@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14201f">
+<title>Leciona</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14201f; --board-fg:#f3efe6; --paper:#e9ece7; --surface:#f6f8f4;
+  --green:#2f6b5e; --green-d:#234f45; --ochre:#c47a3d; --line:#d2d8cf;
+  --muted:#6a7370; --ink-soft:#2a3a38; --danger:#a8442f; --ok:#2f6b5e;
+  --radius:10px; --shadow:0 1px 2px rgba(20,32,31,.06),0 8px 24px rgba(20,32,31,.06);
+  --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --serif:'Spectral',Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--sans);color:var(--ink);background:var(--paper);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+input,textarea,select{font-family:inherit;font-size:14px}
+h1,h2,h3{margin:0;font-weight:600}
+.hidden{display:none!important}
+.serif{font-family:var(--serif)}
+
+#app{display:flex;flex-direction:column;height:100%}
+header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;background:var(--ink);color:var(--board-fg);flex:0 0 auto}
+.brand{display:flex;align-items:baseline;gap:10px;font-family:var(--serif);font-weight:700;font-size:22px;letter-spacing:.3px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--ochre);display:inline-block;transform:translateY(-2px)}
+.brand small{font-family:var(--sans);font-weight:500;font-size:11px;color:#9fb0ab;letter-spacing:.14em;text-transform:uppercase}
+.topbar .spacer{flex:1}
+.topbar nav{display:flex;gap:4px;background:rgba(255,255,255,.06);padding:4px;border-radius:8px}
+.topbar nav button{background:transparent;border:0;color:#bcc8c4;padding:7px 14px;border-radius:6px;font-weight:500;font-size:13px}
+.topbar nav button.active{background:var(--board-fg);color:var(--ink)}
+.icon-btn{background:rgba(255,255,255,.06);border:0;color:var(--board-fg);width:34px;height:34px;border-radius:8px;font-size:15px}
+.icon-btn:hover{background:rgba(255,255,255,.14)}
+.conn{font-size:11px;color:#9fb0ab;display:flex;align-items:center;gap:6px}
+.conn .led{width:8px;height:8px;border-radius:50%;background:var(--ochre)}
+.conn.online .led{background:#6fcaa9}
+
+#viewGestao{flex:1;display:flex;min-height:0}
+.scope{flex:0 0 290px;border-right:1px solid var(--line);background:var(--surface);padding:18px 16px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.scope .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-weight:600}
+.scope select,.scope input{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+.scope .sep{height:1px;background:var(--line);margin:4px 0}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 13px;border-radius:8px;font-weight:500;font-size:13px;display:inline-flex;align-items:center;gap:7px;transition:.12s}
+.btn:hover{border-color:#b9c2b6}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.primary:hover{background:var(--green-d)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink);background:rgba(20,32,31,.05)}
+.btn.full{width:100%;justify-content:center}
+.btn.sm{padding:6px 10px;font-size:12px}
+.btn.danger{color:var(--danger);border-color:transparent}
+.btn.danger:hover{background:rgba(168,68,47,.08)}
+
+.themes{flex:1;display:flex;flex-direction:column;min-width:0}
+.themes-head{padding:14px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--surface)}
+.themes-head h2{font-family:var(--serif);font-size:18px}
+.themes-head .crumb{font-size:12px;color:var(--muted)}
+.themes-body{flex:1;overflow:auto;padding:18px 22px}
+
+/* Conteúdo > Tema */
+.conteudo{border:1px solid var(--line);background:#fff;border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
+.conteudo-head{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(47,107,94,.05);border-bottom:1px solid var(--line)}
+.conteudo-head .cname{font-family:var(--serif);font-size:16px;font-weight:600;flex:1;cursor:pointer}
+.conteudo-head .ordbtns{display:flex;flex-direction:column;gap:1px}
+.ordbtns button{border:1px solid var(--line);background:#fff;width:22px;height:17px;line-height:1;border-radius:4px;font-size:10px;color:var(--muted);padding:0}
+.ordbtns button:hover{border-color:var(--green);color:var(--green)}
+.conteudo-body{padding:10px 14px}
+.selos{display:inline-flex;gap:4px;flex-wrap:wrap}
+.selo{font-size:9.5px;font-weight:700;letter-spacing:.03em;padding:2px 6px;border-radius:5px;text-transform:uppercase}
+.selo.revisa{background:#e7efe9;color:#2f6b5e}
+.selo.ser{background:#efe6db;color:#a06a2e}
+.selo.goiastec{background:#e6e9ef;color:#3a4a8a}
+
+.tlist{display:grid;gap:9px}
+.tcard{border:1px solid var(--line);background:#fff;border-radius:9px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.12s}
+.tcard:hover{border-color:var(--green);box-shadow:var(--shadow)}
+.tcard .tname{font-family:var(--serif);font-size:15px;font-weight:600}
+.tcard .tcode{font-size:11px;color:var(--green);font-weight:600;letter-spacing:.04em;margin-right:8px}
+.tcard .tsub{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
+.tcard .tmeta{flex:1;min-width:0}
+.tcard .prog{display:flex;gap:3px}
+.tcard .prog i{width:7px;height:7px;border-radius:2px;background:var(--line)}
+.tcard .prog i.on{background:var(--green)}
+.statusdot{font-size:11px;color:var(--muted)}
+.statusdot b{color:var(--green)}
+.empty{color:var(--muted);text-align:center;padding:44px 20px;font-size:14px}
+.empty p{max-width:420px;margin:8px auto}
+.addrow{display:flex;gap:8px;margin-top:10px}
+
+/* Editor */
+.editor{position:fixed;inset:0;background:var(--paper);z-index:40;display:flex;flex-direction:column}
+.editor-top{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+.editor-top input.tema-nome{font-family:var(--serif);font-size:20px;font-weight:600;border:0;background:transparent;flex:1;color:var(--ink);padding:4px}
+.editor-top input.tema-nome:focus{outline:0;border-bottom:2px solid var(--green)}
+.editor-body{flex:1;display:flex;min-height:0}
+.meta-pane{flex:0 0 312px;border-right:1px solid var(--line);padding:18px;overflow:auto;background:var(--surface)}
+.meta-pane .field{margin-bottom:14px}
+.meta-pane label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
+.meta-pane input,.meta-pane textarea,.meta-pane select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.meta-pane textarea{resize:vertical;min-height:60px}
+.meta-block{border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px;margin-bottom:14px}
+.meta-block h4{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.turma-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex-wrap:wrap}
+.turma-row .tn{font-weight:600;font-size:13px;flex:1;min-width:70px}
+.turma-row select,.turma-row input{padding:5px 7px;border:1px solid var(--line);border-radius:6px;font-size:12px}
+.turma-row input.dt{width:128px}
+.img-thumbs{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
+.img-thumbs .it{position:relative;width:74px;height:54px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.img-thumbs .it img{width:100%;height:100%;object-fit:cover}
+.img-thumbs .it button{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:0;background:rgba(20,32,31,.78);color:#fff;font-size:11px;line-height:1;padding:0}
+
+.obj-pane{flex:1;display:flex;flex-direction:column;min-width:0}
+.obj-tabs{display:flex;gap:2px;padding:10px 16px 0;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--surface)}
+.obj-tabs button{border:0;background:transparent;padding:9px 13px;border-radius:8px 8px 0 0;color:var(--muted);font-weight:500;font-size:13px;white-space:nowrap;border-bottom:2px solid transparent;display:flex;align-items:center;gap:7px}
+.obj-tabs button.active{color:var(--ink);border-bottom-color:var(--green)}
+.obj-tabs button .badge{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.obj-tabs button.done .badge{background:var(--green)}
+.obj-content{flex:1;overflow:auto;padding:20px 24px;max-width:920px;width:100%;margin:0 auto}
+.obj-actions{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.obj-actions .title{font-family:var(--serif);font-size:17px;font-weight:600;flex:1}
+.obj-hint{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.45}
+textarea.big{width:100%;min-height:320px;padding:14px;border:1px solid var(--line);border-radius:10px;background:#fff;line-height:1.6;resize:vertical}
+.card-list{display:grid;gap:12px}
+.mini-card{border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px}
+.mini-card .row{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.mini-card input,.mini-card textarea,.mini-card select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff}
+.mini-card textarea{resize:vertical;min-height:48px}
+.mini-card .num{font-family:var(--serif);font-weight:700;color:var(--green);font-size:14px;flex:0 0 auto}
+.mini-card label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;display:block;margin:6px 0 3px}
+
+/* Projeção */
+#viewProjecao{position:fixed;inset:0;background:var(--ink);color:var(--board-fg);z-index:50;display:flex;flex-direction:column}
+#viewProjecao.theme-light{background:#faf8f2;color:#1a1a1a}
+#viewProjecao.theme-contrast{background:#000;color:#fff}
+.proj-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(0,0,0,.25);flex:0 0 auto}
+.theme-light .proj-bar{background:rgba(0,0,0,.05)}
+.proj-bar .ptitle{font-family:var(--serif);font-weight:600;font-size:15px;opacity:.85;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-bar .spacer{flex:1}
+.obj-switch{display:flex;gap:2px;background:rgba(255,255,255,.08);padding:4px;border-radius:9px;overflow-x:auto;max-width:60vw}
+.theme-light .obj-switch{background:rgba(0,0,0,.06)}
+.obj-switch button{border:0;background:transparent;color:inherit;opacity:.6;padding:6px 11px;border-radius:6px;font-size:12px;font-weight:500;white-space:nowrap}
+.obj-switch button.active{background:rgba(255,255,255,.16);opacity:1}
+.theme-light .obj-switch button.active{background:rgba(0,0,0,.1)}
+.proj-ctrl{display:flex;align-items:center;gap:4px}
+.proj-ctrl button{border:0;background:rgba(255,255,255,.08);color:inherit;width:32px;height:32px;border-radius:7px;font-size:14px}
+.theme-light .proj-ctrl button{background:rgba(0,0,0,.06)}
+.proj-ctrl button:hover{background:rgba(255,255,255,.18)}
+.proj-stage{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;padding:5vh 6vw}
+.proj-canvas{width:100%;max-width:1100px;font-size:var(--proj-fs,30px);line-height:var(--proj-lh,1.6)}
+.proj-canvas h2{font-family:var(--serif);font-size:1.5em;margin-bottom:.6em;color:var(--ochre)}
+.theme-contrast .proj-canvas h2{color:#ffd479}
+.proj-canvas p{margin:0 0 .8em}
+.proj-canvas ul{margin:0 0 .8em;padding-left:1.3em}
+.proj-canvas li{margin-bottom:.4em}
+.proj-canvas .q{margin-bottom:1.2em}
+.proj-canvas .alt{padding:.25em .6em;border-radius:8px;margin:.2em 0}
+.proj-canvas .alt.correct{background:rgba(111,202,169,.22);outline:2px solid #6fcaa9}
+.theme-light .proj-canvas .alt.correct{background:rgba(47,107,94,.16);outline-color:var(--green)}
+.reveal-box{margin-top:.6em;padding:.5em .8em;border-left:4px solid var(--ochre);background:rgba(255,255,255,.06);border-radius:6px;font-size:.85em}
+.theme-light .reveal-box{background:rgba(0,0,0,.04)}
+.flash{width:100%;max-width:820px;min-height:46vh;border-radius:18px;border:2px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;text-align:center;padding:6vh 6vw;cursor:pointer;font-family:var(--serif);font-size:1.2em;position:relative;user-select:none}
+.theme-light .flash{border-color:rgba(0,0,0,.14)}
+.flash .side-label{position:absolute;top:14px;left:18px;font-family:var(--sans);font-size:13px;letter-spacing:.1em;text-transform:uppercase;opacity:.5}
+.slide{width:100%;max-width:1000px;min-height:50vh;border-radius:16px;background:rgba(255,255,255,.05);padding:6vh 6vw;border:1px solid rgba(255,255,255,.1)}
+.theme-light .slide{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.08)}
+.slide h2{font-family:var(--serif);font-size:1.6em;margin-bottom:.7em;color:var(--ochre)}
+.theme-contrast .slide h2{color:#ffd479}
+.slide li{margin-bottom:.6em}
+.nav-dots{display:flex;gap:8px;justify-content:center;margin-top:20px}
+.nav-dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.25)}
+.nav-dots i.on{background:var(--ochre)}
+.markmap-wrap{width:100%;height:74vh}
+.markmap-wrap svg{width:100%;height:100%}
+.proj-foot{display:flex;align-items:center;justify-content:center;gap:18px;padding:10px;font-size:13px;opacity:.6;flex:0 0 auto}
+.proj-foot button{border:0;background:transparent;color:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;width:100%;max-width:1000px}
+.img-grid img{width:100%;border-radius:10px;cursor:pointer;border:2px solid transparent}
+.img-grid img:hover{border-color:var(--ochre)}
+.img-grid .pick{position:relative}
+.img-grid .pick .fix{position:absolute;bottom:8px;right:8px}
+.img-big{max-width:90vw;max-height:74vh;border-radius:12px}
+
+/* Modais / toast */
+.modal-bg{position:fixed;inset:0;background:rgba(20,32,31,.55);z-index:80;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:88vh;overflow:auto;box-shadow:var(--shadow)}
+.modal-h{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+.modal-h h3{font-family:var(--serif);font-size:18px;flex:1}
+.modal-b{padding:20px 22px}
+.modal-b .field{margin-bottom:14px}
+.modal-b label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:5px}
+.modal-b input,.modal-b textarea,.modal-b select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px}
+.modal-b textarea.mono{min-height:90px;font-family:ui-monospace,monospace;font-size:12px;resize:vertical}
+.modal-b small{color:var(--muted);font-size:12px;display:block;margin-top:5px;line-height:1.4}
+.modal-f{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.check{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;margin-bottom:7px}
+.turma-list .tl{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
+.turma-list .tl b{flex:1}
+.turma-list .tl span{font-size:12px;color:var(--muted)}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:90;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{background:var(--ink);color:var(--board-fg);padding:11px 18px;border-radius:10px;font-size:13px;box-shadow:var(--shadow);max-width:80vw}
+.toast.err{background:var(--danger)}
+.toast.ok{background:var(--green)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+.spin.dark{border-color:rgba(20,32,31,.25);border-top-color:var(--green)}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media (max-width:820px){
+  .scope{flex-basis:240px}
+  .meta-pane{display:none}
+  .topbar nav button{padding:7px 10px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">Leciona<span class="dot"></span><small>Acervo &amp; Projeção</small></div>
+    <div class="spacer"></div>
+    <nav>
+      <button id="tabGestao" class="active" onclick="setView('gestao')">Gestão</button>
+      <button id="tabProjecao" onclick="abrirProjecaoAtual()">Projetar</button>
+    </nav>
+    <span class="conn" id="conn"><span class="led"></span><span id="connTxt">Local</span></span>
+    <button class="icon-btn" title="Turmas" onclick="openTurmas()">&#128101;</button>
+    <button class="icon-btn" title="Configurações" onclick="openConfig()">&#9881;</button>
+  </header>
+
+  <div id="viewGestao">
+    <aside class="scope">
+      <div class="field"><label>Disciplina</label><select id="selDisc" onchange="onScopeChange()"></select></div>
+      <div class="field"><label>Série / Ano</label><select id="selSerie" onchange="onScopeChange()"></select></div>
+      <div class="field"><label>Bimestre</label><select id="selBim" onchange="onScopeChange()"></select></div>
+      <div class="sep"></div>
+      <button class="btn primary full" onclick="novoConteudo()">+ Novo conteúdo</button>
+      <button class="btn full" onclick="sugerirPelaMatriz()">&#10022; Sugerir pela matriz</button>
+      <button class="btn full" onclick="openRelatorio()">&#128196; Gerar relatório / PDF</button>
+      <div class="sep"></div>
+      <button class="btn full" onclick="exportBackup()">Exportar backup (JSON)</button>
+      <label class="btn ghost full" style="text-align:center;cursor:pointer">Importar backup
+        <input type="file" accept="application/json" style="display:none" onchange="importBackup(event)">
+      </label>
+    </aside>
+
+    <main class="themes">
+      <div class="themes-head">
+        <div>
+          <h2 id="scopeTitle">—</h2>
+          <div class="crumb" id="scopeCrumb"></div>
+        </div>
+        <div class="spacer" style="flex:1"></div>
+      </div>
+      <div class="themes-body" id="themesBody"></div>
+    </main>
+  </div>
+</div>
+
+<div id="editor" class="editor hidden">
+  <div class="editor-top">
+    <button class="btn ghost" onclick="fecharEditor()">← Voltar</button>
+    <input class="tema-nome" id="edNome" placeholder="Nome do tema" oninput="edDirty()">
+    <button class="btn" onclick="projetarTema()">▶ Projetar</button>
+    <button class="btn primary" onclick="salvarTema()">Salvar</button>
+  </div>
+  <div class="editor-body">
+    <div class="meta-pane">
+      <div class="field"><label>Conteúdo (guarda-chuva)</label>
+        <select id="edConteudo" onchange="edDirty()"></select></div>
+      <div class="field"><label>Habilidade (DC-GO / corte)</label>
+        <select id="edHab" onchange="aplicarHab()"></select></div>
+      <div class="field"><label>Código DC-GO</label>
+        <input id="edDcgo" oninput="onDcgoInput()" placeholder="ex: GO-EF09HI13-A"></div>
+      <div class="field"><label>Selos da matriz</label>
+        <div id="edSelos" class="selos"></div></div>
+      <div class="field"><label>Resumo</label>
+        <textarea id="edResumo" oninput="edDirty()"></textarea></div>
+      <div class="field"><label>Palavras-chave</label>
+        <input id="edPalavras" oninput="edDirty()" placeholder="separe por vírgula"></div>
+      <div class="field"><label>Tempo estimado (aulas)</label>
+        <input id="edTempo" type="number" min="1" oninput="edDirty()"></div>
+
+      <div class="meta-block">
+        <h4>&#128101; Turmas</h4>
+        <div id="edTurmas"></div>
+      </div>
+
+      <div class="meta-block">
+        <h4>&#127748; Imagens fixadas</h4>
+        <div class="addrow" style="margin-top:0">
+          <button class="btn sm full" onclick="buscarImagemTema()">+ Buscar imagem (Wikimedia)</button>
+        </div>
+        <div class="img-thumbs" id="edImagens"></div>
+      </div>
+    </div>
+
+    <div class="obj-pane">
+      <div class="obj-tabs" id="objTabs"></div>
+      <div class="obj-content" id="objContent"></div>
+    </div>
+  </div>
+</div>
+
+<div id="viewProjecao" class="hidden">
+  <div class="proj-bar">
+    <span class="ptitle" id="projTitle"></span>
+    <div class="spacer"></div>
+    <div class="obj-switch" id="projSwitch"></div>
+    <div class="proj-ctrl">
+      <button title="Diminuir fonte" onclick="projFont(-2)">A−</button>
+      <button title="Aumentar fonte" onclick="projFont(2)">A+</button>
+      <button title="Espaçamento" onclick="projSpacing()">↕</button>
+      <button title="Tema de cor" onclick="projTheme()">◐</button>
+      <button title="Buscar imagem" onclick="projImagem()">⛰</button>
+      <button title="Sair" onclick="fecharProjecao()">✕</button>
+    </div>
+  </div>
+  <div class="proj-stage" id="projStage"></div>
+  <div class="proj-foot" id="projFoot"></div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.18"></script>
+<script src="https://cdn.jsdelivr.net/npm/markmap-view@0.18"></script>
+<script>
+/* =========================================================
+   LECIONA — lógica (v2: Conteúdo→Tema, turmas, ordem, selos, PDF)
+   ========================================================= */
+
+/* ---------- Disciplinas / séries / bimestres ---------- */
+const SERIES_BY_DISC = {
+  'História':   ['6º ano','7º ano','8º ano','9º ano','1ª série EM','2ª série EM','3ª série EM'],
+  'Filosofia':  ['1ª série EM','2ª série EM','3ª série EM'],
+  'Sociologia': ['1ª série EM','2ª série EM','3ª série EM'],
+};
+const BIMESTRES = ['1º Bimestre','2º Bimestre','3º Bimestre','4º Bimestre'];
+
+/* ---------- Matriz SEDUC-GO 2026 (recorte: História + Filosofia + Sociologia) ----------
+   Fonte oficial: goias.gov.br/educacao — Matriz de Habilidades Essenciais 2026.
+   Cada item: c=código DC-GO/BNCC, h=habilidade essencial, t=tema sugerido,
+   r/s/g = REVISA / SER / GoiásTec (1 = ✓ tem material, 0 = X, null = não informado).
+   1º e 2º bimestres: selos lidos da matriz oficial.
+   3º bimestre: selos = null (PDF a ser fornecido). */
+const M = (c,h,t,r,s,g)=>({c,h,t,r,s,g});
+const N = null;
+
+const MATRIZ = {
+  /* ===================== HISTÓRIA 6º ===================== */
+  'História|6º ano|1º Bimestre':[
+    M('EF06HI01','Reconhecer que a organização do tempo é construída culturalmente, conforme a sociedade e seu contexto histórico.','Tempo e periodização histórica',0,1,0),
+    M('GO-EF06HI02-B','Analisar a importância da história oral e dos diferentes tipos de fontes históricas (materiais, escritas, visuais e orais) na produção do saber histórico.','Fontes históricas e história oral',0,1,0),
+    M('GO-EF06HI03-A','Identificar as teorias sobre o aparecimento do ser humano no continente africano e os processos de evolução, deslocamento e povoamento a partir da África.','Origem da humanidade na África',0,1,0),
+    M('EF06HI04','Identificar as teorias sobre a origem do homem americano, em especial as dos povos indígenas do Brasil (Serra da Capivara e Lagoa Santa).','Origem do homem americano',0,0,0),
+    M('EF06HI05','Identificar as concepções dos povos indígenas originários e africanos sobre a natureza e sua relação com ela.','Povos originários e a natureza',0,0,0),
+  ],
+  'História|6º ano|2º Bimestre':[
+    M('EF06HI07','Identificar e analisar as formas de registro histórico e cultural das civilizações da África e do Oriente Médio (hieróglifos, cuneiforme, tradição oral, artefatos).','Registros da Antiguidade (África e Oriente)',0,1,0),
+    M('GO-EF06HI07-A','Identificar e caracterizar a escrita cuneiforme da Mesopotâmia e sua importância como um dos primeiros sistemas de escrita.','Surgimento da escrita (Mesopotâmia)',0,1,0),
+    M('GO-EF06HI07-D','Investigar os povos do Antigo Oriente (Índia, China, Japão), sua localização e as rotas comerciais de intercâmbio.','Civilizações do Antigo Oriente',0,1,0),
+    M('EF06HI08','Identificar os espaços territoriais dos povos originários do continente americano (astecas, maias e incas).','Astecas, maias e incas',0,0,0),
+  ],
+  'História|6º ano|3º Bimestre':[
+    M('GO-EF06HI10-B','Compreender as cidades-estado gregas e a democracia ateniense e sua influência nas democracias atuais.','Atenas e a democracia',N,N,N),
+    M('EF06HI11','Analisar a formação de Roma Antiga e as bases da civilização romana.','Roma Antiga',N,N,N),
+    M('EF06HI12','Compreender o conceito de cidadania e as dinâmicas de inclusão e exclusão na Grécia e Roma antigas.','Cidadania na Antiguidade',N,N,N),
+    M('GO-EF06HI13-A','Investigar a formação e sustentação dos impérios na Antiguidade, incluindo a África antiga.','África no mundo antigo',N,N,N),
+    M('GO-EF06HI14-B','Entender o fim do Império Romano e a passagem do mundo antigo ao medieval.','Do mundo antigo ao medieval',N,N,N),
+  ],
+  /* ===================== HISTÓRIA 7º ===================== */
+  'História|7º ano|1º Bimestre':[
+    M('GO-EF07HI01-A','Conceituar a Modernidade no contexto da formação dos estados nacionais, da expansão marítima e da colonização.','A construção da Modernidade',0,1,0),
+    M('GO-EF07HI02-B','Reconhecer as formas de organização social, política e econômica dos povos da América, Europa e África e suas lógicas de produção e circulação de mercadorias.','Povos e sociedades (América, Europa, África)',0,1,0),
+    M('GO-EF07HI03-C','Relacionar o modo de vida das civilizações Inca, Maia e Asteca com as sociedades europeias (escrita, moeda, tempo, comércio).','Civilizações pré-colombianas e Europa',0,0,0),
+  ],
+  'História|7º ano|2º Bimestre':[
+    M('EF07HI04','Compreender o Renascimento e o Humanismo e como influenciaram a transição da mentalidade medieval para a moderna.','Renascimento e Humanismo',0,1,0),
+    M('GO-EF07HI05-B','Analisar a Reforma protestante e as relações entre questões religiosas, políticas e econômicas da época.','Reforma protestante',0,1,0),
+    M('GO-EF07HI06-A','Identificar as rotas marítimas europeias dos séculos XV-XVI e as motivações políticas e econômicas das grandes navegações.','Grandes navegações',0,1,0),
+    M('GO-EF07HI07-B','Compreender a relação entre a formação dos Estados nacionais europeus e o mercantilismo na Idade Moderna.','Estados nacionais e mercantilismo',0,0,0),
+  ],
+  'História|7º ano|3º Bimestre':[
+    M('GO-EF07HI08-A','Analisar a conquista de Astecas, Incas e Maias pelos espanhóis: alianças, conflitos e resistência.','Povos pré-colombianos',N,N,N),
+    M('GO-EF07HI09-C','Reconhecer os impactos da conquista e colonização para as populações nativas.','Conquista e colonização da América',N,N,N),
+    M('GO-EF07HI12-A','Avaliar a diversidade étnico-racial e a formação do povo brasileiro.','Formação do povo brasileiro',N,N,N),
+    M('GO-EF07HI13-A','Analisar a política mercantilista e seus impactos na expansão e colonização europeia.','Mercantilismo',N,N,N),
+  ],
+  /* ===================== HISTÓRIA 8º ===================== */
+  'História|8º ano|1º Bimestre':[
+    M('EF08HI01','Conceituar iluminismo, liberalismo e neoliberalismo, estabelecendo relações com a atualidade.','Iluminismo e liberalismo',0,1,1),
+    M('GO-EF08HI02-A','Analisar os desdobramentos das revoluções inglesas nas estruturas políticas, sociais e econômicas da sociedade europeia.','Revoluções inglesas',0,1,1),
+    M('GO-EF08HI03-A','Identificar e compreender os processos de produção da Revolução Industrial e suas relações com as condições de vida e o trabalho.','Revolução Industrial',0,1,1),
+    M('EF08HI04','Identificar o contexto da Revolução Francesa e analisar seus impactos nas independências das Américas e nas revoltas do Brasil Colônia.','Revolução Francesa',0,1,1),
+  ],
+  'História|8º ano|2º Bimestre':[
+    M('GO-EF08HI05-A','Analisar a influência das ideias iluministas e do anticolonialismo nas revoltas da América Portuguesa (Conjurações Mineira, Baiana e Insurreição Pernambucana).','Iluminismo e revoltas coloniais',0,1,1),
+    M('GO-EF08HI11-A','Analisar e comparar os movimentos e revoltas do século XVIII no Brasil e na América Espanhola: causas, líderes, desfechos e impactos.','Revoltas coloniais nas Américas',0,1,1),
+    M('EF08HI12','Analisar as causas da transferência da Corte portuguesa para o Brasil em 1808 e seus impactos sociais, políticos e econômicos.','Vinda da Corte (1808-1822)',0,1,1),
+    M('GO-EF08HI14-B','Analisar as consequências históricas da colonização e da escravidão sobre populações afrodescendentes e indígenas e as desigualdades estruturais atuais.','Escravidão e desigualdades estruturais',0,1,1),
+  ],
+  'História|8º ano|3º Bimestre':[
+    M('GO-EF08HI15-A','Analisar o contexto do Primeiro Reinado (1822-1831) e a Independência do Brasil.','Independência e Primeiro Reinado',N,N,N),
+    M('GO-EF08HI16-A','Avaliar o Período Regencial e as revoltas provinciais.','Período Regencial',N,N,N),
+    M('GO-EF08HI17-A','Analisar as estruturas políticas do Segundo Reinado e relações com modelos atuais.','Segundo Reinado',N,N,N),
+    M('GO-EF08HI18-B','Reconhecer as consequências da escravidão e o processo de abolição.','Abolição e Lei de Terras',N,N,N),
+    M('GO-EF08HI20-A','Problematizar as origens históricas do racismo na sociedade brasileira.','Racismo estrutural e abolição',N,N,N),
+  ],
+  /* ===================== HISTÓRIA 9º ===================== */
+  'História|9º ano|1º Bimestre':[
+    M('EF09HI01','Reconhecer o contexto histórico que levou à emergência da República no Brasil e a participação da sociedade na mudança de regime.','Proclamação da República',1,1,0),
+    M('GO-EF09HI03-A','Analisar a Lei de Terras de 1850 como marco da exclusão social e racial no Brasil e seus desdobramentos atuais.','Lei de Terras de 1850',1,0,1),
+    M('GO-EF09HI02-A','Compreender a estrutura de poder oligárquica (política café com leite), o coronelismo, a urbanização e a marginalização das camadas populares.','Primeira República e oligarquias',1,0,0),
+    M('GO-EF09HI03-C','Entender como a abolição não assegurou à população negra acesso a direitos e condições de vida, e as consequências dessa exclusão.','Abolição e exclusão social',1,1,1),
+    M('GO-EF09HI05-D','Compreender a modernização republicana como processo desigual e excludente, analisando os movimentos rurais e urbanos.','Modernização e revoltas da Primeira República',1,1,1),
+  ],
+  'História|9º ano|2º Bimestre':[
+    M('GO-EF09HI06-A','Analisar a ascensão de Getúlio Vargas ao poder, o Estado Novo, a legislação trabalhista e a centralização do poder (1930-1945).','Era Vargas e Estado Novo',1,1,0),
+    M('GO-EF09HI06-B','Analisar os impactos das políticas varguistas em Goiás (mudanças políticas, sociais e econômicas).','Era Vargas em Goiás',1,1,1),
+    M('GO-EF09HI10-A','Analisar o imperialismo do fim do século XIX e sua relação com o nacionalismo e a formação de alianças que levaram à Primeira Guerra.','Imperialismo e nacionalismos',1,1,0),
+    M('GO-EF09HI10-C','Compreender o contexto e os impactos da Primeira Guerra Mundial (transformações sociais, políticas, econômicas e territoriais).','Primeira Guerra Mundial',1,1,1),
+    M('EF09HI11','Identificar os eventos que levaram à Revolução Russa e analisar a implantação da URSS e suas ideologias.','Revolução Russa e a URSS',1,1,1),
+    M('EF09HI12','Analisar a Crise de 1929 e seus desdobramentos sobre a economia global.','Crise de 1929',1,1,1),
+  ],
+  'História|9º ano|3º Bimestre':[
+    M('GO-EF09HI13-A','Conceituar os regimes totalitários e analisar sua relação com a Segunda Guerra Mundial.','Totalitarismos e Segunda Guerra Mundial',N,N,N),
+    M('GO-EF09HI17-A','Analisar os governos populistas e desenvolvimentistas (1946-1964) e seus desdobramentos em Goiás.','Populismo e desenvolvimentismo (1946-64)',N,N,N),
+    M('GO-EF09HI19-A','Compreender a ruptura democrática, a Ditadura Militar e a reabertura.','Ditadura Militar e reabertura democrática',N,N,N),
+  ],
+  /* ===================== FILOSOFIA EM ===================== */
+  'Filosofia|1ª série EM|1º Bimestre':[
+    M('GO-EMCHS103A','Compreender o que é Filosofia, suas origens e características; a passagem do Mito para a Filosofia, o surgimento da Pólis e a diferença entre doxa e episteme.','Origem da Filosofia',0,0,1),
+    M('GO-EMCHS101A','Reconhecer os primeiros filósofos (pré-socráticos: Tales, Anaximandro, Heráclito e Parmênides) e suas explicações racionais sobre a origem do universo (arché).','Pré-socráticos',0,0,1),
+  ],
+  'Filosofia|1ª série EM|2º Bimestre':[
+    M('GO-EMCHS501A','Compreender a diferença entre Ética e Moral, analisando a ética na filosofia clássica (Sócrates, Platão e Aristóteles) e comparando com o estilo de vida contemporâneo.','Ética e Moral na Antiguidade',0,0,1),
+  ],
+  'Filosofia|1ª série EM|3º Bimestre':[
+    M('EM13CHS502','Problematizar formas de desigualdade e identificar ações que promovam os Direitos Humanos.','Direitos Humanos e dignidade',N,N,N),
+    M('GO-EMCHS502C','Refletir sobre liberdade de expressão: filósofos x sofistas; liberdade pública e privada (Constant).','Liberdade de expressão',N,N,N),
+  ],
+  'Filosofia|2ª série EM|1º Bimestre':[
+    M('GO-EMCHS104D','Compreender a filosofia política medieval por meio de Santo Agostinho e Santo Tomás de Aquino.','Filosofia política medieval',0,0,1),
+    M('GO-EMCHS106B','Compreender as transformações do pensamento político moderno (Maquiavel) e as teorias do absolutismo (Thomas Hobbes).','Maquiavel e Hobbes',0,0,1),
+  ],
+  'Filosofia|2ª série EM|2º Bimestre':[
+    M('GO-EMCHS201C','Compreender o pensamento iluminista do século XVIII (Locke, Rousseau e Montesquieu) e sua influência nos processos revolucionários.','Iluminismo',0,0,1),
+  ],
+  'Filosofia|2ª série EM|3º Bimestre':[
+    M('EM13CHS205','Avaliar processos culturais e relações de poder na sociedade contemporânea.','Cultura e poder',N,N,N),
+    M('GO-EMCHS205D','Conhecer a Escola de Frankfurt e a indústria cultural (Adorno e Horkheimer).','Indústria cultural (Escola de Frankfurt)',N,N,N),
+  ],
+  'Filosofia|3ª série EM|1º Bimestre':[
+    M('GO-EMCHS603A','Compreender o pensamento político de Hannah Arendt (poder e soberania) e as relações de poder a partir de Foucault.','Arendt e Foucault: poder',0,0,1),
+  ],
+  'Filosofia|3ª série EM|2º Bimestre':[
+    M('GO-EMCHS604D','Compreender o pensamento de Tomás de Aquino e, por Erasmo de Roterdã, a relação entre filosofia humanista e direitos humanos.','Humanismo e Direitos Humanos',1,0,1),
+  ],
+  'Filosofia|3ª série EM|3º Bimestre':[
+    M('EM13CHS605','Analisar os princípios da Declaração dos Direitos Humanos (justiça, igualdade, fraternidade).','Princípios dos Direitos Humanos',N,N,N),
+    M('GO-EMCHS605A','Entender as origens iluministas dos Direitos Humanos (Locke e Rousseau).','Direitos naturais (Iluminismo)',N,N,N),
+  ],
+  /* ===================== HISTÓRIA EM ===================== */
+  'História|1ª série EM|1º Bimestre':[
+    M('GO-EMCHS103A','Compreender o conceito de História e historiografia, tempo histórico e periodização, Patrimônio Histórico e Cultural.','História e historiografia',0,0,1),
+    M('GO-EMCHS101A','Identificar fontes históricas para compreender a pré-história e o surgimento da espécie humana; analisar as Civilizações do Antigo Oriente e da América pré-colombiana.','Pré-história e primeiras civilizações',0,0,1),
+  ],
+  'História|1ª série EM|2º Bimestre':[
+    M('GO-EMCHS501A','Identificar a Grécia e Roma Antiga (democracia ateniense e direito romano) e analisar a construção da cidadania na Antiguidade Clássica.','Grécia e Roma: cidadania',0,0,1),
+  ],
+  'História|1ª série EM|3º Bimestre':[
+    M('EM13CHS104','Analisar objetos e vestígios da cultura material e imaterial de diferentes sociedades.','Cultura material e identidade',N,N,N),
+    M('EM13CHS402','Analisar as relações sociais e produtivas do mundo feudal (suserania e vassalagem).','Mundo feudal',N,N,N),
+  ],
+  'História|2ª série EM|1º Bimestre':[
+    M('GO-EMCHS104D','Entender as Cruzadas e o Renascimento urbano e comercial; analisar a crise do sistema feudal.','Cruzadas e crise do feudalismo',0,0,1),
+    M('GO-EMCHS106B','Compreender a formação do Estado Nacional Moderno, as Grandes Navegações e as práticas mercantilistas.','Estado Moderno e Navegações',0,0,1),
+  ],
+  'História|2ª série EM|2º Bimestre':[
+    M('GO-EMCHS201D','Compreender os processos sociais, econômicos e políticos relacionados à Revolução Francesa.','Revolução Francesa',0,0,1),
+    M('GO-EMCHS201A','Compreender a transição para o capitalismo, as migrações a partir da Revolução Industrial e seus impactos sociais.','Revolução Industrial e capitalismo',0,0,1),
+  ],
+  'História|2ª série EM|3º Bimestre':[
+    M('EM13CHS601','Identificar protagonismos de povos indígenas e afrodescendentes no Brasil contemporâneo.','Protagonismos indígenas e afrodescendentes',N,N,N),
+    M('GO-EMCHS601A','Conhecer as origens históricas da desigualdade étnico-racial desde o período colonial.','Escravidão e formação do Brasil',N,N,N),
+    M('GO-EMCHS601B','Compreender as formas de resistência indígena e negra à escravidão.','Resistência indígena e negra',N,N,N),
+  ],
+  'História|3ª série EM|1º Bimestre':[
+    M('GO-EMCHS603A','Compreender as políticas imperialistas na eclosão da Primeira Guerra Mundial e suas fases.','Imperialismo e Primeira Guerra',1,0,1),
+    M('GO-EMCHS603C','Analisar o contexto histórico da Rússia no início do século XX e o processo da Revolução Russa de 1917.','Revolução Russa de 1917',1,0,1),
+  ],
+  'História|3ª série EM|2º Bimestre':[
+    M('GO-EMCHS604A','Entender as dinâmicas da Segunda Guerra Mundial, a formação da ONU e da OTAN e a Guerra Fria.','Segunda Guerra, ONU/OTAN e Guerra Fria',1,0,1),
+  ],
+  'História|3ª série EM|3º Bimestre':[
+    M('GO-EMCHS305A','Analisar os governos pós-Era Vargas e as políticas ambientais.','Política e meio ambiente no Brasil',N,N,N),
+    M('GO-EMCHS605B','Analisar os movimentos de defesa dos Direitos Humanos na Ditadura Militar (1964-1985).','Direitos Humanos e Ditadura Militar',N,N,N),
+  ],
+  /* ===================== SOCIOLOGIA EM ===================== */
+  'Sociologia|1ª série EM|1º Bimestre':[
+    M('GO-EMCHS103A','Compreender o que é Sociologia, seu conceito, origens e principais pensadores.','O que é Sociologia',0,0,1),
+    M('GO-EMCHS104A','Conceituar Cultura, cultura material e imaterial, etnocentrismo e diversidade cultural.','Cultura e diversidade',0,0,1),
+  ],
+  'Sociologia|1ª série EM|2º Bimestre':[
+    M('GO-EMCHS401C','Compreender a divisão social do trabalho (Durkheim: solidariedade mecânica e orgânica) e a ética protestante e o capitalismo (Weber).','Durkheim e Weber: indivíduo e sociedade',0,0,1),
+  ],
+  'Sociologia|1ª série EM|3º Bimestre':[
+    M('GO-EMCHS402A','Compreender o capitalismo, a mais-valia e a teoria do valor (Marx).','Capitalismo e trabalho',N,N,N),
+    M('GO-EMCHS403A','Compreender as novas formas de trabalho (uberização, plataformização, precarização).','Mundo do trabalho contemporâneo',N,N,N),
+  ],
+  'Sociologia|2ª série EM|1º Bimestre':[
+    M('GO-EMCHS204A','Compreender os conceitos de Max Weber sobre o Estado moderno e os tipos de dominação (tradicional, carismática e legal).','Weber: Estado e dominação',0,0,1),
+  ],
+  'Sociologia|2ª série EM|2º Bimestre':[
+    M('GO-EMCHS201B','Compreender as origens sócio-históricas do capitalismo e os conflitos de classe (teoria de classe social de Karl Marx).','Marx: classes e capitalismo',0,0,1),
+  ],
+  'Sociologia|2ª série EM|3º Bimestre':[
+    M('GO-EMCHS205C','Debater conflitos sociais, intolerância, racismo e desigualdade no Brasil contemporâneo.','Conflitos sociais no Brasil',N,N,N),
+  ],
+  'Sociologia|3ª série EM|1º Bimestre':[
+    M('GO-EMCHS603D','Entender as diferenças entre Liberalismo e Socialismo e os limites da construção da cidadania no Brasil e na América Latina.','Liberalismo, Socialismo e cidadania',0,0,1),
+  ],
+  'Sociologia|3ª série EM|2º Bimestre':[
+    M('GO-EMCHS604C','Analisar o papel dos organismos internacionais (ONU, FMI, Banco Mundial, OMC, OMS) e os limites da cidadania nos países de capitalismo dependente.','Organismos internacionais e cidadania',1,0,1),
+  ],
+  'Sociologia|3ª série EM|3º Bimestre':[
+    M('EM13CHS605','Analisar a aplicação dos Direitos Humanos na realidade do século XXI.','Direitos Humanos no século XXI',N,N,N),
+    M('GO-EMCHS605B','Refletir sobre democracia e movimentos sociais na garantia dos Direitos Humanos.','Democracia e movimentos sociais',N,N,N),
+  ],
+};
+
+function matrizKey(d,s,b){ return d+'|'+s+'|'+b; }
+function matrizDoScope(){ return MATRIZ[matrizKey(scope.disc,scope.serie,scope.bim)]||[]; }
+function matrizItem(d,s,b,code){ return (MATRIZ[matrizKey(d,s,b)]||[]).find(x=>x.c===code)||null; }
+
+/* ---------- Definição dos 9 objetos ---------- */
+const OBJ_DEFS = [
+  {k:'planejamento', label:'Planejamento', tipo:'texto',  hint:'Para você: objetivos, recursos, sequência da aula. Não vai à parede por padrão.'},
+  {k:'textoQuadro',  label:'Texto de quadro', tipo:'texto', hint:'Enxuto e esquemático — o esqueleto que os alunos copiam da lousa.'},
+  {k:'textoAluno',   label:'Texto do aluno', tipo:'texto',  hint:'Prosa explicativa, linguagem adaptada à faixa — para ler e estudar.'},
+  {k:'slides',       label:'Slides', tipo:'slides',         hint:'Cartões de texto navegáveis em sequência.'},
+  {k:'atividade',    label:'Atividade', tipo:'atividade',   hint:'Enunciados para a turma resolver.'},
+  {k:'gabarito',     label:'Gabarito', tipo:'gabarito',     hint:'Respostas comentadas — reveladas no seu ritmo na projeção.'},
+  {k:'questoes',     label:'Questões', tipo:'questoes',     hint:'Questões objetivas; na projeção a resposta certa é revelável.'},
+  {k:'flashcards',   label:'Flash cards', tipo:'flashcards',hint:'Frente e verso para revisão relâmpago (modo vira-carta).'},
+  {k:'mapaMental',   label:'Mapa mental', tipo:'mapa',      hint:'Hierarquia em tópicos (markdown). Vira mapa radial na projeção; no PDF, árvore de tópicos.'},
+];
+
+/* ---------- Estado ---------- */
+let DB = null;
+let conteudos = {};
+let temas = {};
+let turmas = {};            // turmas reais (9º A, 9º B...)
+let scope = {disc:'História', serie:'9º ano', bim:'3º Bimestre'};
+let editing = null;
+let activeObj = 'planejamento';
+let dirty = false;
+let expanded = {};          // conteudoId -> bool (aberto/fechado na lista)
+
+const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_turmas',
+      LS_KEY='leciona_anthropic_key', LS_FB='leciona_fb_cfg', LS_MODEL='leciona_model';
+
+function getModel(){ return localStorage.getItem(LS_MODEL) || 'claude-sonnet-4-6'; }
+function getKey(){ if(DB) return window.__key || ''; return localStorage.getItem(LS_KEY) || ''; }
+function uid(){ return crypto.randomUUID ? crypto.randomUUID() : 't'+Date.now()+Math.random().toString(16).slice(2); }
+
+/* ---------- Firebase / localStorage ---------- */
+function initFirebase(){
+  let cfg=null;
+  try{ cfg=JSON.parse(localStorage.getItem(LS_FB)||'null'); }catch(e){}
+  if(!cfg || !cfg.databaseURL){ setConn(false); return; }
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(cfg);
+    DB = firebase.database();
+    setConn(true);
+    DB.ref('anthropicKey').on('value', s=>{ window.__key = s.val()||''; });
+    DB.ref('leciona/conteudos').on('value', s=>{ conteudos = s.val()||{}; migrateAndRender(); });
+    DB.ref('leciona/temas').on('value', s=>{ temas = s.val()||{}; migrateAndRender(); });
+    DB.ref('leciona/turmas').on('value', s=>{ turmas = s.val()||{}; renderThemes(); });
+  }catch(e){ console.error(e); setConn(false); toast('Falha ao conectar Firebase: '+e.message,'err'); }
+}
+function setConn(on){
+  const el=document.getElementById('conn');
+  el.classList.toggle('online',on);
+  document.getElementById('connTxt').textContent = on?'Firebase':'Local';
+}
+function loadLocal(){
+  try{ conteudos = JSON.parse(localStorage.getItem(LS_CONT)||'{}'); }catch(e){ conteudos={}; }
+  try{ temas = JSON.parse(localStorage.getItem(LS_TEMAS)||'{}'); }catch(e){ temas={}; }
+  try{ turmas = JSON.parse(localStorage.getItem(LS_TURMAS)||'{}'); }catch(e){ turmas={}; }
+}
+function persistConteudo(c){
+  c.updatedAt=Date.now(); conteudos[c.id]=c;
+  if(DB) DB.ref('leciona/conteudos/'+c.id).set(c).catch(e=>toast('Erro: '+e.message,'err'));
+  else localStorage.setItem(LS_CONT, JSON.stringify(conteudos));
+}
+function persistTema(t){
+  t.updatedAt=Date.now(); temas[t.id]=t;
+  if(DB) DB.ref('leciona/temas/'+t.id).set(t).catch(e=>toast('Erro ao salvar: '+e.message,'err'));
+  else localStorage.setItem(LS_TEMAS, JSON.stringify(temas));
+}
+function persistTurma(t){
+  t.updatedAt=Date.now(); turmas[t.id]=t;
+  if(DB) DB.ref('leciona/turmas/'+t.id).set(t);
+  else localStorage.setItem(LS_TURMAS, JSON.stringify(turmas));
+}
+function removeConteudo(id){
+  delete conteudos[id];
+  if(DB) DB.ref('leciona/conteudos/'+id).remove();
+  else localStorage.setItem(LS_CONT, JSON.stringify(conteudos));
+}
+function removeTema(id){
+  delete temas[id];
+  if(DB) DB.ref('leciona/temas/'+id).remove();
+  else localStorage.setItem(LS_TEMAS, JSON.stringify(temas));
+}
+function removeTurma(id){
+  delete turmas[id];
+  if(DB) DB.ref('leciona/turmas/'+id).remove();
+  else localStorage.setItem(LS_TURMAS, JSON.stringify(turmas));
+}
+
+/* ---------- Migração (temas órfãos da v1 -> conteúdo padrão) ---------- */
+let migrated=false;
+function migrateAndRender(){
+  const orphans = Object.values(temas).filter(t=>t && !t.conteudoId);
+  if(orphans.length){
+    // agrupa por disciplina|serie|bimestre, cria conteúdo "Conteúdos avulsos"
+    const groups={};
+    orphans.forEach(t=>{ const k=t.disciplina+'|'+t.serie+'|'+(t.bimestre||'3º Bimestre'); (groups[k]=groups[k]||[]).push(t); });
+    Object.keys(groups).forEach(k=>{
+      const [d,s,b]=k.split('|');
+      let cont = Object.values(conteudos).find(c=>c.disciplina===d&&c.serie===s&&c.bimestre===b&&c._avulsos);
+      if(!cont){
+        cont={id:uid(),disciplina:d,serie:s,bimestre:b,nome:'Conteúdos avulsos',resumo:'',ordem:nextOrdemConteudo(d,s,b),_avulsos:true,updatedAt:Date.now()};
+        persistConteudo(cont);
+      }
+      groups[k].forEach((t,i)=>{ t.conteudoId=cont.id; if(t.ordem==null) t.ordem=i; persistTema(t); });
+    });
+    if(!migrated){ migrated=true; toast('Temas da versão anterior reorganizados em "Conteúdos avulsos".','ok'); }
+  }
+  renderThemes();
+}
+
+/* ---------- Boot ---------- */
+function boot(){
+  const d=document.getElementById('selDisc');
+  Object.keys(SERIES_BY_DISC).forEach(x=>d.add(new Option(x,x)));
+  BIMESTRES.forEach(b=>document.getElementById('selBim').add(new Option(b,b)));
+  d.value=scope.disc;
+  refreshSeries();
+  document.getElementById('selSerie').value=scope.serie;
+  document.getElementById('selBim').value=scope.bim;
+  loadLocal();
+  initFirebase();
+  onScopeChange();
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+  document.addEventListener('keydown', projKeys);
+}
+function refreshSeries(){
+  const s=document.getElementById('selSerie'); s.innerHTML='';
+  (SERIES_BY_DISC[document.getElementById('selDisc').value]||[]).forEach(x=>s.add(new Option(x,x)));
+}
+function onScopeChange(){
+  const dv=document.getElementById('selDisc').value;
+  if(scope.disc!==dv){ scope.disc=dv; refreshSeries(); }
+  scope.disc=dv;
+  scope.serie=document.getElementById('selSerie').value;
+  scope.bim=document.getElementById('selBim').value;
+  renderThemes();
+}
+
+/* ---------- Selos ---------- */
+function selosHtml(d,s,b,code){
+  const it=matrizItem(d,s,b,code);
+  if(!it) return '';
+  if(it.r==null && it.s==null && it.g==null) return '<span class="statusdot" style="font-size:10px">selos do '+esc(b)+' não informados</span>';
+  let h='';
+  if(it.r===1) h+='<span class="selo revisa">REVISA</span>';
+  if(it.s===1) h+='<span class="selo ser">SER</span>';
+  if(it.g===1) h+='<span class="selo goiastec">GoiásTec</span>';
+  if(!h) h='<span class="statusdot" style="font-size:10px">sem material nos instrumentos</span>';
+  return h;
+}
+function selosConteudo(c){
+  const ts=temasDoConteudo(c.id);
+  let r=false,s=false,g=false,any=false;
+  ts.forEach(t=>{ const it=matrizItem(t.disciplina,t.serie,t.bimestre,t.dcgo); if(it){any=true; if(it.r===1)r=true; if(it.s===1)s=true; if(it.g===1)g=true;} });
+  if(!any) return '';
+  let h='';
+  if(r)h+='<span class="selo revisa">REVISA</span>';
+  if(s)h+='<span class="selo ser">SER</span>';
+  if(g)h+='<span class="selo goiastec">GoiásTec</span>';
+  return h;
+}
+
+/* ---------- Listagem Conteúdo > Tema ---------- */
+function conteudosDoScope(){
+  return Object.values(conteudos)
+    .filter(c=>c.disciplina===scope.disc && c.serie===scope.serie && c.bimestre===scope.bim)
+    .sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+}
+function temasDoConteudo(cid){
+  return Object.values(temas).filter(t=>t.conteudoId===cid).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+}
+function nextOrdemConteudo(d,s,b){
+  const arr=Object.values(conteudos).filter(c=>c.disciplina===d&&c.serie===s&&c.bimestre===b);
+  return arr.length ? Math.max(...arr.map(c=>c.ordem||0))+1 : 0;
+}
+function nextOrdemTema(cid){
+  const arr=temasDoConteudo(cid);
+  return arr.length ? Math.max(...arr.map(t=>t.ordem||0))+1 : 0;
+}
+
+function renderThemes(){
+  document.getElementById('scopeTitle').textContent = scope.disc+' · '+scope.serie;
+  document.getElementById('scopeCrumb').textContent = scope.bim;
+  const body=document.getElementById('themesBody');
+  const conts=conteudosDoScope();
+  if(!conts.length){
+    body.innerHTML='<div class="empty"><p>Nenhum conteúdo neste bimestre ainda.</p>'+
+      '<p>Crie um <strong>conteúdo</strong> (o guarda-chuva, ex.: Idade Contemporânea) ou use <strong>Sugerir pela matriz</strong> para partir dos códigos da SEDUC-GO.</p></div>';
+    return;
+  }
+  let html='';
+  conts.forEach((c,ci)=>{
+    const open = expanded[c.id]!==false;
+    const ts=temasDoConteudo(c.id);
+    html+='<div class="conteudo">';
+    html+='<div class="conteudo-head">'+
+      '<div class="ordbtns">'+
+        '<button title="Subir" onclick="moverConteudo(\''+c.id+'\',-1)">▲</button>'+
+        '<button title="Descer" onclick="moverConteudo(\''+c.id+'\',1)">▼</button>'+
+      '</div>'+
+      '<div class="cname" onclick="toggleConteudo(\''+c.id+'\')">'+(open?'▾ ':'▸ ')+esc(c.nome||'(sem nome)')+'</div>'+
+      '<div class="selos">'+selosConteudo(c)+'</div>'+
+      '<button class="btn ghost sm" onclick="editarConteudo(\''+c.id+'\')">renomear</button>'+
+      '<button class="btn ghost sm danger" onclick="excluirConteudo(\''+c.id+'\')">excluir</button>'+
+    '</div>';
+    if(open){
+      html+='<div class="conteudo-body">';
+      if(ts.length){
+        html+='<div class="tlist">';
+        ts.forEach((t,ti)=>{
+          const done=OBJ_DEFS.filter(o=>isFilled(t,o.k)).length;
+          html+='<div class="tcard" onclick="abrirEditor(\''+t.id+'\')">'+
+            '<div class="ordbtns" onclick="event.stopPropagation()">'+
+              '<button title="Subir" onclick="moverTema(\''+t.id+'\',-1)">▲</button>'+
+              '<button title="Descer" onclick="moverTema(\''+t.id+'\',1)">▼</button>'+
+            '</div>'+
+            '<div class="tmeta">'+
+              '<div><span class="tcode">'+esc(t.dcgo||'')+'</span><span class="tname">'+esc(t.nome)+'</span></div>'+
+              '<div class="tsub">'+selosHtml(t.disciplina,t.serie,t.bimestre,t.dcgo)+statusResumo(t)+'</div>'+
+            '</div>'+
+            '<div class="prog" title="'+done+'/9 objetos">'+OBJ_DEFS.map((o,i)=>'<i class="'+(i<done?'on':'')+'"></i>').join('')+'</div>'+
+            '<button class="btn ghost sm" onclick="event.stopPropagation();projetarTemaId(\''+t.id+'\')">▶</button>'+
+          '</div>';
+        });
+        html+='</div>';
+      } else {
+        html+='<div class="statusdot" style="padding:6px 2px">Nenhum tema neste conteúdo.</div>';
+      }
+      html+='<div class="addrow"><button class="btn sm" onclick="novoTema(\''+c.id+'\')">+ Novo tema</button>'+
+            '<button class="btn sm ghost" onclick="sugerirNoConteudo(\''+c.id+'\')">&#10022; Puxar temas da matriz</button></div>';
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+  body.innerHTML=html;
+}
+function statusResumo(t){
+  const ts=turmasDoScopeTema(t);
+  if(!ts.length) return '';
+  let apl=0; ts.forEach(tu=>{ const st=(t.status||{})[tu.id]; if(st&&st.estado==='aplicado')apl++; });
+  return '<span class="statusdot">· <b>'+apl+'</b>/'+ts.length+' turma(s) aplicado</span>';
+}
+function isFilled(t,k){
+  const v=t.obj&&t.obj[k];
+  if(v==null) return false;
+  if(Array.isArray(v)) return v.length>0;
+  return String(v).trim().length>0;
+}
+function toggleConteudo(id){ expanded[id]=!(expanded[id]!==false); renderThemes(); }
+
+/* ---------- Reordenar ---------- */
+function moverConteudo(id,dir){
+  const arr=conteudosDoScope(); const i=arr.findIndex(c=>c.id===id); const j=i+dir;
+  if(i<0||j<0||j>=arr.length) return;
+  const a=arr[i],b=arr[j]; const ta=a.ordem,tb=b.ordem; a.ordem=tb; b.ordem=ta;
+  persistConteudo(a); persistConteudo(b); if(!DB) renderThemes();
+}
+function moverTema(id,dir){
+  const t=temas[id]; const arr=temasDoConteudo(t.conteudoId); const i=arr.findIndex(x=>x.id===id); const j=i+dir;
+  if(i<0||j<0||j>=arr.length) return;
+  const a=arr[i],b=arr[j]; const ta=a.ordem,tb=b.ordem; a.ordem=tb; b.ordem=ta;
+  persistTema(a); persistTema(b); if(!DB) renderThemes();
+}
+
+/* ---------- CRUD Conteúdo ---------- */
+function novoConteudo(){
+  const nome=prompt('Nome do conteúdo (o guarda-chuva, ex.: "Idade Contemporânea"):','');
+  if(nome==null) return;
+  const c={id:uid(),disciplina:scope.disc,serie:scope.serie,bimestre:scope.bim,nome:nome.trim()||'Novo conteúdo',resumo:'',ordem:nextOrdemConteudo(scope.disc,scope.serie,scope.bim),updatedAt:Date.now()};
+  persistConteudo(c); expanded[c.id]=true; if(!DB) renderThemes();
+  return c.id;
+}
+function editarConteudo(id){
+  const c=conteudos[id]; if(!c) return;
+  const nome=prompt('Renomear conteúdo:',c.nome||'');
+  if(nome==null) return;
+  c.nome=nome.trim()||c.nome; c._avulsos=false; persistConteudo(c); if(!DB) renderThemes();
+}
+function excluirConteudo(id){
+  const ts=temasDoConteudo(id);
+  if(ts.length && !confirm('Este conteúdo tem '+ts.length+' tema(s). Excluir o conteúdo E os temas dentro dele?')) return;
+  if(!ts.length && !confirm('Excluir este conteúdo?')) return;
+  ts.forEach(t=>removeTema(t.id));
+  removeConteudo(id); if(!DB) renderThemes();
+}
+
+/* ---------- Sugestão pela matriz ---------- */
+function sugerirPelaMatriz(){
+  const arr=matrizDoScope();
+  if(!arr.length){ toast('A matriz embutida cobre História (6º–9º + EM) e Filosofia/Sociologia (EM), bimestres 1 a 3. Este recorte não tem dados.',''); return; }
+  // cria um conteúdo "Temas da matriz" e popula
+  const c={id:uid(),disciplina:scope.disc,serie:scope.serie,bimestre:scope.bim,nome:'Temas da matriz — '+scope.bim+' (revisar/agrupar)',resumo:'',ordem:nextOrdemConteudo(scope.disc,scope.serie,scope.bim),updatedAt:Date.now()};
+  persistConteudo(c); expanded[c.id]=true;
+  arr.forEach((it,i)=> persistTema(blankTema(c.id,{nome:it.t,dcgo:it.c,habilidade:it.h,resumo:it.h,ordem:i})));
+  if(!DB) renderThemes();
+  toast(arr.length+' tema(s) da matriz adicionados. Renomeie/agrupe os conteúdos como preferir.','ok');
+}
+function sugerirNoConteudo(cid){
+  const arr=matrizDoScope();
+  if(!arr.length){ toast('Sem dados da matriz para este recorte.',''); return; }
+  const existentes=new Set(temasDoConteudo(cid).map(t=>t.dcgo));
+  let base=nextOrdemTema(cid),n=0;
+  arr.forEach(it=>{ if(existentes.has(it.c))return; persistTema(blankTema(cid,{nome:it.t,dcgo:it.c,habilidade:it.h,resumo:it.h,ordem:base++})); n++; });
+  if(!DB) renderThemes();
+  toast(n?n+' tema(s) adicionados ao conteúdo.':'Os temas da matriz já estavam aqui.','ok');
+}
+
+/* ---------- CRUD Tema ---------- */
+function blankTema(cid,extra){
+  const t={
+    id:uid(), conteudoId:cid,
+    disciplina:scope.disc, serie:scope.serie, bimestre:scope.bim,
+    nome:'', dcgo:'', habilidade:'', resumo:'', palavras:'', tempo:'', ordem:0,
+    obj:{planejamento:'',textoQuadro:'',textoAluno:'',slides:[],atividade:[],gabarito:[],questoes:[],flashcards:[],mapaMental:''},
+    imagens:[], status:{}, aprovado:{}, updatedAt:Date.now()
+  };
+  return Object.assign(t, extra||{});
+}
+function novoTema(cid){
+  const t=blankTema(cid,{nome:'Novo tema',ordem:nextOrdemTema(cid)});
+  persistTema(t); if(!DB) renderThemes(); abrirEditor(t.id);
+}
+
+/* ---------- Editor ---------- */
+function abrirEditor(id){
+  editing = JSON.parse(JSON.stringify(temas[id]));
+  if(!editing.obj) editing.obj={};
+  if(!editing.imagens) editing.imagens=[];
+  if(!editing.status) editing.status={};
+  dirty=false;
+  document.getElementById('edNome').value=editing.nome||'';
+  document.getElementById('edDcgo').value=editing.dcgo||'';
+  document.getElementById('edResumo').value=editing.resumo||'';
+  document.getElementById('edPalavras').value=editing.palavras||'';
+  document.getElementById('edTempo').value=editing.tempo||'';
+  // conteúdos do mesmo escopo
+  const csel=document.getElementById('edConteudo'); csel.innerHTML='';
+  conteudosDoScope().forEach(c=>csel.add(new Option(c.nome,c.id)));
+  csel.value=editing.conteudoId||'';
+  // habilidades da matriz
+  const hsel=document.getElementById('edHab'); hsel.innerHTML='';
+  hsel.add(new Option('— escolher habilidade da matriz —',''));
+  matrizDoScope().forEach(it=> hsel.add(new Option(it.c+' — '+it.h.slice(0,55)+(it.h.length>55?'…':''), it.c)) );
+  hsel.value=editing.dcgo||'';
+  renderSelosEditor();
+  renderTurmasEditor();
+  renderImagensEditor();
+  activeObj='planejamento';
+  renderObjTabs(); renderObjContent();
+  document.getElementById('editor').classList.remove('hidden');
+}
+function fecharEditor(){
+  if(dirty && !confirm('Há alterações não salvas. Sair mesmo assim?')) return;
+  document.getElementById('editor').classList.add('hidden'); editing=null;
+}
+function edDirty(){ dirty=true; }
+function onDcgoInput(){ renderSelosEditor(); edDirty(); }
+function aplicarHab(){
+  const c=document.getElementById('edHab').value;
+  const it=matrizItem(editing.disciplina,editing.serie,editing.bimestre,c);
+  if(it){ document.getElementById('edDcgo').value=it.c; editing.habilidade=it.h;
+    if(!document.getElementById('edResumo').value) document.getElementById('edResumo').value=it.h; }
+  renderSelosEditor(); edDirty();
+}
+function renderSelosEditor(){
+  const code=document.getElementById('edDcgo').value.trim();
+  document.getElementById('edSelos').innerHTML = code ? (selosHtml(editing.disciplina,editing.serie,editing.bimestre,code)||'<span class="statusdot" style="font-size:10px">código fora da matriz embutida</span>') : '<span class="statusdot" style="font-size:10px">defina um código</span>';
+}
+function turmasDoScopeTema(t){
+  return Object.values(turmas).filter(x=>x.disciplina===t.disciplina && x.serie===t.serie).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+}
+function renderTurmasEditor(){
+  const box=document.getElementById('edTurmas');
+  const ts=turmasDoScopeTema(editing);
+  if(!ts.length){ box.innerHTML='<div class="statusdot">Nenhuma turma de '+esc(editing.serie)+' cadastrada. Use 👥 no topo.</div>'; return; }
+  box.innerHTML = ts.map(tu=>{
+    const st=(editing.status||{})[tu.id]||{};
+    const estado=st.estado||'';
+    return '<div class="turma-row"><span class="tn">'+esc(tu.nome)+'</span>'+
+      '<select onchange="setTurmaStatus(\''+tu.id+'\',\'estado\',this.value)">'+
+        '<option value="" '+(estado===''?'selected':'')+'>—</option>'+
+        '<option value="planejado" '+(estado==='planejado'?'selected':'')+'>Planejado</option>'+
+        '<option value="aplicado" '+(estado==='aplicado'?'selected':'')+'>Aplicado</option>'+
+      '</select>'+
+      (estado==='aplicado'?'<input class="dt" type="date" value="'+esc(st.data||'')+'" onchange="setTurmaStatus(\''+tu.id+'\',\'data\',this.value)">':'')+
+    '</div>';
+  }).join('');
+}
+function setTurmaStatus(turmaId,field,val){
+  if(!editing.status) editing.status={};
+  if(!editing.status[turmaId]) editing.status[turmaId]={};
+  editing.status[turmaId][field]=val;
+  if(field==='estado'){
+    if(val==='aplicado' && !editing.status[turmaId].data) editing.status[turmaId].data=new Date().toISOString().slice(0,10);
+    if(val==='') delete editing.status[turmaId];
+    renderTurmasEditor();
+  }
+  edDirty();
+}
+function renderImagensEditor(){
+  const box=document.getElementById('edImagens');
+  const imgs=editing.imagens||[];
+  box.innerHTML = imgs.length ? imgs.map((im,i)=>'<div class="it"><img src="'+esc(im.thumburl||im.url)+'"><button onclick="removerImagem('+i+')" title="remover">✕</button></div>').join('') : '<div class="statusdot">Nenhuma imagem fixada.</div>';
+}
+function removerImagem(i){ editing.imagens.splice(i,1); renderImagensEditor(); edDirty(); }
+
+function collectMeta(){
+  editing.nome=document.getElementById('edNome').value.trim()||'Sem título';
+  editing.dcgo=document.getElementById('edDcgo').value.trim();
+  editing.resumo=document.getElementById('edResumo').value.trim();
+  editing.palavras=document.getElementById('edPalavras').value.trim();
+  editing.tempo=document.getElementById('edTempo').value;
+  const cid=document.getElementById('edConteudo').value;
+  if(cid && cid!==editing.conteudoId){ editing.conteudoId=cid; editing.ordem=nextOrdemTema(cid); }
+}
+function salvarTema(){
+  collectMeta(); persistTema(editing); dirty=false;
+  if(!DB) renderThemes();
+  toast('Tema salvo.','ok');
+}
+
+/* ---------- Objetos (tabs + conteúdo) ---------- */
+function renderObjTabs(){
+  const el=document.getElementById('objTabs'); el.innerHTML='';
+  OBJ_DEFS.forEach(o=>{
+    const b=document.createElement('button');
+    b.className=(o.k===activeObj?'active ':'')+(isFilled(editing,o.k)?'done':'');
+    b.innerHTML='<span class="badge"></span>'+o.label;
+    b.onclick=()=>{activeObj=o.k; renderObjTabs(); renderObjContent();};
+    el.appendChild(b);
+  });
+}
+function renderObjContent(){
+  const def=OBJ_DEFS.find(o=>o.k===activeObj);
+  const c=document.getElementById('objContent');
+  let body=''; const v=editing.obj[activeObj];
+  if(def.tipo==='texto'){ body='<textarea class="big" id="objText" oninput="onObjText()">'+esc(v||'')+'</textarea>'; }
+  else if(def.tipo==='slides'){ body=renderListEditor((v||[]),'slide'); }
+  else if(def.tipo==='atividade'){ body=renderListEditor((v||[]),'atividade'); }
+  else if(def.tipo==='gabarito'){ body=renderListEditor((v||[]),'gabarito'); }
+  else if(def.tipo==='questoes'){ body=renderListEditor((v||[]),'questao'); }
+  else if(def.tipo==='flashcards'){ body=renderListEditor((v||[]),'flash'); }
+  else if(def.tipo==='mapa'){ body='<textarea class="big" id="objText" oninput="onObjText()" placeholder="# Tema central&#10;## Ramo&#10;- subitem">'+esc(v||'')+'</textarea>'; }
+  c.innerHTML='<div class="obj-actions"><span class="title">'+def.label+'</span>'+
+    '<button class="btn primary" id="genBtn" onclick="gerarObjeto()">&#10022; Gerar com IA</button></div>'+
+    '<div class="obj-hint">'+def.hint+'</div>'+body;
+}
+function onObjText(){
+  const def=OBJ_DEFS.find(o=>o.k===activeObj);
+  if(def.tipo==='texto'||def.tipo==='mapa'){ editing.obj[activeObj]=document.getElementById('objText').value; edDirty(); }
+}
+function renderListEditor(arr,kind){
+  let html='<div class="card-list" id="cardList">';
+  arr.forEach((item,i)=>html+=cardHtml(kind,item,i));
+  html+='</div><button class="btn full sm" style="margin-top:12px" onclick="addCard(\''+kind+'\')">+ adicionar</button>';
+  return html;
+}
+function cardHtml(kind,item,i){
+  item=item||{};
+  if(kind==='slide'){
+    return '<div class="mini-card"><div class="row"><span class="num">'+(i+1)+'</span>'+
+      '<input placeholder="Título do slide" value="'+esc(item.titulo||'')+'" oninput="updCard(\'slide\','+i+',\'titulo\',this.value)">'+
+      '<button class="btn ghost sm" onclick="delCard('+i+')">remover</button></div>'+
+      '<label>Tópicos (um por linha)</label>'+
+      '<textarea oninput="updCard(\'slide\','+i+',\'topicos\',this.value)">'+esc((item.topicos||[]).join('\n'))+'</textarea></div>';
+  }
+  if(kind==='atividade'){
+    return '<div class="mini-card"><div class="row"><span class="num">'+(i+1)+'</span>'+
+      '<button class="btn ghost sm" style="margin-left:auto" onclick="delCard('+i+')">remover</button></div>'+
+      '<textarea placeholder="Enunciado da questão/atividade" oninput="updCard(\'atividade\','+i+',\'enunciado\',this.value)">'+esc(item.enunciado||'')+'</textarea></div>';
+  }
+  if(kind==='gabarito'){
+    return '<div class="mini-card"><div class="row"><span class="num">'+(i+1)+'</span>'+
+      '<button class="btn ghost sm" style="margin-left:auto" onclick="delCard('+i+')">remover</button></div>'+
+      '<label>Resposta</label><textarea oninput="updCard(\'gabarito\','+i+',\'resposta\',this.value)">'+esc(item.resposta||'')+'</textarea>'+
+      '<label>Comentário</label><textarea oninput="updCard(\'gabarito\','+i+',\'comentario\',this.value)">'+esc(item.comentario||'')+'</textarea></div>';
+  }
+  if(kind==='questao'){
+    const alts=(item.alternativas||[]); let opt='';
+    for(let a=0;a<alts.length;a++) opt+='<option value="'+a+'" '+(item.correta===a?'selected':'')+'>Alt. '+String.fromCharCode(65+a)+'</option>';
+    return '<div class="mini-card"><div class="row"><span class="num">'+(i+1)+'</span>'+
+      '<button class="btn ghost sm" style="margin-left:auto" onclick="delCard('+i+')">remover</button></div>'+
+      '<label>Enunciado</label><textarea oninput="updCard(\'questao\','+i+',\'enunciado\',this.value)">'+esc(item.enunciado||'')+'</textarea>'+
+      '<label>Alternativas (uma por linha)</label>'+
+      '<textarea oninput="updCard(\'questao\','+i+',\'alternativas\',this.value)">'+esc(alts.join('\n'))+'</textarea>'+
+      '<div class="row" style="margin-top:8px"><label style="margin:0">Correta:</label><select onchange="updCard(\'questao\','+i+',\'correta\',this.value)">'+(opt||'<option>—</option>')+'</select></div>'+
+      '<label>Comentário</label><textarea oninput="updCard(\'questao\','+i+',\'comentario\',this.value)">'+esc(item.comentario||'')+'</textarea></div>';
+  }
+  if(kind==='flash'){
+    return '<div class="mini-card"><div class="row"><span class="num">'+(i+1)+'</span>'+
+      '<button class="btn ghost sm" style="margin-left:auto" onclick="delCard('+i+')">remover</button></div>'+
+      '<label>Frente</label><textarea oninput="updCard(\'flash\','+i+',\'frente\',this.value)">'+esc(item.frente||'')+'</textarea>'+
+      '<label>Verso</label><textarea oninput="updCard(\'flash\','+i+',\'verso\',this.value)">'+esc(item.verso||'')+'</textarea></div>';
+  }
+  return '';
+}
+function curArr(){ if(!Array.isArray(editing.obj[activeObj])) editing.obj[activeObj]=[]; return editing.obj[activeObj]; }
+function addCard(kind){
+  const a=curArr();
+  if(kind==='slide')a.push({titulo:'',topicos:[]});
+  else if(kind==='atividade')a.push({enunciado:''});
+  else if(kind==='gabarito')a.push({resposta:'',comentario:''});
+  else if(kind==='questao')a.push({enunciado:'',alternativas:['','','',''],correta:0,comentario:''});
+  else if(kind==='flash')a.push({frente:'',verso:''});
+  edDirty(); renderObjContent();
+}
+function delCard(i){ curArr().splice(i,1); edDirty(); renderObjContent(); }
+function updCard(kind,i,field,val){
+  const a=curArr();
+  if(field==='topicos'||field==='alternativas') a[i][field]=val.split('\n');
+  else if(field==='correta') a[i][field]=parseInt(val,10);
+  else a[i][field]=val;
+  edDirty();
+}
+
+/* ---------- Geração com Claude ---------- */
+async function gerarObjeto(){
+  const key=getKey();
+  if(!key){ toast('Configure a chave da API Claude em ⚙ primeiro.','err'); return; }
+  collectMeta();
+  const def=OBJ_DEFS.find(o=>o.k===activeObj);
+  const btn=document.getElementById('genBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Gerando…';
+  try{
+    const {system,user,parse}=promptFor(def, editing);
+    const raw=await callClaude(system,user,key);
+    editing.obj[activeObj]=parse(raw);
+    edDirty(); renderObjTabs(); renderObjContent();
+    toast('Conteúdo gerado. Revise e aprove com Salvar.','ok');
+  }catch(e){ console.error(e); toast('Erro na geração: '+e.message,'err');
+    btn.disabled=false; btn.innerHTML='✦ Gerar com IA'; }
+}
+function ctx(t){
+  const bimNum=(t.bimestre||'').charAt(0);
+  return 'Disciplina: '+t.disciplina+'\nSérie/Ano: '+t.serie+'\nTema: '+t.nome+'\n'+
+    (t.dcgo?'Código DC-GO/BNCC: '+t.dcgo+'\n':'')+
+    (t.habilidade?'Habilidade essencial: '+t.habilidade+'\n':'')+
+    (t.resumo?'Resumo: '+t.resumo+'\n':'')+
+    'Contexto curricular: SEDUC-GO / DC-GO Ampliado, '+bimNum+'º bimestre.';
+}
+function promptFor(def,t){
+  const base=ctx(t);
+  const sysBase='Você é uma professora experiente de Ciências Humanas da rede estadual de Goiás. Escreva em português do Brasil, com rigor historiográfico e linguagem adequada à série. Responda apenas com o conteúdo pedido, sem preâmbulos.';
+  const txt=(s)=>({system:sysBase,user:s,parse:r=>r.trim()});
+  const json=(sys,u)=>({system:sys+' Responda SOMENTE com JSON válido, sem cercas de código nem texto fora do JSON.',user:u,parse:r=>parseJSON(r)});
+  switch(def.k){
+    case 'planejamento': return txt(base+'\n\nProduza um PLANEJAMENTO de aula: objetivos de aprendizagem, recursos, sequência didática em passos e formas de avaliação. Texto corrido com subtítulos simples.');
+    case 'textoQuadro': return txt(base+'\n\nProduza um TEXTO DE QUADRO: enxuto e esquemático, tópicos curtos e palavras-chave, como anotações para os alunos copiarem da lousa.');
+    case 'textoAluno': return txt(base+'\n\nProduza um TEXTO DO ALUNO: prosa explicativa, parágrafos completos e linguagem adequada à série, para leitura e estudo. Termine com 2 perguntas de reflexão.');
+    case 'slides': return json('Você cria slides de aula para projeção.', base+'\n\nGere de 5 a 7 slides como JSON: array de {"titulo": string, "topicos": [string,...]}. Cada slide com 3 a 5 tópicos curtos.');
+    case 'atividade': return json('Você cria atividades escolares.', base+'\n\nGere uma atividade com 5 itens como JSON: array de {"enunciado": string}. Misture objetivas e discursivas.');
+    case 'gabarito': {
+      const at=(t.obj.atividade||[]).map((x,i)=>(i+1)+'. '+x.enunciado).join('\n');
+      return json('Você corrige atividades escolares.', base+'\n\n'+(at?('Atividade existente:\n'+at):'Crie respostas para 5 questões coerentes com o tema.')+'\n\nGere o gabarito comentado como JSON: array de {"resposta": string, "comentario": string}, na mesma ordem.');
+    }
+    case 'questoes': return json('Você elabora questões objetivas de múltipla escolha.', base+'\n\nGere 5 questões como JSON: array de {"enunciado": string, "alternativas": [4 strings], "correta": índice 0-3, "comentario": string explicando a correta e por que as outras estão erradas}.');
+    case 'flashcards': return json('Você cria flash cards de revisão.', base+'\n\nGere 8 flash cards como JSON: array de {"frente": string, "verso": string}.');
+    case 'mapaMental': return {system:'Você organiza conteúdos em mapas mentais hierárquicos.',user:base+'\n\nProduza um mapa mental em MARKDOWN hierárquico: "# Tema central", depois "## Ramos" e "- subitens". Apenas o markdown.',parse:r=>r.replace(/```[a-z]*|```/g,'').trim()};
+  }
+}
+function parseJSON(raw){
+  let s=raw.replace(/```json|```/g,'').trim();
+  const a=s.indexOf('['), b=s.lastIndexOf(']');
+  if(a>=0&&b>a) s=s.slice(a,b+1);
+  return JSON.parse(s);
+}
+async function callClaude(system,user,key){
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:getModel(),max_tokens:2500,system,messages:[{role:'user',content:user}]})
+  });
+  if(!res.ok){ const e=await res.text(); throw new Error('API '+res.status+': '+e.slice(0,160)); }
+  const data=await res.json();
+  return (data.content||[]).map(b=>b.text||'').join('\n').trim();
+}
+
+/* =========================================================
+   PROJEÇÃO
+   ========================================================= */
+let proj={tema:null, obj:'textoAluno', idx:0, flip:false, fs:30, sp:1.6, theme:'dark', imgMode:false};
+const PROJ_ORDER=['textoQuadro','textoAluno','slides','atividade','gabarito','questoes','flashcards','mapaMental'];
+
+function projetarTemaId(id){ proj.tema=temas[id]; openProjecao(); }
+function projetarTema(){ collectMeta(); persistTema(editing); proj.tema=editing; openProjecao(); }
+function abrirProjecaoAtual(){
+  // primeiro tema do primeiro conteúdo do escopo
+  const conts=conteudosDoScope();
+  let first=null;
+  for(const c of conts){ const ts=temasDoConteudo(c.id); if(ts.length){ first=ts[0]; break; } }
+  if(!first){ toast('Cadastre um tema para projetar.',''); return; }
+  proj.tema=first; openProjecao();
+}
+function openProjecao(){
+  proj.idx=0; proj.flip=false; proj.imgMode=false;
+  proj.obj = PROJ_ORDER.find(k=>isFilled(proj.tema,k)) || 'textoAluno';
+  document.getElementById('viewProjecao').classList.remove('hidden');
+  document.getElementById('tabProjecao').classList.add('active');
+  document.getElementById('tabGestao').classList.remove('active');
+  applyProjVars(); renderProjSwitch(); renderProj();
+}
+function fecharProjecao(){
+  document.getElementById('viewProjecao').classList.add('hidden');
+  document.getElementById('tabProjecao').classList.remove('active');
+  document.getElementById('tabGestao').classList.add('active');
+}
+function applyProjVars(){
+  const v=document.getElementById('viewProjecao');
+  v.style.setProperty('--proj-fs',proj.fs+'px');
+  v.style.setProperty('--proj-lh',proj.sp);
+  v.className=''; if(proj.theme!=='dark') v.classList.add('theme-'+proj.theme);
+}
+function projFont(d){ proj.fs=Math.max(16,Math.min(64,proj.fs+d)); applyProjVars(); }
+function projSpacing(){ proj.sp = proj.sp>=2 ? 1.3 : Math.round((proj.sp+0.2)*10)/10; applyProjVars(); }
+function projTheme(){ proj.theme = proj.theme==='dark'?'light':proj.theme==='light'?'contrast':'dark'; applyProjVars(); }
+
+function renderProjSwitch(){
+  const el=document.getElementById('projSwitch'); el.innerHTML='';
+  document.getElementById('projTitle').textContent=proj.tema.nome+(proj.tema.dcgo?(' · '+proj.tema.dcgo):'');
+  const order=PROJ_ORDER.slice();
+  if((proj.tema.imagens||[]).length) order.push('imagens');
+  order.forEach(k=>{
+    if(k!=='imagens' && !isFilled(proj.tema,k)) return;
+    const def = k==='imagens' ? {label:'Imagens'} : OBJ_DEFS.find(o=>o.k===k);
+    const b=document.createElement('button');
+    b.textContent=def.label; b.className=(k===proj.obj?'active':'');
+    b.onclick=()=>{proj.obj=k; proj.idx=0; proj.flip=false; proj.imgMode=false; renderProjSwitch(); renderProj();};
+    el.appendChild(b);
+  });
+}
+function renderProj(){
+  if(proj.imgMode) return;
+  const stage=document.getElementById('projStage');
+  const foot=document.getElementById('projFoot');
+  const t=proj.tema, k=proj.obj, v=t.obj?t.obj[k]:null;
+  foot.innerHTML=''; let html='';
+  if(k==='imagens'){
+    const im=(t.imagens||[]); 
+    html='<div class="img-grid">'+im.map(x=>'<img src="'+esc(x.url||x.thumburl)+'">').join('')+'</div>';
+  } else if(k==='textoQuadro'||k==='textoAluno'){
+    html='<div class="proj-canvas">'+textToHtml(v)+'</div>';
+  } else if(k==='mapaMental'){
+    html='<div class="markmap-wrap"><svg id="mm"></svg></div>';
+  } else if(k==='slides'){
+    const s=(v||[])[proj.idx]||{};
+    html='<div class="slide"><h2>'+esc(s.titulo||'')+'</h2><ul>'+(s.topicos||[]).filter(x=>x.trim()).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>'+
+      '<div class="nav-dots">'+(v||[]).map((_,i)=>'<i class="'+(i===proj.idx?'on':'')+'"></i>').join('')+'</div>';
+    foot.innerHTML='<button onclick="projNav(-1)">‹ anterior</button> '+(proj.idx+1)+'/'+(v||[]).length+' <button onclick="projNav(1)">próximo ›</button>';
+  } else if(k==='atividade'){
+    html='<div class="proj-canvas">'+(v||[]).map((x,i)=>'<div class="q"><strong>'+(i+1)+'.</strong> '+esc(x.enunciado||'')+'</div>').join('')+'</div>';
+  } else if(k==='gabarito'){
+    html='<div class="proj-canvas">'+(v||[]).map((x,i)=>'<div class="q"><strong>'+(i+1)+'.</strong> <span id="gb'+i+'" style="opacity:.5">[ resposta oculta — clique ]</span> <button class="btn ghost sm" onclick="revealGab('+i+')">revelar</button><div class="reveal-box hidden" id="gbx'+i+'"><strong>'+esc(x.resposta||'')+'</strong><br>'+esc(x.comentario||'')+'</div></div>').join('')+'</div>';
+  } else if(k==='questoes'){
+    const q=(v||[])[proj.idx]||{};
+    html='<div class="proj-canvas"><div class="q"><strong>Q'+(proj.idx+1)+'.</strong> '+esc(q.enunciado||'')+'</div>'+
+      (q.alternativas||[]).map((a,i)=>'<div class="alt" id="alt'+i+'">'+String.fromCharCode(65+i)+') '+esc(a)+'</div>').join('')+
+      '<div class="reveal-box hidden" id="qcom">'+esc(q.comentario||'')+'</div></div>'+
+      '<div class="nav-dots">'+(v||[]).map((_,i)=>'<i class="'+(i===proj.idx?'on':'')+'"></i>').join('')+'</div>';
+    foot.innerHTML='<button onclick="projNav(-1)">‹</button> <button onclick="revealQ()">revelar resposta</button> <button onclick="projNav(1)">›</button>';
+  } else if(k==='flashcards'){
+    const f=(v||[])[proj.idx]||{};
+    html='<div class="flash" onclick="flipFlash()"><span class="side-label">'+(proj.flip?'verso':'frente')+'</span>'+esc(proj.flip?(f.verso||''):(f.frente||''))+'</div>'+
+      '<div class="nav-dots">'+(v||[]).map((_,i)=>'<i class="'+(i===proj.idx?'on':'')+'"></i>').join('')+'</div>';
+    foot.innerHTML='<button onclick="projNav(-1)">‹ anterior</button> '+(proj.idx+1)+'/'+(v||[]).length+' · clique no cartão para virar <button onclick="projNav(1)">próximo ›</button>';
+  }
+  stage.innerHTML=html;
+  if(k==='mapaMental') renderMarkmap(v);
+}
+function projNav(d){
+  const v=proj.tema.obj[proj.obj]||[];
+  if(!v.length) return;
+  proj.idx=(proj.idx+d+v.length)%v.length; proj.flip=false; renderProj();
+}
+function flipFlash(){ proj.flip=!proj.flip; renderProj(); }
+function revealGab(i){ document.getElementById('gbx'+i).classList.remove('hidden'); document.getElementById('gb'+i).style.display='none'; }
+function revealQ(){
+  const q=(proj.tema.obj.questoes||[])[proj.idx]||{};
+  if(typeof q.correta==='number'){ const el=document.getElementById('alt'+q.correta); if(el)el.classList.add('correct'); }
+  const c=document.getElementById('qcom'); if(c) c.classList.remove('hidden');
+}
+function renderMarkmap(md){
+  try{
+    if(!window.markmap||!window.markmap.Transformer){ document.getElementById('projStage').innerHTML='<div class="proj-canvas">'+textToHtml(md)+'</div>'; return; }
+    const {Transformer}=window.markmap; const tr=new Transformer();
+    const {root}=tr.transform(md||'# (vazio)');
+    const {Markmap}=window.markmap;
+    Markmap.create(document.getElementById('mm'),{paddingX:40,duration:300},root);
+  }catch(e){ document.getElementById('projStage').innerHTML='<div class="proj-canvas">'+textToHtml(md)+'</div>'; }
+}
+function projKeys(e){
+  if(document.getElementById('viewProjecao').classList.contains('hidden')) return;
+  if(e.key==='ArrowRight'||e.key===' '){ if(proj.obj==='flashcards'&&!proj.flip){flipFlash();} else {projNav(1);} e.preventDefault(); }
+  else if(e.key==='ArrowLeft'){ projNav(-1); e.preventDefault(); }
+  else if(e.key==='Escape'){ if(proj.imgMode){proj.imgMode=false;renderProj();} else fecharProjecao(); }
+  else if(e.key==='+'){ projFont(2); } else if(e.key==='-'){ projFont(-2); }
+}
+
+/* ---------- Busca de imagem (Wikimedia) — projeção e fixar no tema ---------- */
+async function wikimediaSearch(term){
+  const url='https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch='+
+    encodeURIComponent(term)+'&gsrlimit=12&prop=imageinfo&iiprop=url&iiurlwidth=480&format=json&origin=*';
+  const r=await fetch(url); const d=await r.json();
+  const pages=d.query?Object.values(d.query.pages):[];
+  return pages.map(p=>p.imageinfo&&p.imageinfo[0]).filter(Boolean);
+}
+async function projImagem(){
+  const term=prompt('Buscar imagem no Wikimedia Commons (livre para aula):', proj.tema?proj.tema.nome:'');
+  if(!term) return;
+  proj.imgMode=true;
+  const stage=document.getElementById('projStage');
+  stage.innerHTML='<div class="proj-canvas"><span class="spin"></span> buscando imagens…</div>';
+  document.getElementById('projFoot').innerHTML='<button onclick="sairImagem()">‹ voltar ao conteúdo</button>';
+  try{
+    const imgs=await wikimediaSearch(term);
+    if(!imgs.length){ stage.innerHTML='<div class="proj-canvas">Nenhuma imagem para "'+esc(term)+'".</div>'; return; }
+    stage.innerHTML='<div class="img-grid">'+imgs.map(im=>'<div class="pick"><img src="'+im.thumburl+'" data-full="'+im.url+'" onclick="ampliarImg(this)"></div>').join('')+'</div>';
+  }catch(e){ stage.innerHTML='<div class="proj-canvas">Erro ao buscar (precisa de internet).</div>'; }
+}
+function ampliarImg(el){
+  proj.imgMode=true;
+  document.getElementById('projStage').innerHTML='<img class="img-big" src="'+el.dataset.full+'">';
+  document.getElementById('projFoot').innerHTML='<button onclick="projImagem()">‹ nova busca</button> <button onclick="sairImagem()">voltar ao conteúdo</button>';
+}
+function sairImagem(){ proj.imgMode=false; renderProjSwitch(); renderProj(); }
+
+/* fixar imagem no tema (editor) */
+let imgPickResults=[];
+async function buscarImagemTema(){
+  const term=prompt('Buscar imagem no Wikimedia Commons para fixar neste tema:', editing.nome||'');
+  if(!term) return;
+  toast('Buscando imagens…','');
+  try{
+    imgPickResults=await wikimediaSearch(term);
+    if(!imgPickResults.length){ toast('Nenhuma imagem encontrada.',''); return; }
+    openImgPickModal(term);
+  }catch(e){ toast('Erro ao buscar (precisa de internet).','err'); }
+}
+function openImgPickModal(term){
+  const grid=imgPickResults.map((im,i)=>'<div class="pick" style="position:relative"><img src="'+im.thumburl+'" style="width:100%;border-radius:8px;cursor:pointer" onclick="fixarImagem('+i+')" title="fixar"></div>').join('');
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Imagens para "'+esc(term)+'"</h3></div>'+
+    '<div class="modal-b"><small>Clique numa imagem para fixá-la no tema (entra no PDF).</small><div class="img-grid" style="margin-top:10px">'+grid+'</div></div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+function fixarImagem(i){
+  const im=imgPickResults[i]; if(!im) return;
+  if(!editing.imagens) editing.imagens=[];
+  editing.imagens.push({thumburl:im.thumburl,url:im.url,titulo:''});
+  renderImagensEditor(); edDirty(); closeModal(); toast('Imagem fixada no tema.','ok');
+}
+
+/* =========================================================
+   TURMAS (modal)
+   ========================================================= */
+function openTurmas(){
+  const list=Object.values(turmas).sort((a,b)=>(a.disciplina+a.serie+a.nome).localeCompare(b.disciplina+b.serie+b.nome));
+  const rows=list.length?list.map(t=>'<div class="tl"><b>'+esc(t.nome)+'</b><span>'+esc(t.disciplina)+' · '+esc(t.serie)+'</span><button class="btn ghost sm danger" onclick="excluirTurma(\''+t.id+'\')">excluir</button></div>').join(''):'<div class="statusdot">Nenhuma turma cadastrada ainda.</div>';
+  const discOpts=Object.keys(SERIES_BY_DISC).map(d=>'<option value="'+d+'">'+d+'</option>').join('');
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+
+    '<div class="modal-h"><h3>Minhas turmas</h3></div>'+
+    '<div class="modal-b"><small>Cadastre suas turmas reais (ex.: 9º A, 9º B). Em cada tema você marca Planejado/Aplicado por turma.</small>'+
+    '<div class="turma-list" style="margin:12px 0">'+rows+'</div>'+
+    '<div class="field"><label>Nova turma</label>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      '<input id="ntNome" placeholder="Nome (ex.: 9º A)" style="flex:1;min-width:120px">'+
+      '<select id="ntDisc" onchange="ntRefresh()" style="flex:0 0 130px">'+discOpts+'</select>'+
+      '<select id="ntSerie" style="flex:0 0 130px"></select>'+
+      '<button class="btn primary" onclick="addTurma()">Adicionar</button>'+
+    '</div></div></div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  document.getElementById('ntDisc').value=scope.disc; ntRefresh();
+}
+function ntRefresh(){
+  const s=document.getElementById('ntSerie'); s.innerHTML='';
+  (SERIES_BY_DISC[document.getElementById('ntDisc').value]||[]).forEach(x=>s.add(new Option(x,x)));
+  if((SERIES_BY_DISC[document.getElementById('ntDisc').value]||[]).includes(scope.serie)) s.value=scope.serie;
+}
+function addTurma(){
+  const nome=document.getElementById('ntNome').value.trim();
+  if(!nome){ toast('Dê um nome à turma.','err'); return; }
+  persistTurma({id:uid(),nome,disciplina:document.getElementById('ntDisc').value,serie:document.getElementById('ntSerie').value,updatedAt:Date.now()});
+  closeModal(); if(!DB) renderThemes(); openTurmas();
+}
+function excluirTurma(id){
+  if(!confirm('Excluir esta turma? Os registros de status dela nos temas deixam de aparecer.')) return;
+  removeTurma(id); closeModal(); if(!DB) renderThemes(); openTurmas();
+}
+
+/* =========================================================
+   RELATÓRIO / PDF (via impressão do navegador)
+   ========================================================= */
+function openRelatorio(){
+  const ts=Object.values(turmas).filter(t=>t.disciplina===scope.disc&&t.serie===scope.serie);
+  const turmaOpts='<option value="">Geral (todos os temas do bimestre)</option>'+ts.map(t=>'<option value="'+t.id+'">Só turma '+esc(t.nome)+' (aplicados)</option>').join('');
+  const objChecks=[['textoAluno','Texto do aluno'],['textoQuadro','Texto de quadro'],['atividade','Atividade'],['gabarito','Gabarito'],['questoes','Questões'],['mapaMental','Mapa mental (árvore)'],['imagens','Imagens fixadas'],['planejamento','Planejamento'],['slides','Slides']]
+    .map(([k,l])=>'<label class="check"><input type="checkbox" value="'+k+'" '+(['textoAluno','atividade','imagens','mapaMental'].includes(k)?'checked':'')+'> '+l+'</label>').join('');
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+
+    '<div class="modal-h"><h3>Gerar relatório / PDF</h3></div>'+
+    '<div class="modal-b"><small>'+esc(scope.disc)+' · '+esc(scope.serie)+' · '+esc(scope.bim)+'. Abre uma janela formatada → use <b>Imprimir → Salvar como PDF</b>.</small>'+
+    '<div class="field" style="margin-top:12px"><label>Escopo</label><select id="relTurma">'+turmaOpts+'</select></div>'+
+    '<div class="field"><label>Incluir</label>'+objChecks+'</div></div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="gerarRelatorio()">Gerar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+function gerarRelatorio(){
+  const turmaId=document.getElementById('relTurma').value;
+  const incs=[...document.querySelectorAll('#modalWrap input[type=checkbox]:checked')].map(c=>c.value);
+  const turma = turmaId?turmas[turmaId]:null;
+  closeModal();
+  const conts=conteudosDoScope();
+  let bodies='';
+  conts.forEach(c=>{
+    let temasC=temasDoConteudo(c.id);
+    if(turma){ temasC=temasC.filter(t=>{ const st=(t.status||{})[turmaId]; return st&&st.estado==='aplicado'; }); }
+    if(!temasC.length) return;
+    bodies+='<h2 class="cont">'+esc(c.nome)+'</h2>';
+    temasC.forEach(t=>{ bodies+=temaRelatorioHtml(t,incs,turmaId); });
+  });
+  if(!bodies) bodies='<p>Nenhum tema'+(turma?' aplicado na turma '+esc(turma.nome):'')+' neste bimestre.</p>';
+  const titulo='Leciona — '+scope.disc+' · '+scope.serie+' · '+scope.bim+(turma?(' · Turma '+turma.nome):'');
+  const win=window.open('','_blank');
+  win.document.write(relatorioShell(titulo,bodies));
+  win.document.close();
+  setTimeout(()=>{ try{win.focus();win.print();}catch(e){} },400);
+}
+function temaRelatorioHtml(t,incs,turmaId){
+  let h='<div class="tema"><h3>'+esc(t.nome)+'</h3>';
+  let meta=[]; if(t.dcgo)meta.push(t.dcgo);
+  const it=matrizItem(t.disciplina,t.serie,t.bimestre,t.dcgo);
+  if(it){ const sel=[]; if(it.r===1)sel.push('REVISA'); if(it.s===1)sel.push('SER'); if(it.g===1)sel.push('GoiásTec'); if(sel.length)meta.push('Material: '+sel.join(', ')); }
+  if(turmaId){ const st=(t.status||{})[turmaId]; if(st&&st.data)meta.push('Aplicado em '+st.data.split('-').reverse().join('/')); }
+  if(meta.length) h+='<div class="meta">'+esc(meta.join('  ·  '))+'</div>';
+  const o=t.obj||{};
+  if(incs.includes('planejamento')&&o.planejamento) h+='<h4>Planejamento</h4>'+mdToPrint(o.planejamento);
+  if(incs.includes('textoQuadro')&&o.textoQuadro) h+='<h4>Texto de quadro</h4>'+mdToPrint(o.textoQuadro);
+  if(incs.includes('textoAluno')&&o.textoAluno) h+='<h4>Texto do aluno</h4>'+mdToPrint(o.textoAluno);
+  if(incs.includes('slides')&&(o.slides||[]).length){ h+='<h4>Slides</h4>'; o.slides.forEach((s,i)=>{ h+='<p><b>'+(i+1)+'. '+esc(s.titulo||'')+'</b></p><ul>'+(s.topicos||[]).filter(x=>x.trim()).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'; }); }
+  if(incs.includes('atividade')&&(o.atividade||[]).length){ h+='<h4>Atividade</h4><ol>'+o.atividade.map(x=>'<li>'+esc(x.enunciado||'')+'</li>').join('')+'</ol>'; }
+  if(incs.includes('gabarito')&&(o.gabarito||[]).length){ h+='<h4>Gabarito</h4><ol>'+o.gabarito.map(x=>'<li><b>'+esc(x.resposta||'')+'</b>'+(x.comentario?' — '+esc(x.comentario):'')+'</li>').join('')+'</ol>'; }
+  if(incs.includes('questoes')&&(o.questoes||[]).length){ h+='<h4>Questões</h4><ol>'+o.questoes.map(q=>'<li>'+esc(q.enunciado||'')+'<ul class="alts">'+(q.alternativas||[]).map((a,i)=>'<li>'+String.fromCharCode(65+i)+') '+esc(a)+(q.correta===i?' <b>(correta)</b>':'')+'</li>').join('')+'</ul>'+(q.comentario?'<p class="cmt">'+esc(q.comentario)+'</p>':'')+'</li>').join('')+'</ol>'; }
+  if(incs.includes('mapaMental')&&o.mapaMental) h+='<h4>Mapa mental</h4>'+mdToPrint(o.mapaMental);
+  if(incs.includes('imagens')&&(t.imagens||[]).length){ h+='<h4>Imagens</h4><div class="imgs">'+t.imagens.map(im=>'<img src="'+esc(im.url||im.thumburl)+'">').join('')+'</div>'; }
+  h+='</div>'; return h;
+}
+function mdToPrint(s){
+  const lines=String(s||'').split('\n'); let out='',inList=false;
+  lines.forEach(ln=>{ const t=ln.trim();
+    if(/^#{1,6}\s/.test(t)){ if(inList){out+='</ul>';inList=false;} out+='<p class="mh">'+esc(t.replace(/^#+\s/,''))+'</p>'; }
+    else if(/^[-*•]\s/.test(t)){ if(!inList){out+='<ul>';inList=true;} out+='<li>'+esc(t.replace(/^[-*•]\s/,''))+'</li>'; }
+    else if(t===''){ if(inList){out+='</ul>';inList=false;} }
+    else { if(inList){out+='</ul>';inList=false;} out+='<p>'+esc(t)+'</p>'; }
+  });
+  if(inList)out+='</ul>'; return out;
+}
+function relatorioShell(titulo,body){
+  return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+esc(titulo)+'</title>'+
+    '<style>'+
+    'body{font-family:Georgia,"Times New Roman",serif;color:#1a2422;max-width:780px;margin:24px auto;padding:0 20px;line-height:1.5}'+
+    'h1{font-size:21px;border-bottom:2px solid #2f6b5e;padding-bottom:8px;margin-bottom:4px}'+
+    '.sub{color:#6a7370;font-size:12px;margin-bottom:18px;font-family:Arial,sans-serif}'+
+    'h2.cont{font-size:17px;color:#2f6b5e;margin:22px 0 6px;border-bottom:1px solid #d2d8cf;padding-bottom:4px}'+
+    '.tema{margin:0 0 14px;padding:10px 0;page-break-inside:avoid}'+
+    '.tema h3{font-size:15px;margin:6px 0 2px}'+
+    '.meta{font-family:Arial,sans-serif;font-size:11px;color:#2f6b5e;margin-bottom:8px}'+
+    'h4{font-family:Arial,sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#6a7370;margin:12px 0 4px}'+
+    'p{margin:0 0 7px}p.mh{font-weight:bold;margin-top:8px}'+
+    'ul,ol{margin:0 0 8px;padding-left:22px}li{margin-bottom:3px}'+
+    'ul.alts{margin-top:3px}p.cmt{font-size:12px;color:#555;font-style:italic}'+
+    '.imgs{display:flex;flex-wrap:wrap;gap:8px}.imgs img{max-width:240px;max-height:180px;border:1px solid #d2d8cf;border-radius:6px}'+
+    '@media print{body{margin:0}a{color:inherit;text-decoration:none}}'+
+    '</style></head><body>'+
+    '<h1>'+esc(titulo)+'</h1><div class="sub">Gerado pelo Leciona — '+new Date().toLocaleDateString('pt-BR')+' · códigos e selos conforme Matriz de Habilidades Essenciais SEDUC-GO 2026</div>'+
+    body+'</body></html>';
+}
+
+/* =========================================================
+   Config / backup / utilidades
+   ========================================================= */
+function openConfig(){
+  const cfg=localStorage.getItem(LS_FB)||'';
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+
+    '<div class="modal-h"><h3>Configurações</h3></div>'+
+    '<div class="modal-b">'+
+      '<div class="field"><label>Chave da API Claude (Anthropic)</label>'+
+        '<input id="cfgKey" type="password" placeholder="sk-ant-..." value="'+esc(getKey())+'">'+
+        '<small>Guardada '+(DB?'no root do documento Firebase (sincroniza entre dispositivos)':'localmente neste navegador')+'.</small></div>'+
+      '<div class="field"><label>Modelo</label><input id="cfgModel" value="'+esc(getModel())+'"></div>'+
+      '<div class="field"><label>Credenciais do Firebase (firebaseConfig em JSON)</label>'+
+        '<textarea id="cfgFb" class="mono" placeholder=\'{ "apiKey":"...", "databaseURL":"https://SEU-PROJETO.firebaseio.com", ... }\'>'+esc(cfg)+'</textarea>'+
+        '<small>Cole o firebaseConfig do seu projeto novo. Vazio = funciona local. Após salvar, a página recarrega conectada.</small></div>'+
+    '</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveConfig()">Salvar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+function closeModal(){ const w=document.getElementById('modalWrap'); if(w)w.remove(); }
+function saveConfig(){
+  const key=document.getElementById('cfgKey').value.trim();
+  const model=document.getElementById('cfgModel').value.trim()||'claude-sonnet-4-6';
+  const fb=document.getElementById('cfgFb').value.trim();
+  localStorage.setItem(LS_MODEL,model);
+  let fbChanged=false;
+  if(fb!==(localStorage.getItem(LS_FB)||'')){
+    if(fb){ try{ JSON.parse(fb); }catch(e){ toast('Firebase: JSON inválido.','err'); return; } }
+    localStorage.setItem(LS_FB,fb); fbChanged=true;
+  }
+  if(DB){ DB.ref('anthropicKey').set(key); } else { localStorage.setItem(LS_KEY,key); }
+  closeModal();
+  if(fbChanged){ toast('Configurações salvas. Recarregando…','ok'); setTimeout(()=>location.reload(),700); }
+  else toast('Configurações salvas.','ok');
+}
+function exportBackup(){
+  const data=JSON.stringify({version:2,exportedAt:new Date().toISOString(),conteudos,temas,turmas},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='leciona-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  toast('Backup exportado.','ok');
+}
+function importBackup(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+    const d=JSON.parse(r.result);
+    let n=0;
+    if(d.conteudos) Object.values(d.conteudos).forEach(c=>{ if(c&&c.id){ persistConteudo(c); } });
+    if(d.turmas) Object.values(d.turmas).forEach(t=>{ if(t&&t.id){ persistTurma(t); } });
+    const imp=d.temas||d;
+    Object.values(imp).forEach(t=>{ if(t&&t.id){ persistTema(t); n++; } });
+    if(!DB){ migrateAndRender(); }
+    toast(n+' tema(s) importado(s).','ok');
+  }catch(e){ toast('Arquivo inválido.','err'); } };
+  r.readAsText(f); ev.target.value='';
+}
+function setView(v){ if(v==='gestao'){ fecharProjecao(); document.getElementById('tabGestao').classList.add('active'); } }
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function textToHtml(s){
+  const lines=String(s||'').split('\n'); let out='',inList=false;
+  lines.forEach(ln=>{ const t=ln.trim();
+    if(/^#{1,3}\s/.test(t)){ if(inList){out+='</ul>';inList=false;} out+='<h2>'+esc(t.replace(/^#+\s/,''))+'</h2>'; }
+    else if(/^[-*•]\s/.test(t)){ if(!inList){out+='<ul>';inList=true;} out+='<li>'+esc(t.replace(/^[-*•]\s/,''))+'</li>'; }
+    else if(t===''){ if(inList){out+='</ul>';inList=false;} }
+    else { if(inList){out+='</ul>';inList=false;} out+='<p>'+esc(t)+'</p>'; }
+  });
+  if(inList)out+='</ul>'; return out;
+}
+let toastT;
+function toast(msg,kind){
+  const el=document.getElementById('toast');
+  const d=document.createElement('div'); d.className='toast '+(kind||''); d.textContent=msg;
+  el.appendChild(d); setTimeout(()=>d.remove(),4200);
+}
+
+boot();
+
+</script>
+</body>
+</html>
