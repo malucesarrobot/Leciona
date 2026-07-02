@@ -990,7 +990,16 @@ flashcards:[{"frente":"Quem foi Juscelino Kubitschek e qual era seu lema?","vers
 };
 
 /* Retorna o conteúdo pré-gerado para um tema, se existir */
-function getPrebuilt(t){ return PREBUILT_OBJ[t.nome]||null; }
+function getPrebuilt(t){
+  if(!t||!t.nome) return null;
+  const nome=t.nome.trim();
+  // 1. match exato
+  if(PREBUILT_OBJ[nome]) return PREBUILT_OBJ[nome];
+  // 2. match case-insensitive + trim
+  const nomeLow=nome.toLowerCase();
+  const key=Object.keys(PREBUILT_OBJ).find(k=>k.toLowerCase().trim()===nomeLow);
+  return key?PREBUILT_OBJ[key]:null;
+}
 
 /* Aplica conteúdo pré-gerado a um tema que ainda não tem objetos gerados */
 function applyPrebuiltIfEmpty(t){
