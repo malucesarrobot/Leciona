@@ -236,12 +236,14 @@ const SUBTEMAS = {
     {s:'Da manufatura à fábrica: máquinas, carvão e cidades',a:1},
     {s:'Questão social: infância operária e condições de trabalho',a:1},
     {s:'Resistências: ludismo, sindicatos e greves',a:1},
-    {s:'A crítica socialista: Marx e a mais-valia',a:1}
+    {s:'A crítica socialista: Marx e a mais-valia',a:1},
+    {s:'Capitalismo industrial e a crítica socialista',a:1}
   ],
   'História|EM13CHS601':[
     {s:'Indígenas e afrodescendentes como sujeitos da história do Brasil',a:1},
     {s:'Demandas e movimentos no Brasil contemporâneo',a:1},
-    {s:'Cotas e políticas afirmativas: conquistas e limites',a:1}
+    {s:'Cotas e políticas afirmativas: conquistas e limites',a:1},
+    {s:'Inclusão precária e a luta por direitos',a:1}
   ],
   'História|GO-EMCHS601A':[
     {s:'A escravização e o tráfico atlântico',a:1},
@@ -280,6 +282,36 @@ const SUBTEMAS = {
     {s:'A Declaração Universal dos Direitos Humanos',a:1},
     {s:'A Ditadura Militar (1964-1985): repressão e resistência',a:2},
     {s:'Consequências do regime e a luta por memória e justiça',a:1}
+  ],
+  /* ===== FILOSOFIA — ENSINO MÉDIO =====
+     Primeiras entradas: 3º Bimestre, 1ª/2ª/3ª séries. */
+  'Filosofia|GO-EMCHS502C':[
+    {s:'Liberdade de expressão: filósofos e sofistas no período clássico',a:1},
+    {s:'Liberdade pública e liberdade privada: a reflexão de Benjamin Constant',a:1}
+  ],
+  'Filosofia|GO-EMCHS205D':[
+    {s:'A Escola de Frankfurt e a indústria cultural: Adorno e Horkheimer',a:1},
+    {s:'Cultura de massa: alienação ou empoderamento juvenil?',a:1}
+  ],
+  'Filosofia|GO-EMCHS605A':[
+    {s:'Direitos naturais: vida, liberdade e propriedade em Locke e Rousseau',a:1}
+  ],
+  'Filosofia|EM13CHS502':[
+    {s:'Direitos Humanos e dignidade humana: da desigualdade à ação',a:1}
+  ],
+  'Filosofia|EM13CHS205':[
+    {s:'Cultura e poder: entre a indústria cultural e as culturas populares',a:1}
+  ],
+  'Filosofia|EM13CHS605':[
+    {s:'Princípios dos Direitos Humanos: justiça, igualdade e fraternidade',a:1}
+  ],
+  /* ===== SOCIOLOGIA — ENSINO MÉDIO =====
+     Primeiras entradas: 1ª série, 3º Bimestre. */
+  'Sociologia|GO-EMCHS402A':[
+    {s:'O modo de produção capitalista: mercadoria, valor e mais-valia',a:1}
+  ],
+  'Sociologia|GO-EMCHS403A':[
+    {s:'Uberização, plataformização e precarização: as novas formas de trabalho',a:1}
   ]
 };
 
