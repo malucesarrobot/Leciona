@@ -357,8 +357,6 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
 .nav-dots{display:flex;gap:8px;justify-content:center;margin-top:20px}
 .nav-dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.25)}
 .nav-dots i.on{background:var(--ochre)}
-.markmap-wrap{width:100%;height:74vh}
-.markmap-wrap svg{width:100%;height:100%}
 .proj-foot{display:flex;align-items:center;justify-content:center;gap:18px;padding:10px;font-size:13px;opacity:.6;flex:0 0 auto}
 .proj-foot button{border:0;background:transparent;color:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
 .img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;width:100%;max-width:1000px}
@@ -415,7 +413,13 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
 </style>
 </head>
 <body>
-<div id="app">
+<div id="loginGate" style="position:fixed;inset:0;background:var(--ink);color:var(--board-fg);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:20px">
+  <div class="brand" style="font-size:28px">Leciona<span class="dot"></span></div>
+  <p style="max-width:320px;opacity:.8;font-size:14px">Acervo, planejamento e projeção de aulas — acesso restrito.</p>
+  <button class="btn primary" onclick="loginComGoogle()">Entrar com Google</button>
+  <p id="loginErro" style="color:#f0a; font-size:12px; max-width:320px"></p>
+</div>
+<div id="app" class="hidden">
   <header class="topbar">
     <div class="brand">Leciona<span class="dot"></span><small>Acervo &amp; Projeção</small></div>
     <div class="spacer"></div>
@@ -482,7 +486,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
   <div class="editor-body">
     <div class="meta-pane">
       <div class="field"><label>Conteúdo</label>
-        <select id="edConteudo" onchange="edDirty()"></select></div>
+        <select id="edConteudo" onchange="edDirty();renderCronograma()"></select></div>
       <div class="field"><label>Habilidade (DC-GO / corte)</label>
         <select id="edHab" onchange="aplicarHab()"></select></div>
       <div class="field"><label>Código DC-GO</label>
@@ -512,6 +516,11 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
           <button class="btn sm full" onclick="buscarImagemTema()">+ Buscar imagem (Wikimedia)</button>
         </div>
         <div class="img-thumbs" id="edImagens"></div>
+      </div>
+
+      <div class="meta-block">
+        <h4>&#128197; Cronograma do conteúdo</h4>
+        <div id="edCronograma"></div>
       </div>
     </div>
 
@@ -547,7 +556,8 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <script src="catalog.js"></script>
 <script src="prebuilt.js"></script>
 <script>
@@ -902,7 +912,7 @@ let dirty = false;
 let expanded = {};          // conteudoId -> bool (aberto/fechado na lista)
 
 const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_turmas',
-      LS_KEY='leciona_anthropic_key', LS_FB='leciona_fb_cfg', LS_MODEL='leciona_model',
+      LS_FB='leciona_fb_cfg', LS_MODEL='leciona_model',
       LS_REG='leciona_registros', LS_ALUNOS='leciona_alunos',
       LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl';
 // Versão do formato dos dados. Se uma futura versão do app mudar a estrutura,
@@ -942,7 +952,6 @@ function saveRelCfg(){ localStorage.setItem('leciona_relcfg', JSON.stringify(rel
 function relLabel(k){ return (relCfg.rotulos&&relCfg.rotulos[k])||REL_LABELS_DEFAULT[k]||k; }
 
 function getModel(){ return localStorage.getItem(LS_MODEL) || 'claude-sonnet-4-6'; }
-function getKey(){ if(DB) return window.__key || ''; return localStorage.getItem(LS_KEY) || ''; }
 function uid(){ return crypto.randomUUID ? crypto.randomUUID() : 't'+Date.now()+Math.random().toString(16).slice(2); }
 
 /* ---------- Firebase / localStorage ---------- */
@@ -985,6 +994,44 @@ const DEFAULT_FIREBASE_CONFIG = {
   "appId": "1:824991056615:web:3cd321e321f1a5c91dd842",
   "measurementId": "G-FKE76CH8DS"
 };
+
+/* ---------- Login (Google) ----------
+   O app inteiro fica atrás de login: só quem está na lista de e-mails
+   autorizados (regras do Firebase + verificarAcesso na Cloud Function)
+   consegue ler/gravar dados ou usar a IA. Isso substitui o antigo esquema
+   de "cole sua chave da API aqui", que expunha a chave no navegador. */
+function _resolveFirebaseCfg(){
+  let cfg=null;
+  try{ cfg=JSON.parse(localStorage.getItem(LS_FB)||'null'); }catch(e){}
+  if(!cfg || !cfg.databaseURL) cfg=DEFAULT_FIREBASE_CONFIG;
+  return (cfg && cfg.databaseURL) ? cfg : null;
+}
+const _fbCfg=_resolveFirebaseCfg();
+if(_fbCfg && !firebase.apps.length) firebase.initializeApp(_fbCfg);
+const auth=_fbCfg ? firebase.auth() : null;
+let _booted=false;
+function loginComGoogle(){
+  if(!auth) return;
+  const provider=new firebase.auth.GoogleAuthProvider();
+  document.getElementById('loginErro').textContent='';
+  auth.signInWithPopup(provider).catch(err=>{
+    document.getElementById('loginErro').textContent='Não consegui entrar: '+(err.message||err.code||'erro desconhecido');
+  });
+}
+if(auth){
+  auth.onAuthStateChanged(user=>{
+    const gate=document.getElementById('loginGate'), app=document.getElementById('app');
+    if(user){
+      gate.classList.add('hidden'); app.classList.remove('hidden');
+      if(!_booted){ _booted=true; boot(); }
+    } else {
+      gate.classList.remove('hidden'); app.classList.add('hidden');
+    }
+  });
+} else {
+  document.getElementById('loginGate').innerHTML='<p>Não foi possível conectar ao Firebase. Verifique sua conexão e recarregue a página.</p>';
+}
+
 function initFirebase(){
   let cfg=null;
   try{ cfg=JSON.parse(localStorage.getItem(LS_FB)||'null'); }catch(e){}
@@ -995,7 +1042,6 @@ function initFirebase(){
     DB = firebase.database();
     setConn(true);
     if(_modoSeguro) toast('⚠ Modo seguro: lendo os dados uma única vez, sem sincronização automática. Gravações manuais (salvar, excluir) continuam funcionando.','');
-    _escutar('anthropicKey', s=>{ window.__key = s.val()||''; });
     _escutar('relCfg', s=>{ const v=s.val(); if(v&&v.ordem){ let ord=v.ordem.filter(k=>REL_KEYS.includes(k)); REL_KEYS.forEach(k=>{ if(!ord.includes(k)) ord.push(k); }); relCfg.ordem=ord; relCfg.rotulos=Object.assign({},REL_LABELS_DEFAULT,v.rotulos||{}); } });
     _escutar('leciona/conteudos', s=>{
       const m=mergeRemote(conteudos, s.val()); conteudos=m.merged; lsSet(LS_CONT, JSON.stringify(conteudos));
@@ -1100,7 +1146,7 @@ function criarColunaAvaliacao(temaId, turmaId){
 function removerRegistro(id){
   delete registros[id];
   lsSet(LS_REG, JSON.stringify(registros));
-  if(DB) DB.ref('leciona/registros/'+id).remove();
+  if(DB) DB.ref('leciona/registros/'+id).remove().catch(e=>toast('⚠ Removido localmente, mas falhou ao sincronizar com o Firebase: '+e.message,'err'));
 }
 function registrosDoTema(temaId){
   return Object.values(registros).filter(r=>r.temaId===temaId).sort((a,b)=>b.data.localeCompare(a.data));
@@ -1453,6 +1499,7 @@ function renderThemes(){
             objStatusHtml(t.id, scope.turma)+
             '<button class="btn ghost sm" onclick="event.stopPropagation();openExportTema(\''+t.id+'\')" title="Copiar esta aula para outra turma">→</button>'+
             '<button class="btn ghost sm" onclick="event.stopPropagation();projetarTemaId(\''+t.id+'\')">▶</button>'+
+            '<button class="btn ghost sm" onclick="event.stopPropagation();abrirModalRegistroCard(\''+t.id+'\')" title="Registrar aplicação (sem projetar)">✓</button>'+
           '</div>';
         });
         html+='</div>';
@@ -1570,7 +1617,6 @@ function renderPmList(){
 }
 function pmToggle(k){ if(pmSel.has(k))pmSel.delete(k); else pmSel.add(k); }
 async function sugerirSubtemas(){
-  const key=getKey(); if(!key){ toast('Configure a chave da IA em ⚙.','err'); return; }
   const arr=matrizDoScope(); const btn=document.getElementById('pmSubBtn'); const msg=document.getElementById('pmSubMsg');
   const usarWeb=(document.getElementById('pmWeb')||{}).checked;
   if(usarWeb && !confirm('A busca na web faz pesquisas reais na internet e consome MAIS créditos da API (cobrança à parte, por busca). Sem ela, a IA sugere subtemas só pelo conhecimento dela, mais rápido e barato. Usar busca na web mesmo assim?')) { if(btn) btn.disabled=false; return; }
@@ -1587,7 +1633,7 @@ async function sugerirSubtemas(){
   try{
     const sys='Você é professora de '+scope.serie+' ('+scope.disc+') no Brasil, com lente decolonial e pan-africanista. Sugira subtemas didáticos relevantes e alinhados à BNCC/DC-GO'+(usarWeb?', pesquisando em portais educacionais e de governo brasileiros (gov.br, secretarias de educação, repositórios públicos)':'')+'.';
     const usr='Para CADA habilidade abaixo, sugira de 2 a 4 subtemas NOVOS e concretos para '+scope.serie+', que ampliem a abrangência da aula sem repetir os subtemas já cobertos (listados abaixo de cada habilidade, quando houver). Mantenha o mesmo critério pedagógico e o mesmo nível de detalhe dos exemplos já cobertos. Responda APENAS um JSON: array (na MESMA ordem) de arrays de strings curtas. Nada fora do JSON.\n\n'+lista;
-    const raw=usarWeb ? await callClaudeWeb(sys,usr,key) : await callClaude(sys,usr,key);
+    const raw=usarWeb ? await callClaudeWeb(sys,usr) : await callClaude(sys,usr);
     const j=raw.replace(/```json|```/g,'').trim(); const mt=j.match(/\[[\s\S]*\]/); const data=JSON.parse(mt?mt[0]:j);
     let nAdicionados=0;
     if(Array.isArray(data)) data.forEach((subsArr,k)=>{
@@ -1610,8 +1656,6 @@ async function criarPartirMatriz(){
   const sel=[];
   arr.forEach((it,i)=>{ if(pmSel.has('h:'+i)) sel.push({nome:(it.t||it.h||it.c), it}); (pmSubs[i]||[]).forEach((sb,j)=>{ if(pmSel.has('s:'+i+':'+j)){ const nm=(sb&&sb.s)||sb; sel.push({nome:nm, it, tempo:(sb&&sb.a)||''}); } }); });
   if(!sel.length){ toast('Selecione ao menos um tema/subtema.','err'); return; }
-  const key=getKey();
-  if(mode==='gerar' && !key){ toast('Configure a chave da IA para gerar (ou escolha "Só criar").','err'); return; }
   if(mode==='gerar'){ const nGer=sel.length*objs.length; if(nGer>0 && !confirm('Isto criará '+sel.length+' tema(s) e fará '+nGer+' geração(ões) na API (consome créditos da sua conta). Continuar?')) return; }
   const btn=document.getElementById('pmBtn'); if(btn)btn.disabled=true; const prog=document.getElementById('pmProg');
   let cont=Object.values(conteudos).find(c=>c.turmaId===scope.turma&&c.bimestre===scope.bim&&c.nome==='Matriz — '+scope.bim);
@@ -1682,7 +1726,7 @@ async function limparTurmasDuplicadas(){
   Object.values(turmas).forEach(t=>{ if(!t) return; const k=chaveTurma(t); (grupos[k]=grupos[k]||[]).push(t); });
 
   let turmasRemovidas=0, gruposAfetados=0;
-  const contsAtualizados=[], temasAtualizados=[], turmasApagar=[];
+  const contsAtualizados=[], temasAtualizados=[], regsAtualizados=[], turmasApagar=[];
   const chaves=Object.keys(grupos);
   for(let i=0;i<chaves.length;i++){
     const lista=grupos[chaves[i]];
@@ -1698,6 +1742,9 @@ async function limparTurmasDuplicadas(){
       ordenado.slice(1).forEach(perdedor=>{
         Object.values(conteudos).forEach(c=>{ if(c.turmaId===perdedor.id){ c.turmaId=manter.id; contsAtualizados.push(c); } });
         Object.values(temas).forEach(t=>{ if(t.turmaId===perdedor.id){ t.turmaId=manter.id; temasAtualizados.push(t); } });
+        // registros de aplicação também referenciam turmaId — sem isto, ficam
+        // órfãos apontando pra uma turma apagada e somem da barra de progresso.
+        Object.values(registros).forEach(r=>{ if(r.turmaId===perdedor.id){ r.turmaId=manter.id; regsAtualizados.push(r); } });
         turmasApagar.push(perdedor.id);
         turmasRemovidas++;
       });
@@ -1712,11 +1759,13 @@ async function limparTurmasDuplicadas(){
   lsSet(LS_TURMAS, JSON.stringify(turmas));
   lsSet(LS_CONT, JSON.stringify(conteudos));
   lsSet(LS_TEMAS, JSON.stringify(temas));
+  if(regsAtualizados.length) lsSet(LS_REG, JSON.stringify(registros));
   if(DB){
     const updates={};
     turmasApagar.forEach(id=>updates['leciona/turmas/'+id]=null);
     contsAtualizados.forEach(c=>updates['leciona/conteudos/'+c.id]=c);
     temasAtualizados.forEach(t=>updates['leciona/temas/'+t.id]=t);
+    regsAtualizados.forEach(r=>updates['leciona/registros/'+r.id]=r);
     DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
   }
   renderThemes();
@@ -1765,6 +1814,30 @@ async function limparDuplicatasGeral(){
   }
   renderThemes();
   toast(idsParaApagar.length+' tema(s) duplicado(s) removidos, em '+gruposAfetados+' grupo(s) — mantido sempre o mais completo de cada um.', 'ok');
+}
+/* Apaga TODOS os dados pedagógicos (conteúdos, temas, turmas, registros,
+   alunos, notas) — local e no Firebase. Não mexe em configurações (chave da
+   IA, modelo, credenciais do Firebase): isso é "esvaziar o Leciona", não
+   "resetar o app". Dupla confirmação porque é irreversível. */
+function excluirTodosDados(){
+  const nTemas=Object.keys(temas).length, nConts=Object.keys(conteudos).length, nTurmas=Object.keys(turmas).length;
+  if(!confirm('Isso vai apagar TODOS os dados do Leciona: '+nTemas+' tema(s), '+nConts+' conteúdo(s), '+nTurmas+' turma(s), além de todos os registros de aplicação, alunos e notas — local e no Firebase (se conectado). NÃO PODE SER DESFEITO. Continuar?')) return;
+  const confirmacao=prompt('Para confirmar, digite APAGAR TUDO (em maiúsculas):');
+  if(confirmacao!=='APAGAR TUDO'){ toast('Cancelado — o texto de confirmação não bateu. Nada foi apagado.',''); return; }
+  closeModal();
+
+  [LS_CONT,LS_TEMAS,LS_TURMAS,LS_REG,LS_ALUNOS,LS_ATVCTRL,LS_NOTAS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  conteudos={}; temas={}; turmas={}; registros={}; alunos={}; atividadesCtrl={}; notasCtrl={}; _temaIdx=null;
+
+  if(DB){
+    DB.ref('leciona').remove()
+      .then(()=>toast('Todos os dados foram apagados (local e Firebase). Recarregando…','ok'))
+      .catch(e=>toast('⚠ Apagado localmente, mas falhou ao apagar do Firebase: '+e.message,'err'))
+      .finally(()=>setTimeout(()=>location.reload(),1200));
+  } else {
+    toast('Todos os dados locais foram apagados. Recarregando…','ok');
+    setTimeout(()=>location.reload(),1200);
+  }
 }
 function abrirPopularSeletivo(){
   if(typeof PREBUILT_OBJ==='undefined'){ toast('O conteúdo pré-pronto ainda está carregando. Aguarde e tente de novo.','err'); return; }
@@ -1965,6 +2038,7 @@ function abrirEditor(id){
   renderStatusEditor();
   renderNotasAssistente();
   renderImagensEditor();
+  renderCronograma();
   activeObj='quadro';
   renderObjTabs(); renderObjContent();
   setSaveStatus('salvo');
@@ -2049,53 +2123,88 @@ function setStatus(field,val){
   }
   edDirty();
 }
-/* ---- Exportar conteúdo (e temas) para outra turma ---- */
+/* ---- Exportar conteúdo (e temas) para outra(s) turma(s) ----
+   Multi-seleção: pode marcar turmas avulsas, "todas da mesma série" (atalho)
+   ou "todas" de uma vez — útil pra distribuir o mesmo conteúdo/aula pra
+   várias turmas paralelas sem repetir a operação. */
+function _checksDestino(alvos, origem, cssClass){
+  const mesmaSerieIds=alvos.filter(x=>x.disciplina===origem.disciplina && x.serie===origem.serie).map(x=>x.id);
+  const todosIds=alvos.map(x=>x.id);
+  const checks=alvos.map(x=>'<label class="check"><input type="checkbox" class="'+cssClass+'" value="'+x.id+'">'+esc(turmaNome(x))+' — '+esc(x.disciplina)+' · '+esc(x.unidade||'—')+'</label>').join('');
+  const marcar=(ids)=>'expMarcar(\''+cssClass+'\',['+ids.map(id=>'\''+id+'\'').join(',')+'])';
+  const botoes='<div class="addrow" style="margin:10px 0 4px;flex-wrap:wrap">'+
+    (mesmaSerieIds.length>1?'<button class="btn ghost sm" type="button" onclick="'+marcar(mesmaSerieIds)+'">marcar todas de '+esc(origem.serie||'')+'</button>':'')+
+    '<button class="btn ghost sm" type="button" onclick="'+marcar(todosIds)+'">marcar todas ('+todosIds.length+')</button>'+
+    '<button class="btn ghost sm" type="button" onclick="'+marcar([])+'">limpar</button>'+
+  '</div>';
+  return botoes+'<div class="rel-temas-list">'+checks+'</div>';
+}
+function expMarcar(cssClass, ids){
+  document.querySelectorAll('.'+cssClass).forEach(cb=>{ cb.checked=ids.includes(cb.value); });
+}
 function openExportConteudo(cid){
   const c=conteudos[cid]; if(!c) return;
+  const origem=turmas[c.turmaId]||{};
   const alvos=Object.values(turmas).filter(t=>t.id!==c.turmaId).sort((a,b)=>((a.disciplina||'')+(a.serie||'')+turmaNome(a)).localeCompare((b.disciplina||'')+(b.serie||'')+turmaNome(b)));
-  const opts = alvos.length ? alvos.map(t=>'<option value="'+t.id+'">'+esc(turmaNome(t))+' — '+esc(t.disciplina)+' · '+esc(t.unidade||'—')+'</option>').join('') : '';
   const inner = alvos.length
-    ? '<small>Copia o conteúdo "<b>'+esc(c.nome)+'</b>" e todos os seus temas/objetos para <b>qualquer turma</b> (útil para projetos interdisciplinares e temas transversais). A cópia fica <b>independente</b>: editar ou excluir lá não afeta a turma de origem.</small>'+
-      '<div class="field" style="margin-top:12px"><label>Turma de destino</label><select id="expTurma">'+opts+'</select></div>'
+    ? '<small>Copia o conteúdo "<b>'+esc(c.nome)+'</b>" e todos os seus temas/objetos pras turmas marcadas (útil para projetos interdisciplinares e temas transversais). Cada cópia fica <b>independente</b>: editar ou excluir numa não afeta as outras.</small>'+
+      _checksDestino(alvos, origem, 'expDestC')
     : '<small>Não há outra turma cadastrada. Crie a turma de destino em "+ turmas" primeiro.</small>';
   const foot = alvos.length ? '<button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="doExportConteudo(\''+cid+'\')">Copiar</button>' : '<button class="btn ghost" onclick="closeModal()">Fechar</button>';
-  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Copiar para outra turma</h3></div><div class="modal-b">'+inner+'</div><div class="modal-f">'+foot+'</div></div></div>';
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Copiar para outra(s) turma(s)</h3></div><div class="modal-b">'+inner+'</div><div class="modal-f">'+foot+'</div></div></div>';
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function doExportConteudo(cid){
-  const c=conteudos[cid]; const dest=document.getElementById('expTurma').value;
-  const dt=turmas[dest]; if(!c||!dt) return;
-  if(!confirm('Copiar "'+c.nome+'" e todos os seus temas para a turma '+turmaNome(dt)+' ('+dt.disciplina+')?\nA cópia será independente da turma de origem.')) return;
-  const novoC=JSON.parse(JSON.stringify(c)); novoC.id=uid(); novoC.turmaId=dest; novoC.disciplina=dt.disciplina; novoC.serie=dt.serie; novoC._avulsos=false; novoC.ordem=99; novoC.updatedAt=Date.now();
-  persistConteudo(novoC);
-  temasDoConteudo(cid).forEach((t,i)=>{
-    const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=novoC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=i; nt.updatedAt=Date.now();
-    persistTema(nt);
+  const c=conteudos[cid]; if(!c) return;
+  const destIds=[...document.querySelectorAll('.expDestC:checked')].map(cb=>cb.value);
+  if(!destIds.length){ toast('Marque ao menos uma turma de destino.','err'); return; }
+  const nomes=destIds.map(id=>turmaNome(turmas[id])).join(', ');
+  if(!confirm('Copiar "'+c.nome+'" e todos os seus temas para: '+nomes+'?\nCada cópia será independente da turma de origem.')) return;
+  let feitas=0;
+  destIds.forEach(dest=>{
+    const dt=turmas[dest]; if(!dt) return;
+    const novoC=JSON.parse(JSON.stringify(c)); novoC.id=uid(); novoC.turmaId=dest; novoC.disciplina=dt.disciplina; novoC.serie=dt.serie; novoC._avulsos=false; novoC.ordem=99; novoC.updatedAt=Date.now();
+    novoC.planejamento=[]; // cronograma referencia temaIds da origem — não faz sentido na cópia
+    persistConteudo(novoC);
+    temasDoConteudo(cid).forEach((t,i)=>{
+      const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=novoC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=i; nt.updatedAt=Date.now();
+      persistTema(nt);
+    });
+    feitas++;
   });
   closeModal(); if(!DB) renderThemes();
-  toast('Conteúdo copiado para a turma '+dt.nome+'.','ok');
+  toast('Conteúdo copiado para '+feitas+' turma(s).','ok');
 }
 function openExportTema(tid){
   const t=temas[tid]; if(!t) return;
+  const origem=turmas[t.turmaId]||{};
   const alvos=Object.values(turmas).filter(x=>x.id!==t.turmaId).sort((a,b)=>((a.disciplina||'')+(a.serie||'')+turmaNome(a)).localeCompare((b.disciplina||'')+(b.serie||'')+turmaNome(b)));
-  const opts=alvos.map(x=>'<option value="'+x.id+'">'+esc(turmaNome(x))+' — '+esc(x.disciplina)+' · '+esc(x.unidade||'—')+'</option>').join('');
   const inner = alvos.length
-    ? '<small>Copia <b>somente esta aula</b> ("'+esc(t.nome)+'") para outra turma. A cópia é independente (excluir lá não afeta a origem).</small><div class="field" style="margin-top:12px"><label>Turma de destino</label><select id="expTurmaT">'+opts+'</select></div>'
+    ? '<small>Copia <b>somente esta aula</b> ("'+esc(t.nome)+'") pras turmas marcadas. Cada cópia é independente (excluir numa não afeta as outras).</small>'+
+      _checksDestino(alvos, origem, 'expDestT')
     : '<small>Não há outra turma cadastrada.</small>';
   const foot = alvos.length ? '<button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="doExportTema(\''+tid+'\')">Copiar aula</button>' : '<button class="btn ghost" onclick="closeModal()">Fechar</button>';
-  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Copiar aula para outra turma</h3></div><div class="modal-b">'+inner+'</div><div class="modal-f">'+foot+'</div></div></div>';
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Copiar aula para outra(s) turma(s)</h3></div><div class="modal-b">'+inner+'</div><div class="modal-f">'+foot+'</div></div></div>';
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function doExportTema(tid){
-  const t=temas[tid]; const dest=document.getElementById('expTurmaT').value; const dt=turmas[dest]; if(!t||!dt) return;
-  if(!confirm('Copiar a aula "'+t.nome+'" para a turma '+turmaNome(dt)+' ('+dt.disciplina+')?')) return;
+  const t=temas[tid]; if(!t) return;
+  const destIds=[...document.querySelectorAll('.expDestT:checked')].map(cb=>cb.value);
+  if(!destIds.length){ toast('Marque ao menos uma turma de destino.','err'); return; }
+  const nomes=destIds.map(id=>turmaNome(turmas[id])).join(', ');
+  if(!confirm('Copiar a aula "'+t.nome+'" para: '+nomes+'?')) return;
   const srcC=conteudos[t.conteudoId]; const nomeC=srcC?srcC.nome:'Aulas importadas';
-  let destC=Object.values(conteudos).find(c=>c.turmaId===dest && c.bimestre===t.bimestre && c.nome===nomeC);
-  if(!destC){ destC={id:uid(),disciplina:dt.disciplina,serie:dt.serie,turmaId:dest,bimestre:t.bimestre,nome:nomeC,resumo:'',ordem:99,updatedAt:Date.now()}; persistConteudo(destC); }
-  const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=destC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=nextOrdemTema(destC.id); nt.updatedAt=Date.now();
-  persistTema(nt);
+  let feitas=0;
+  destIds.forEach(dest=>{
+    const dt=turmas[dest]; if(!dt) return;
+    let destC=Object.values(conteudos).find(c=>c.turmaId===dest && c.bimestre===t.bimestre && c.nome===nomeC);
+    if(!destC){ destC={id:uid(),disciplina:dt.disciplina,serie:dt.serie,turmaId:dest,bimestre:t.bimestre,nome:nomeC,resumo:'',ordem:99,updatedAt:Date.now()}; persistConteudo(destC); }
+    const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=destC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=nextOrdemTema(destC.id); nt.updatedAt=Date.now();
+    persistTema(nt);
+    feitas++;
+  });
   closeModal(); if(!DB) renderThemes();
-  toast('Aula copiada para '+turmaNome(dt)+'.','ok');
+  toast('Aula copiada para '+feitas+' turma(s).','ok');
 }
 function renderImagensEditor(){
   const box=document.getElementById('edImagens');
@@ -2103,6 +2212,92 @@ function renderImagensEditor(){
   box.innerHTML = imgs.length ? imgs.map((im,i)=>'<div class="it"><img src="'+esc(im.thumburl||im.url)+'"><button onclick="removerImagem('+i+')" title="remover">✕</button></div>').join('') : '<div class="statusdot">Nenhuma imagem fixada.</div>';
 }
 function removerImagem(i){ editing.imagens.splice(i,1); renderImagensEditor(); edDirty(); }
+
+/* ---------- Cronograma (planejamento por conteúdo) ----------
+   O campo 'planejamento' vive no CONTEÚDO (não no tema/objeto): um conteúdo
+   pode ter vários temas/aulas, e o cronograma é a distribuição deles no
+   tempo — data prevista + qual dos 5 objetos será dado naquela aula.
+   Cada entrada: {id, data:'AAAA-MM-DD', temaId, objeto, obs}. */
+function renderCronograma(){
+  const box=document.getElementById('edCronograma'); if(!box) return;
+  // lê do <select> (não de editing.conteudoId) pra refletir a troca de Conteúdo
+  // na hora, mesmo antes do autosave rodar collectMeta() e persistir a mudança.
+  const cid=(document.getElementById('edConteudo')||{}).value || editing.conteudoId;
+  const cont=cid?conteudos[cid]:null;
+  if(!cont){ box.innerHTML='<p class="statusdot" style="font-size:12px">Escolha um Conteúdo (acima) pra habilitar o cronograma.</p>'; return; }
+  const plan=(cont.planejamento||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const temasDoCont=temasDoConteudo(cid);
+  const temaOpts=temasDoCont.map(t=>'<option value="'+t.id+'"'+(t.id===editing.id?' selected':'')+'>'+esc((t.nome||'(sem nome)').slice(0,40))+'</option>').join('');
+  const objOpts=OBJ_DEFS.map(o=>'<option value="'+o.k+'">'+esc(o.label)+'</option>').join('');
+  const lista = plan.length ? plan.map(p=>{
+    const tm=temas[p.temaId];
+    const objLabel=(OBJ_DEFS.find(o=>o.k===p.objeto)||{}).label||p.objeto||'—';
+    const dataFmt=p.data?new Date(p.data+'T00:00:00').toLocaleDateString('pt-BR'):'—';
+    return '<div class="turma-row"><span class="tn" style="flex:0 0 76px">'+esc(dataFmt)+'</span>'+
+      '<span style="flex:1;font-size:12px">'+esc(tm?tm.nome:'(tema removido)')+' · '+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
+      '<button class="btn ghost sm" onclick="remPlanejamento(\''+p.id+'\')" title="Remover">✕</button></div>';
+  }).join('') : '<p class="statusdot" style="font-size:12px">Nenhuma aula planejada ainda.</p>';
+  box.innerHTML = lista+
+    '<div class="addrow" style="margin-top:8px;flex-wrap:wrap">'+
+      '<input type="date" id="cronData" style="flex:0 0 132px">'+
+      '<select id="cronTema" style="flex:1;min-width:130px">'+temaOpts+'</select>'+
+      '<select id="cronObjeto" style="flex:0 0 116px">'+objOpts+'</select>'+
+    '</div>'+
+    '<div class="addrow" style="margin-top:6px">'+
+      '<input id="cronObs" placeholder="observação (opcional)" style="flex:1">'+
+      '<button class="btn sm" onclick="addPlanejamento()">+ Adicionar</button>'+
+    '</div>';
+}
+function addPlanejamento(){
+  const cid=(document.getElementById('edConteudo')||{}).value || editing.conteudoId;
+  if(!cid){ toast('Escolha um Conteúdo primeiro.','err'); return; }
+  const cont=conteudos[cid]; if(!cont) return;
+  const data=(document.getElementById('cronData')||{}).value;
+  const temaId=(document.getElementById('cronTema')||{}).value;
+  const objeto=(document.getElementById('cronObjeto')||{}).value;
+  const obs=(document.getElementById('cronObs')||{}).value.trim();
+  if(!data){ toast('Escolha uma data.','err'); return; }
+  if(!temaId){ toast('Este conteúdo ainda não tem tema pra planejar.','err'); return; }
+  if(!cont.planejamento) cont.planejamento=[];
+  cont.planejamento.push({id:uid(),data,temaId,objeto,obs});
+  persistConteudo(cont);
+  renderCronograma();
+  toast('Aula adicionada ao cronograma.','ok');
+}
+function remPlanejamento(pid){
+  const cid=(document.getElementById('edConteudo')||{}).value || editing.conteudoId;
+  const cont=cid?conteudos[cid]:null; if(!cont||!cont.planejamento) return;
+  cont.planejamento=cont.planejamento.filter(p=>p.id!==pid);
+  persistConteudo(cont);
+  renderCronograma();
+}
+/* Todas as aulas planejadas (em qualquer conteúdo/turma) para uma data. */
+function planejamentosDoDia(dataISO){
+  const out=[];
+  Object.values(conteudos).forEach(c=>{
+    (c.planejamento||[]).forEach(p=>{ if(p.data===dataISO){ const t=temas[p.temaId]; if(t) out.push({conteudo:c, entry:p, tema:t}); } });
+  });
+  return out;
+}
+/* Abre o editor já no tema certo, ajustando o escopo (disciplina/turma/bimestre)
+   a partir do conteúdo — usado pelos atalhos do cronograma na tela Hoje. */
+function abrirTemaDoDia(temaId){
+  const t=temas[temaId]; if(!t) return;
+  const c=conteudos[t.conteudoId]; const tu=c?turmas[c.turmaId]:null;
+  if(tu){
+    scope.disc=tu.disciplina; scope.unidade=tu.unidade; scope.serie=tu.serie||'—'; scope.bim=t.bimestre||scope.bim; scope.turma=tu.id;
+    const selDisc=document.getElementById('selDisc'); if(selDisc) selDisc.value=scope.disc;
+    refreshSeries();
+    const selSerie=document.getElementById('selSerie'); if(selSerie) selSerie.value=scope.serie;
+    const selUnidade=document.getElementById('selUnidade'); if(selUnidade) selUnidade.value=scope.unidade;
+    const selBim=document.getElementById('selBim'); if(selBim) selBim.value=scope.bim;
+    refreshTurmas();
+    const selTurma=document.getElementById('selTurma'); if(selTurma) selTurma.value=tu.id;
+    saveScope();
+  }
+  setView('gestao'); renderThemes();
+  abrirEditor(temaId);
+}
 
 function collectMeta(){
   editing.nome=document.getElementById('edNome').value.trim()||'Sem título';
@@ -2269,11 +2464,9 @@ function updCard(kind,i,field,val){
 
 /* ---------- Geração com Claude ---------- */
 async function gerarObjeto(append){
-  const key=getKey();
-  if(!key){ toast('Configure a chave da API Claude em ⚙ primeiro.','err'); return; }
   collectMeta();
   const def=OBJ_DEFS.find(o=>o.k===activeObj);
-  const existente=editing.obj[activeObj];
+  const existente=activeObj==='avaliacao' ? ((editing.obj.avaliacao||{})[window.__avalTab||'questoes']) : editing.obj[activeObj];
   pushUndo();
   const btn=document.getElementById(append?'genMoreBtn':'genBtn');
   let __timerId=null;
@@ -2281,7 +2474,7 @@ async function gerarObjeto(append){
   try{
     const foco=(document.getElementById('genFoco')||{}).value||'';
     const {system,user,parse}=promptFor(def, editing, append?existente:null, foco);
-    const raw=await callClaude(system,user,key);
+    const raw=await callClaude(system,user);
     stopGenTimer(__timerId);
     const novo=parse(raw);
     const vazio=(Array.isArray(novo)&&!novo.length)||(typeof novo==='string'&&!novo.trim());
@@ -2308,7 +2501,7 @@ async function genObjFor(temaObj, objKey){
       const fakeDef={k:sub,tipo:sub};
       try{
         const {system,user,parse}=promptFor(fakeDef, temaObj, null, '');
-        const raw=await callClaude(system,user,getKey());
+        const raw=await callClaude(system,user);
         const novo=parse(raw);
         if(Array.isArray(novo)&&novo.length) av[sub]=novo;
       }catch(e){ console.warn('genObjFor avaliacao/'+sub+':',e); }
@@ -2320,7 +2513,7 @@ async function genObjFor(temaObj, objKey){
   const def=OBJ_DEFS.find(o=>o.k===objKey);
   if(!def) throw new Error('objeto desconhecido: '+objKey);
   const {system,user,parse}=promptFor(def, temaObj, null, '');
-  const raw=await callClaude(system,user,getKey());
+  const raw=await callClaude(system,user);
   const novo=parse(raw);
   const vazio=(Array.isArray(novo)&&!novo.length)||(typeof novo==='string'&&!novo.trim());
   return vazio?null:novo;
@@ -2363,15 +2556,13 @@ async function genOne(key, foco){
   }
   const def=OBJ_DEFS.find(o=>o.k===key);
   const {system,user,parse}=promptFor(def, editing, null, foco);
-  const raw=await callClaude(system,user,getKey());
+  const raw=await callClaude(system,user);
   const novo=parse(raw);
   const vazio=(Array.isArray(novo)&&!novo.length)||(typeof novo==='string'&&!novo.trim());
   if(vazio) return false;
   editing.obj[key]=novo; return true;
 }
 async function gerarTudo(){
-  const key=getKey();
-  if(!key){ toast('Configure a chave da API em ⚙.','err'); return; }
   const foco=document.getElementById('gtFoco').value.trim();
   let keys=[...document.querySelectorAll('#modalWrap .gt-checks input[type=checkbox]:checked')].map(c=>c.value);
   if(!keys.length){ toast('Marque ao menos um objeto.','err'); return; }
@@ -2457,33 +2648,20 @@ function parseJSON(raw){
   if(a>=0&&b>a) s=s.slice(a,b+1);
   return JSON.parse(s);
 }
-async function callClaude(system,user,key,retries=2){
-  for(let i=0;i<=retries;i++){
-    try{
-      const res=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:getModel(),max_tokens:2500,system,messages:[{role:'user',content:user}]})
-      });
-      if(res.status===429&&i<retries){ await new Promise(r=>setTimeout(r,1500*(i+1))); continue; }
-      if(!res.ok){ const e=await res.text(); throw new Error('API '+res.status+': '+e.slice(0,160)); }
-      const data=await res.json();
-      return (data.content||[]).map(b=>b.text||'').join('\n').trim();
-    }catch(e){
-      if(i<retries&&/429|rate.limit|timeout/i.test(e.message)){ await new Promise(r=>setTimeout(r,1500*(i+1))); continue; }
-      throw e;
-    }
-  }
+/* Todas as chamadas de IA passam pela Cloud Function gerarComIA — a chave da
+   API Anthropic fica só no servidor (Secret Manager), nunca no navegador.
+   A function já faz o retry em 429 internamente; aqui só repassamos o erro. */
+async function chamarIA(system, messages, opts){
+  opts=opts||{};
+  const fn=firebase.app().functions('southamerica-east1').httpsCallable('gerarComIA');
+  const r=await fn({system, messages, maxTokens:opts.maxTokens||2500, useWeb:!!opts.useWeb, model:getModel()});
+  return (r.data&&r.data.resposta)||'';
 }
-async function callClaudeWeb(system,user,key){
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:getModel(),max_tokens:3000,system,messages:[{role:'user',content:user}],tools:[{type:'web_search_20250305',name:'web_search',max_uses:3}]})
-  });
-  if(!res.ok){ const e=await res.text(); throw new Error('API '+res.status+': '+e.slice(0,160)); }
-  const data=await res.json();
-  return (data.content||[]).map(b=>b.type==='text'?(b.text||''):'').join('\n').trim();
+async function callClaude(system,user){
+  return chamarIA(system,[{role:'user',content:user}]);
+}
+async function callClaudeWeb(system,user){
+  return chamarIA(system,[{role:'user',content:user}],{maxTokens:3000,useWeb:true});
 }
 
 /* =========================================================
@@ -2491,17 +2669,8 @@ async function callClaudeWeb(system,user,key){
    qualquer resposta a um tema aberto.
    ========================================================= */
 let _chatMsgs=[]; // {role:'user'|'assistant', text}
-async function callClaudeChat(system, msgs, key, useWeb){
-  const body={model:getModel(), max_tokens:3000, system, messages:msgs.map(m=>({role:m.role, content:m.text}))};
-  if(useWeb) body.tools=[{type:'web_search_20250305', name:'web_search', max_uses:3}];
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify(body)
-  });
-  if(!res.ok){ const e=await res.text(); throw new Error('API '+res.status+': '+e.slice(0,160)); }
-  const data=await res.json();
-  return (data.content||[]).map(b=>b.type==='text'?(b.text||''):'').join('\n').trim();
+async function callClaudeChat(system, msgs, useWeb){
+  return chamarIA(system, msgs.map(m=>({role:m.role, content:m.text})), {maxTokens:3000,useWeb});
 }
 function openAssistente(){
   const contexto = editing ? (editing.nome+' — '+(editing.disciplina||'')+' '+(editing.serie||'')) : null;
@@ -2533,7 +2702,6 @@ function renderChat(){
   box.scrollTop=box.scrollHeight;
 }
 async function enviarChat(){
-  const key=getKey(); if(!key){ toast('Configure a chave da IA em ⚙.','err'); return; }
   const inp=document.getElementById('chatInput'); const txt=(inp.value||'').trim();
   if(!txt) return;
   inp.value='';
@@ -2545,7 +2713,7 @@ async function enviarChat(){
   const contexto = editing ? ('O usuário está atualmente com o tema "'+editing.nome+'" ('+editing.disciplina+', '+editing.serie+') aberto no app Leciona. Se a pergunta parecer relacionada, considere esse contexto — mas responda livremente qualquer outra pergunta também.') : '';
   const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+contexto+' Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
   try{
-    const resp = useWeb ? await callClaudeChat(sys,_chatMsgs,key,true) : await callClaudeChat(sys,_chatMsgs,key,false);
+    const resp = await callClaudeChat(sys,_chatMsgs,useWeb);
     _chatMsgs.push({role:'assistant', text:resp||'(sem resposta)'});
   }catch(e){
     _chatMsgs.push({role:'assistant', text:'⚠ Erro: '+e.message});
@@ -2703,7 +2871,6 @@ function renderAbaRegistro(){
       }).join('')+'</tbody></table>';
   }
   document.getElementById('objContent').innerHTML=h;
-  document.getElementById('objActions').innerHTML='';
 }
 function abrirModalRegistroEditor(){
   if(!editing) return;
@@ -2735,6 +2902,43 @@ function salvarRegistroEditor(){
   closeModal();
   renderAbaRegistro();
   toast('Registro salvo.','ok');
+  if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+}
+/* Registrar aplicação direto do card na Gestão, sem entrar na projeção. */
+let _regCardTemaId=null;
+function abrirModalRegistroCard(temaId){
+  const t=temas[temaId]; if(!t){ toast('Tema não encontrado.','err'); return; }
+  _regCardTemaId=temaId;
+  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'" '+(isFilled(t,o.k)?'checked':'')+'>'+o.label+'</label>').join('');
+  const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
+  const tu=turmas[t.turmaId]||{};
+  const hoje=new Date().toISOString().slice(0,10);
+  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
+    '<div class="modal-h"><h3>✓ Registrar aplicação — '+esc((t.nome||'').slice(0,40))+'</h3></div>'+
+    '<div class="modal-b">'+
+    '<div class="field"><label>Turma</label><strong>'+esc(turmaNome(tu))+'</strong></div>'+
+    '<div class="field"><label>O que usou</label><div class="gt-checks">'+objChecks+'</div></div>'+
+    '<div class="field"><label>Como foi entregue</label><select id="regCEntrega">'+entOpts+'</select></div>'+
+    '<div class="field"><label>Data</label><input type="date" id="regCData" value="'+hoje+'"></div>'+
+    '<div class="field"><label>Nota livre (opcional)</label><input id="regCNota" placeholder="ex.: maioria participou, 3 faltaram…"></div>'+
+    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
+    '<button class="btn primary" onclick="salvarRegistroCard()">Salvar registro</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+}
+function salvarRegistroCard(){
+  const t=temas[_regCardTemaId]; if(!t){ closeModal(); return; }
+  const objs=[...document.querySelectorAll('input[name=regObjC]:checked')].map(c=>c.value);
+  if(!objs.length){ toast('Marque ao menos um objeto usado.','err'); return; }
+  const entrega=(document.getElementById('regCEntrega')||{}).value||'sala';
+  const data=(document.getElementById('regCData')||{}).value||new Date().toISOString().slice(0,10);
+  const nota=(document.getElementById('regCNota')||{}).value||'';
+  const r=novoRegistro(t.id, t.turmaId, objs, entrega, nota);
+  r.data=data;
+  persistRegistro(r);
+  closeModal();
+  _regCardTemaId=null;
+  renderThemes();
+  toast('Aplicação registrada — '+esc(turmaNome(turmas[t.turmaId]||{}))+'.','ok');
   if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
 }
 function fecharProjecao(){
@@ -2779,7 +2983,8 @@ function renderProj(){
     html='<div class="img-grid">'+im.map(x=>'<img src="'+esc(x.url||x.thumburl)+'" data-full="'+esc(x.url||x.thumburl)+'" style="cursor:zoom-in" onclick="projZoom(this.dataset.full)">').join('')+'</div>';
     foot.innerHTML='<span class="statusdot">clique numa imagem para ampliar</span>';
   } else if(k==='quadro'||k==='estudo'){
-    html='<div class="proj-canvas">'+textToHtml(v)+'</div>';
+    const objLabel=(OBJ_DEFS.find(o=>o.k===k)||{}).label||'';
+    html='<div class="proj-canvas"><h2>'+esc(objLabel)+'</h2>'+textToHtml(v)+'</div>';
   } else if(k==='mapaMental'){
     html='<div class="mmint">'+(proj.mapaTree?mapInterativo(v):mapDashboard(v))+'</div>';
     foot.innerHTML=proj.mapaTree
@@ -2868,15 +3073,6 @@ function revealQ(){
   if(typeof q.correta==='number'){ const el=document.getElementById('alt'+q.correta); if(el)el.classList.add('correct'); }
   const c=document.getElementById('qcom'); if(c) c.classList.remove('hidden');
 }
-function renderMarkmap(md){
-  try{
-    if(!window.markmap||!window.markmap.Transformer){ document.getElementById('projStage').innerHTML='<div class="proj-canvas">'+textToHtml(md)+'</div>'; return; }
-    const {Transformer}=window.markmap; const tr=new Transformer();
-    const {root}=tr.transform(md||'# (vazio)');
-    const {Markmap}=window.markmap;
-    Markmap.create(document.getElementById('mm'),{paddingX:40,duration:300},root);
-  }catch(e){ document.getElementById('projStage').innerHTML='<div class="proj-canvas">'+textToHtml(md)+'</div>'; }
-}
 function projKeys(e){
   if(document.getElementById('viewProjecao').classList.contains('hidden')) return;
   const tag=(document.activeElement||{}).tagName||'';
@@ -2921,7 +3117,7 @@ async function projImagem(){
   try{
     const imgs=await searchImages(term);
     if(!imgs.length){ stage.innerHTML='<div class="proj-canvas">Nenhuma imagem para "'+esc(term)+'".</div>'; return; }
-    stage.innerHTML='<div class="img-grid">'+imgs.map(im=>'<div class="pick"><img src="'+im.thumburl+'" data-full="'+im.url+'" onclick="ampliarImg(this)"></div>').join('')+'</div>';
+    stage.innerHTML='<div class="img-grid">'+imgs.map(im=>'<div class="pick"><img src="'+esc(im.thumburl)+'" data-full="'+esc(im.url)+'" onclick="ampliarImg(this)"></div>').join('')+'</div>';
   }catch(e){ stage.innerHTML='<div class="proj-canvas">Erro ao buscar (precisa de internet).</div>'; }
 }
 function ampliarImg(el){
@@ -2948,12 +3144,11 @@ function openImgModal(){
 }
 function imgAddChip(t){ const q=document.getElementById('imgQuery'); q.value=(q.value.trim()?q.value.trim()+' ':'')+t; q.focus(); }
 async function imgSugerir(){
-  const key=getKey(); const chips=document.getElementById('imgChips');
-  if(!key){ chips.innerHTML='<span class="statusdot">configure a chave da IA em ⚙ para sugestões</span>'; return; }
+  const chips=document.getElementById('imgChips');
   chips.innerHTML='<span class="spin dark"></span>';
   try{
     const u='Liste de 8 a 12 termos curtos de BUSCA DE IMAGENS associados ao tema escolar abaixo, para achar boas imagens no acervo Wikimedia Commons. Inclua nomes próprios, lugares, obras, personagens, documentos e conceitos visuais; pode misturar português e inglês. Responda só com os termos separados por vírgula, sem numeração.\n\n'+ctx(editing);
-    const raw=await callClaude('Você ajuda professores a encontrar imagens didáticas livres.',u,key);
+    const raw=await callClaude('Você ajuda professores a encontrar imagens didáticas livres.',u);
     const termos=[...new Set(raw.replace(/\n/g,',').split(',').map(x=>x.replace(/^[\d.\-•\s]+/,'').trim()).filter(x=>x&&x.length<40))].slice(0,12);
     chips.innerHTML=termos.map(t=>'<button class="chip" onclick="imgAddChip(\''+t.replace(/'/g,"&#39;")+'\')">'+esc(t)+'</button>').join(' ');
   }catch(e){ chips.innerHTML='<span class="statusdot">não consegui sugerir agora</span>'; }
@@ -2975,7 +3170,7 @@ async function imgBuscar(){
 function renderImgResults(){
   const box=document.getElementById('imgResults');
   if(!imgResults.length){ box.innerHTML='<div class="statusdot">Sem resultados ainda.</div>'; }
-  else box.innerHTML=imgResults.map((im,i)=>'<div class="pick'+(imgSel.has(i)?' sel':'')+'" onclick="imgToggle('+i+')"><img src="'+im.thumburl+'"></div>').join('');
+  else box.innerHTML=imgResults.map((im,i)=>'<div class="pick'+(imgSel.has(i)?' sel':'')+'" onclick="imgToggle('+i+')"><img src="'+esc(im.thumburl)+'"></div>').join('');
   const btn=document.getElementById('imgAddBtn'); if(btn){ btn.disabled=imgSel.size===0; btn.textContent='Fixar selecionadas ('+imgSel.size+')'; }
 }
 function imgToggle(i){ if(imgSel.has(i))imgSel.delete(i); else imgSel.add(i); renderImgResults(); }
@@ -3135,7 +3330,6 @@ function tempoMecanico(t){
   return Math.round(copia+leitura+resposta+flash);
 }
 async function estimarAulasIA(){
-  const key=getKey(); if(!key){ toast('Configure a chave da IA em ⚙.','err'); return; }
   const temasBim=[]; conteudosDoScope().forEach(c=> temasDoConteudo(c.id).forEach(t=>temasBim.push(t)) );
   if(!temasBim.length){ toast('Nenhum tema neste bimestre.','err'); return; }
   const btn=document.getElementById('estBtn'); if(btn){ btn.disabled=true; btn.innerHTML='<span class="spin dark"></span> estimando…'; }
@@ -3148,7 +3342,7 @@ async function estimarAulasIA(){
   try{
     const sys='Você é professora experiente de '+(temasBim[0].serie||'')+' ('+(temasBim[0].disciplina||'')+'). Estime o tempo de AULA, em minutos, para EXPLICAR e DISCUTIR/CORRIGIR cada tema, conforme a densidade do conteúdo real. NÃO inclua tempo de cópia, leitura ou resposta dos alunos (isso é somado à parte). Aula padrão = 50 min.';
     const usr='Para cada tema, devolva o tempo de explicação+correção em MINUTOS. Responda APENAS um JSON: array de inteiros (10 a 200), na MESMA ordem dos temas, sem texto extra.\n\n'+blocos;
-    const raw=await callClaude(sys,usr,key);
+    const raw=await callClaude(sys,usr);
     const arr=JSON.parse(raw.replace(/```json|```/g,'').trim());
     if(Array.isArray(arr)) temasBim.forEach((t,i)=>{
       const explic=Math.max(0,parseInt(arr[i],10)||0);
@@ -3348,9 +3542,9 @@ function openConfig(){
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+
     '<div class="modal-h"><h3>Configurações</h3></div>'+
     '<div class="modal-b">'+
-      '<div class="field"><label>Chave da API Claude (Anthropic)</label>'+
-        '<input id="cfgKey" type="password" placeholder="sk-ant-..." value="'+esc(getKey())+'">'+
-        '<small>Guardada '+(DB?'no root do documento Firebase (sincroniza entre dispositivos)':'localmente neste navegador')+'.</small></div>'+
+      '<div class="field"><label>Conta</label>'+
+        '<small>Logada como <b>'+esc((auth.currentUser&&auth.currentUser.email)||'—')+'</b>. A IA roda num servidor do Leciona — não há chave pra colar aqui.</small>'+
+        '<button class="btn ghost sm" style="margin-top:8px" onclick="closeModal();auth.signOut();">Sair</button></div>'+
       '<div class="field"><label>Modelo</label><input id="cfgModel" value="'+esc(getModel())+'"></div>'+
       '<div class="field"><label>Credenciais do Firebase (firebaseConfig em JSON)</label>'+
         '<textarea id="cfgFb" class="mono" placeholder=\'{ "apiKey":"...", "databaseURL":"https://SEU-PROJETO.firebaseio.com", ... }\'>'+esc(cfg)+'</textarea>'+
@@ -3364,14 +3558,15 @@ function openConfig(){
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="limparTurmasDuplicadas()">🏫 Unificar turmas duplicadas</button>'+
         '<small>Junta turmas com o mesmo nome e mesma escola (ex.: duas cópias de "9ºC") numa só, movendo todo o conteúdo antes de apagar a cópia. Rode este primeiro.</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="limparDuplicatasGeral()">🧹 Limpar duplicatas (banco inteiro)</button>'+
-        '<small>Varre todos os temas, agrupa por turma+código, e mantém só o mais completo de cada grupo (o que já foi aplicado em sala tem prioridade). Apaga os duplicados de vez — não pode ser desfeito. Rode este depois do botão acima.</small></div>'+
+        '<small>Varre todos os temas, agrupa por turma+código, e mantém só o mais completo de cada grupo (o que já foi aplicado em sala tem prioridade). Apaga os duplicados de vez — não pode ser desfeito. Rode este depois do botão acima.</small>'+
+        '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
+        '<small>Apaga TODOS os conteúdos, temas, turmas, registros, alunos e notas — local e no Firebase (se conectado). Suas configurações (modelo, credenciais) não são afetadas. <strong>Não pode ser desfeito.</strong></small></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveConfig()">Salvar</button></div></div></div>';
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function closeModal(){ _relTemasIncluidos=null; const w=document.getElementById('modalWrap'); if(w)w.remove(); }
 function saveConfig(){
-  const key=document.getElementById('cfgKey').value.trim();
   const model=document.getElementById('cfgModel').value.trim()||'claude-sonnet-4-6';
   const fb=document.getElementById('cfgFb').value.trim();
   localStorage.setItem(LS_MODEL,model);
@@ -3380,7 +3575,6 @@ function saveConfig(){
     if(fb){ try{ JSON.parse(fb); }catch(e){ toast('Firebase: JSON inválido.','err'); return; } }
     localStorage.setItem(LS_FB,fb); fbChanged=true;
   }
-  if(DB){ DB.ref('anthropicKey').set(key); } else { localStorage.setItem(LS_KEY,key); }
   closeModal();
   if(fbChanged){ toast('Configurações salvas. Recarregando…','ok'); setTimeout(()=>location.reload(),700); }
   else toast('Configurações salvas.','ok');
@@ -3464,11 +3658,27 @@ function renderHoje(){
   const saud=hojeOffset<0?'Você está vendo':hojeOffset>0?'Você está vendo':(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite');
   const uni=unidadeDoDia(dia);
   const aulas=SCHEDULE.filter(x=>x.dia===dia).sort((a,b)=>a.ini.localeCompare(b.ini));
+  const dataHojeISO=now.toISOString().slice(0,10);
+  const planejHoje=planejamentosDoDia(dataHojeISO);
   let html='<div class="hoje-head"><h2>'+saud+(hojeOffset!==0?' — '+DIAS_LONGO[dia]:'!')+'</h2>'+
     '<div class="hoje-nav"><button class="btn ghost sm" onclick="hojeMudarDia(-1)">‹ dia anterior</button>'+
     (hojeOffset!==0?'<button class="btn ghost sm" onclick="hojeOffset=0;try{localStorage.setItem(\'leciona_hojeoffset\',\'0\')}catch(e){};renderHoje()">hoje</button>':'')+
     '<button class="btn ghost sm" onclick="hojeMudarDia(1)">próximo dia ›</button></div>'+
     '<div class="hoje-data">'+DIAS_LONGO[dia]+' · '+now.toLocaleDateString('pt-BR')+(uni?(' · '+uni):'')+' · '+bimAtual()+'</div></div>';
+  if(planejHoje.length){
+    html+='<h3 style="font-family:var(--serif);font-size:15px;margin:4px 0 8px">📅 Cronograma de hoje</h3><div class="hoje-list" style="margin-bottom:22px">'+
+      planejHoje.map(({conteudo,entry,tema})=>{
+        const tu=turmas[conteudo.turmaId]||{};
+        const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
+        return '<div class="hoje-row">'+
+          '<div class="hoje-info"><b>'+esc(tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span></div>'+
+          '<div class="hoje-acoes">'+
+            '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
+            '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
+          '</div></div>';
+      }).join('')+
+    '</div>';
+  }
   if(!aulas.length){ html+='<div class="empty"><p>Sem aulas neste dia. 🎉</p><p style="margin-top:10px"><button class="btn" onclick="setView(\'gestao\')">Ir para a Gestão</button></p></div>'; box.innerHTML=html; return; }
   html+='<div class="hoje-list">'+aulas.map(x=>{
     const serie=SERIE_NUM[x.serie]; const u=unidadeDoDia(x.dia);
@@ -3618,8 +3828,7 @@ function renderProgressoBar(){
     temasDoConteudo(c.id).forEach(t=>{
       totalTemas++;
       const regsT=registrosDoTema(t.id).filter(r=>r.turmaId===scope.turma);
-      const todosRegs=registrosDoTema(t.id);
-      if(regsT.length||todosRegs.length) temasComReg++;
+      if(regsT.length) temasComReg++;
       regsT.forEach(r=>(r.objetos||[]).forEach(k=>{ if(k in objContadores) objContadores[k]++; }));
     });
   });
@@ -4455,8 +4664,6 @@ function toggleResp(i){ const el=document.getElementById('fq'+i); if(el) el.clas
 
 /* O bloqueio anterior via touchmove/preventDefault travava a rolagem do app inteiro (modais, listas) e foi removido.
    A prevenção do pull-to-refresh nativo agora depende só do overscroll-behavior no CSS (mais seguro, não quebra scroll). */
-boot();
-
 
 /* =========================================================
    ADAPTAÇÕES INCLUSIVAS (material adaptado para impressão)
@@ -4523,8 +4730,6 @@ function openAdaptar(){
 }
 
 async function gerarAdaptado(){
-  const key=getKey();
-  if(!key){ toast('Configure a chave da IA em \u2699.','err'); return; }
   const perfis=[...document.querySelectorAll('input[name=adPerf]:checked')].map(c=>c.value);
   const bases=[...document.querySelectorAll('#adBases input[type=checkbox]:checked')].map(c=>c.value);
   if(!perfis.length){ toast('Marque ao menos um perfil.','err'); return; }
@@ -4539,7 +4744,7 @@ async function gerarAdaptado(){
     const __label='adaptando para '+esc(pl)+'… ('+(i+1)+'/'+perfis.length+')';
     const __timerId=prog?startGenTimer(()=>__label,t=>{ prog.innerHTML='<span class="spin dark"></span> '+t; },'adapt'):null;
     try{
-      const r=await genAdaptOne(pk,bases,key);
+      const r=await genAdaptOne(pk,bases);
       if(r){ editing.adaptado[pk]=r; ok++; collectMeta(); persistTema(editing); dirty=false; }
       else falha++;
     }catch(e){ falha++; err=e.message; }
@@ -4550,7 +4755,7 @@ async function gerarAdaptado(){
   toast(ok+' adaptação(ões) gerada(s)'+(falha?(', '+falha+' falhou ('+(err||'').slice(0,80)+')'):'')+'.', falha?'err':'ok');
 }
 
-async function genAdaptOne(perfK,bases,key){
+async function genAdaptOne(perfK,bases){
   const pl=(ADAPT_PERFIS.find(pf=>pf.k===perfK)||{}).label||perfK;
   const t=editing;
   const bimNum=(t.bimestre||'').charAt(0);
@@ -4566,7 +4771,7 @@ async function genAdaptOne(perfK,bases,key){
       'Adapte o material ORIGINAL de "'+label+'" abaixo para o perfil "'+pl+'". Mantenha o objetivo; adeque linguagem e estrutura ao perfil.'+
       '\n\n### '+label+' (original)\n'+txt;
     try{
-      const raw=await callClaude(sys,usr,key);
+      const raw=await callClaude(sys,usr);
       const clean=(raw||'').replace(/```markdown|```/g,'').trim();
       if(clean){ out[bk]=clean; any=true; }
     }catch(e){ /* segue tentando as outras bases mesmo se uma falhar */ }
@@ -4602,7 +4807,7 @@ function imprimirAdaptado(perfK){
   let body='<div class="tema">';
   ADAPT_BASES.forEach(b=>{ const v=ad[b.k]; if(!v) return;
     body+='<h4>'+esc(b.label)+'</h4>'+(b.k==='mapaMental'?mdMapToHtml(v):renderMd(v,'print'));
-    if(b.k==='atividade'||b.k==='questoes'){ body+='<div class="resp"><p class="rl">Respostas:</p>'+Array(6).join('<div class="ln"></div>')+'</div>'; }
+    if(b.k==='atividade'||b.k==='questoes'){ body+='<div class="resp"><p class="rl">Respostas:</p>'+Array(7).join('<div class="ln"></div>')+'</div>'; }
   });
   body+='</div>';
   const titulo=editing.nome||'Atividade';
@@ -4629,7 +4834,6 @@ function adaptShell(titulo, body, tu){
     '<div class="aluno">Nome: ____________________________________   Data: ____ / ____ / ______</div>'+
     body+'</body></html>';
 }
-
 </script>
 </body>
 </html>

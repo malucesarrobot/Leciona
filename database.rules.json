@@ -1,0 +1,14 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "leciona": {
+      ".read": "auth != null && (auth.token.email === 'prof.malufc@gmail.com' || auth.token.email === 'malu.cesar@gmail.com')",
+      ".write": "auth != null && (auth.token.email === 'prof.malufc@gmail.com' || auth.token.email === 'malu.cesar@gmail.com')"
+    },
+    "relCfg": {
+      ".read": "auth != null && (auth.token.email === 'prof.malufc@gmail.com' || auth.token.email === 'malu.cesar@gmail.com')",
+      ".write": "auth != null && (auth.token.email === 'prof.malufc@gmail.com' || auth.token.email === 'malu.cesar@gmail.com')"
+    }
+  }
+}
