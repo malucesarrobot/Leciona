@@ -1219,7 +1219,15 @@ function removeConteudo(id){
 }
 function removeTema(id){
   delete temas[id]; localStorage.setItem(LS_TEMAS, JSON.stringify(temas));
+  _temaIdx=null; // senão o índice por conteudoId continua listando o tema apagado
   if(DB) DB.ref('leciona/temas/'+id).remove();
+  // registros de aplicação deste tema ficariam órfãos (apontando pra um tema
+  // que não existe mais) se não forem removidos junto.
+  const regsApagar=Object.values(registros).filter(r=>r.temaId===id);
+  if(regsApagar.length){
+    regsApagar.forEach(r=>{ delete registros[r.id]; if(DB) DB.ref('leciona/registros/'+r.id).remove().catch(()=>{}); });
+    lsSet(LS_REG, JSON.stringify(registros));
+  }
 }
 function removeTurma(id){
   delete turmas[id]; localStorage.setItem(LS_TURMAS, JSON.stringify(turmas));
@@ -1500,6 +1508,7 @@ function renderThemes(){
             '<button class="btn ghost sm" onclick="event.stopPropagation();openExportTema(\''+t.id+'\')" title="Copiar esta aula para outra turma">→</button>'+
             '<button class="btn ghost sm" onclick="event.stopPropagation();projetarTemaId(\''+t.id+'\')">▶</button>'+
             '<button class="btn ghost sm" onclick="event.stopPropagation();abrirModalRegistroCard(\''+t.id+'\')" title="Registrar aplicação (sem projetar)">✓</button>'+
+            '<button class="btn ghost sm danger" onclick="event.stopPropagation();excluirTema(\''+t.id+'\')" title="Excluir esta aula">✕</button>'+
           '</div>';
         });
         html+='</div>';
@@ -1573,6 +1582,17 @@ function editarConteudo(id){
   const nome=prompt('Renomear conteúdo:',c.nome||'');
   if(nome==null) return;
   c.nome=nome.trim()||c.nome; c._avulsos=false; persistConteudo(c); if(!DB) renderThemes();
+}
+function excluirTema(id){
+  const t=temas[id]; if(!t) return;
+  const nRegs=registrosDoTema(id).length;
+  const aviso = nRegs
+    ? 'Excluir a aula "'+(t.nome||'')+'"? Isso também apaga '+nRegs+' registro(s) de aplicação dela. Não pode ser desfeito.'
+    : 'Excluir a aula "'+(t.nome||'')+'"? Não pode ser desfeito.';
+  if(!confirm(aviso)) return;
+  removeTema(id); // já limpa os registros vinculados
+  if(!DB) renderThemes();
+  toast('Aula excluída.','ok');
 }
 function excluirConteudo(id){
   const ts=temasDoConteudo(id);
@@ -1726,7 +1746,7 @@ async function limparTurmasDuplicadas(){
   Object.values(turmas).forEach(t=>{ if(!t) return; const k=chaveTurma(t); (grupos[k]=grupos[k]||[]).push(t); });
 
   let turmasRemovidas=0, gruposAfetados=0;
-  const contsAtualizados=[], temasAtualizados=[], regsAtualizados=[], turmasApagar=[];
+  const contsAtualizados=[], temasAtualizados=[], regsAtualizados=[], alunosAtualizados=[], notasAtualizadas=[], ativsAtualizadas=[], turmasApagar=[];
   const chaves=Object.keys(grupos);
   for(let i=0;i<chaves.length;i++){
     const lista=grupos[chaves[i]];
@@ -1734,6 +1754,7 @@ async function limparTurmasDuplicadas(){
       gruposAfetados++;
       const pontuar=t=>{
         let p = t.letra ? 1000 : 0; // formato novo (serie+letra) tem prioridade sobre nome digitado à mão
+        p += Object.values(alunos).filter(a=>a.turmaId===t.id).length*50; // turma com alunos de verdade tem prioridade
         p += Object.values(conteudos).filter(c=>c.turmaId===t.id).length*10;
         return p;
       };
@@ -1742,9 +1763,19 @@ async function limparTurmasDuplicadas(){
       ordenado.slice(1).forEach(perdedor=>{
         Object.values(conteudos).forEach(c=>{ if(c.turmaId===perdedor.id){ c.turmaId=manter.id; contsAtualizados.push(c); } });
         Object.values(temas).forEach(t=>{ if(t.turmaId===perdedor.id){ t.turmaId=manter.id; temasAtualizados.push(t); } });
-        // registros de aplicação também referenciam turmaId — sem isto, ficam
-        // órfãos apontando pra uma turma apagada e somem da barra de progresso.
+        // registros de aplicação, alunos, notas e atividades de controle também
+        // referenciam turmaId/turmaIds — sem migrar isso junto, ficam órfãos
+        // apontando pra uma turma apagada (alunos inteiros "somem" da tela de Notas).
         Object.values(registros).forEach(r=>{ if(r.turmaId===perdedor.id){ r.turmaId=manter.id; regsAtualizados.push(r); } });
+        Object.values(alunos).forEach(a=>{ if(a.turmaId===perdedor.id){ a.turmaId=manter.id; alunosAtualizados.push(a); } });
+        Object.values(notasCtrl).forEach(n=>{ if(n.turmaId===perdedor.id){ n.turmaId=manter.id; notasAtualizadas.push(n); } });
+        Object.values(atividadesCtrl).forEach(av=>{
+          if((av.turmaIds||[]).includes(perdedor.id)){
+            av.turmaIds=av.turmaIds.filter(tid=>tid!==perdedor.id);
+            if(!av.turmaIds.includes(manter.id)) av.turmaIds.push(manter.id);
+            ativsAtualizadas.push(av);
+          }
+        });
         turmasApagar.push(perdedor.id);
         turmasRemovidas++;
       });
@@ -1760,12 +1791,18 @@ async function limparTurmasDuplicadas(){
   lsSet(LS_CONT, JSON.stringify(conteudos));
   lsSet(LS_TEMAS, JSON.stringify(temas));
   if(regsAtualizados.length) lsSet(LS_REG, JSON.stringify(registros));
+  if(alunosAtualizados.length) lsSet(LS_ALUNOS, JSON.stringify(alunos));
+  if(notasAtualizadas.length) lsSet(LS_NOTAS, JSON.stringify(notasCtrl));
+  if(ativsAtualizadas.length) lsSet(LS_ATVCTRL, JSON.stringify(atividadesCtrl));
   if(DB){
     const updates={};
     turmasApagar.forEach(id=>updates['leciona/turmas/'+id]=null);
     contsAtualizados.forEach(c=>updates['leciona/conteudos/'+c.id]=c);
     temasAtualizados.forEach(t=>updates['leciona/temas/'+t.id]=t);
     regsAtualizados.forEach(r=>updates['leciona/registros/'+r.id]=r);
+    alunosAtualizados.forEach(a=>updates['leciona/alunos/'+a.id]=a);
+    notasAtualizadas.forEach(n=>updates['leciona/notas_ctrl/'+n.id]=n);
+    ativsAtualizadas.forEach(av=>updates['leciona/atividades_ctrl/'+av.id]=av);
     DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
   }
   renderThemes();
@@ -1804,16 +1841,24 @@ async function limparDuplicatasGeral(){
 
   if(!idsParaApagar.length){ toast('Nenhuma duplicata encontrada — está tudo limpo.','ok'); return; }
 
+  // registros de aplicação do tema perdedor ficariam órfãos (apontando pra um
+  // tema que não existe mais) se não forem removidos junto.
+  const idsSet=new Set(idsParaApagar);
+  const regsApagar=Object.values(registros).filter(r=>idsSet.has(r.temaId));
+
   idsParaApagar.forEach(id=>{ delete temas[id]; });
+  regsApagar.forEach(r=>{ delete registros[r.id]; });
   _temaIdx=null;
   lsSet(LS_TEMAS, JSON.stringify(temas));
+  if(regsApagar.length) lsSet(LS_REG, JSON.stringify(registros));
   if(DB){
     const updates={};
     idsParaApagar.forEach(id=>updates['leciona/temas/'+id]=null); // null apaga no Firebase, em lote
+    regsApagar.forEach(r=>updates['leciona/registros/'+r.id]=null);
     DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar exclusões com o Firebase (removido localmente). '+e.message,'err'));
   }
   renderThemes();
-  toast(idsParaApagar.length+' tema(s) duplicado(s) removidos, em '+gruposAfetados+' grupo(s) — mantido sempre o mais completo de cada um.', 'ok');
+  toast(idsParaApagar.length+' tema(s) duplicado(s) removidos, em '+gruposAfetados+' grupo(s) — mantido sempre o mais completo de cada um.'+(regsApagar.length?(' '+regsApagar.length+' registro(s) órfão(s) também limpo(s).'):''), 'ok');
 }
 /* Apaga TODOS os dados pedagógicos (conteúdos, temas, turmas, registros,
    alunos, notas) — local e no Firebase. Não mexe em configurações (chave da
@@ -3226,8 +3271,43 @@ function addTurma(){
   closeModal(); renderThemes(); openTurmas();
 }
 function excluirTurma(id){
-  if(!confirm('Excluir esta turma? Os registros de status dela nos temas deixam de aparecer.')) return;
-  removeTurma(id); closeModal(); if(!DB) renderThemes(); openTurmas();
+  const t=turmas[id]; if(!t) return;
+  // Excluir a turma sozinha deixava conteúdo/temas/alunos/notas órfãos (existiam
+  // no banco mas ficavam invisíveis, sem turma pra aparecer). Agora avisa com
+  // números reais e apaga tudo que depende dela junto.
+  const conts=Object.values(conteudos).filter(c=>c.turmaId===id);
+  const temasDaTurma=Object.values(temas).filter(x=>x.turmaId===id);
+  const alunosDaT=Object.values(alunos).filter(a=>a.turmaId===id);
+  const registrosDaT=Object.values(registros).filter(r=>r.turmaId===id);
+  const notasDaT=Object.values(notasCtrl).filter(n=>n.turmaId===id);
+  const ativsAfetadas=Object.values(atividadesCtrl).filter(av=>(av.turmaIds||[]).includes(id));
+
+  const partes=[];
+  if(conts.length) partes.push(conts.length+' conteúdo(s)');
+  if(temasDaTurma.length) partes.push(temasDaTurma.length+' tema(s)/aula(s)');
+  if(alunosDaT.length) partes.push(alunosDaT.length+' aluno(s)');
+  if(registrosDaT.length) partes.push(registrosDaT.length+' registro(s) de aplicação');
+  if(notasDaT.length) partes.push(notasDaT.length+' nota(s) lançada(s)');
+  const aviso = partes.length
+    ? 'Excluir a turma "'+turmaNome(t)+'" também vai apagar: '+partes.join(', ')+'. Não pode ser desfeito. Continuar?'
+    : 'Excluir a turma "'+turmaNome(t)+'"? Não pode ser desfeito.';
+  if(!confirm(aviso)) return;
+
+  temasDaTurma.forEach(x=>removeTema(x.id)); // já limpa os registros vinculados a cada tema
+  conts.forEach(c=>removeConteudo(c.id));
+  alunosDaT.forEach(a=>{ delete alunos[a.id]; if(DB) DB.ref('leciona/alunos/'+a.id).remove().catch(()=>{}); });
+  if(alunosDaT.length) lsSet(LS_ALUNOS, JSON.stringify(alunos));
+  notasDaT.forEach(n=>{ delete notasCtrl[n.id]; if(DB) DB.ref('leciona/notas_ctrl/'+n.id).remove().catch(()=>{}); });
+  if(notasDaT.length) lsSet(LS_NOTAS, JSON.stringify(notasCtrl));
+  ativsAfetadas.forEach(av=>{
+    av.turmaIds=(av.turmaIds||[]).filter(tid=>tid!==id);
+    if(av.turmaIds.length) persistAtivCtrl(av);
+    else { delete atividadesCtrl[av.id]; lsSet(LS_ATVCTRL, JSON.stringify(atividadesCtrl)); if(DB) DB.ref('leciona/atividades_ctrl/'+av.id).remove().catch(()=>{}); }
+  });
+
+  removeTurma(id);
+  closeModal(); if(!DB) renderThemes(); openTurmas();
+  toast('Turma e todo o conteúdo vinculado foram excluídos.','ok');
 }
 
 /* =========================================================
@@ -4142,7 +4222,44 @@ const OBJ_TIPO_PADRAO={quadro:'texto',estudo:'texto',slides:'debate',mapaMental:
 function persistAluno(a){ a._ts=Date.now(); alunos[a.id]=a; lsSet(LS_ALUNOS,JSON.stringify(alunos)); if(DB) DB.ref('leciona/alunos/'+a.id).set(a).catch(e=>console.warn(e)); }
 function persistAtivCtrl(av){ av._ts=Date.now(); atividadesCtrl[av.id]=av; lsSet(LS_ATVCTRL,JSON.stringify(atividadesCtrl)); if(DB) DB.ref('leciona/atividades_ctrl/'+av.id).set(av).catch(e=>console.warn(e)); }
 function persistNota(n){ n._ts=Date.now(); notasCtrl[n.id]=n; lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); if(DB) DB.ref('leciona/notas_ctrl/'+n.id).set(n).catch(e=>console.warn(e)); }
-function removerAluno(id){ delete alunos[id]; lsSet(LS_ALUNOS,JSON.stringify(alunos)); if(DB) DB.ref('leciona/alunos/'+id).remove(); renderNotas(); }
+function removerAluno(id){
+  const al=alunos[id]; if(!al) return;
+  if(!confirm('Remover "'+(al.nome||'este aluno')+'"? As notas lançadas para ele também serão removidas. Não pode ser desfeito.')) return;
+  delete alunos[id];
+  lsSet(LS_ALUNOS,JSON.stringify(alunos));
+  if(DB) DB.ref('leciona/alunos/'+id).remove().catch(e=>toast('⚠ Removido localmente, mas falhou ao remover no Firebase: '+e.message,'err'));
+  // notas lançadas pra esse aluno ficariam órfãs (sem aluno pra aparecer) — limpa junto
+  const notasApagar=Object.keys(notasCtrl).filter(nid=>notasCtrl[nid].alunoId===id);
+  notasApagar.forEach(nid=>{ delete notasCtrl[nid]; if(DB) DB.ref('leciona/notas_ctrl/'+nid).remove().catch(()=>{}); });
+  if(notasApagar.length) lsSet(LS_NOTAS,JSON.stringify(notasCtrl));
+  renderNotas();
+  toast('Aluno removido.','ok');
+}
+function abrirEditarAluno(id){
+  const al=alunos[id]; if(!al) return;
+  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
+    '<div class="modal-h"><h3>Editar aluno</h3></div>'+
+    '<div class="modal-b">'+
+      '<div class="field"><label>Nome completo</label><input id="alunoEdNome" value="'+esc(al.nome||'')+'" autofocus></div>'+
+      '<div class="field"><label>Número (opcional)</label><input id="alunoEdNum" type="number" value="'+esc(al.numero!=null?String(al.numero):'')+'" placeholder="ex.: 1"></div>'+
+    '</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
+    '<button class="btn primary" onclick="salvarEdicaoAluno(\''+id+'\')">Salvar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  setTimeout(()=>document.getElementById('alunoEdNome')?.focus(),50);
+}
+function salvarEdicaoAluno(id){
+  const al=alunos[id]; if(!al) return;
+  const nome=(document.getElementById('alunoEdNome')?.value||'').trim();
+  const numStr=document.getElementById('alunoEdNum')?.value;
+  if(!nome){ toast('Digite o nome do aluno.','err'); return; }
+  al.nome=nome;
+  al.numero=numStr?parseInt(numStr,10):null;
+  persistAluno(al);
+  closeModal();
+  renderNotas();
+  toast('Aluno atualizado.','ok');
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function alunosDaTurma(turmaId){ return Object.values(alunos).filter(a=>a.turmaId===turmaId&&a.ativo!==false).sort((a,b)=>(a.numero||999)-(b.numero||999)||(a.nome||'').localeCompare(b.nome||'')); }
@@ -4292,7 +4409,7 @@ function renderNotas(){
     const med=mediaAluno(al.id,atvs,turmaId);
     const medStr=med!=null?med.toFixed(1):'-';
     const medCls=med==null?'':(med>=6?'aprovado':'reprovado');
-    h+='<tr><td class="aluno-nome">'+
+    h+='<tr><td class="aluno-nome" style="cursor:pointer" onclick="abrirEditarAluno(\''+al.id+'\')" title="Clique para editar nome/número">'+
       (al.numero?'<span style="color:var(--muted);font-size:11px;margin-right:4px">'+al.numero+'</span>':'')+
       esc(al.nome)+
     '</td>'+
