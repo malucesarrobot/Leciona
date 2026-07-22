@@ -426,6 +426,16 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
 .rk-pos{flex:0 0 40px;font-size:18px;text-align:center}
 .rk-nome{flex:1;font-size:16px}
 .rk-nota{font-size:18px;font-weight:700;color:#6fcaa9}
+
+/* Busca rápida de turma — pula direto pra qualquer turma sem passar pelos
+   4 selects em cascata (Disciplina→Unidade→Série→Turma), útil com muitas
+   turmas cadastradas. */
+.busca-turma-wrap{position:relative}
+.busca-turma-resultados{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);z-index:20;max-height:260px;overflow:auto;margin-top:4px}
+.busca-turma-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--line)}
+.busca-turma-item:last-child{border-bottom:0}
+.busca-turma-item:hover{background:var(--surface)}
+.busca-turma-item small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
 </style>
 </head>
 <body>
@@ -459,6 +469,11 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
   <div id="viewNotas" class="hidden"><div class="notas-wrap" id="notasBody"></div></div>
   <div id="viewGestao" class="hidden">
     <aside class="scope">
+      <div class="field busca-turma-wrap">
+        <label>Busca rápida de turma</label>
+        <input id="buscaTurmaRapida" type="search" placeholder="🔍 digite pra pular direto…" oninput="buscarTurmaRapida(this.value)" onblur="setTimeout(fecharBuscaTurmaRapida,150)" autocomplete="off">
+        <div id="buscaTurmaResultados" class="busca-turma-resultados hidden"></div>
+      </div>
       <div class="field"><label>Disciplina</label><select id="selDisc" onchange="onScopeChange()"></select></div>
       <div class="field"><label>Unidade / Escola</label><select id="selUnidade" onchange="onScopeChange()"></select></div>
       <div class="field"><label>Série / Ano</label><select id="selSerie" onchange="onScopeChange()"></select></div>
@@ -4257,9 +4272,12 @@ function renderPainel(){
 
   box.innerHTML=html;
 }
-function abrirTurmaNoPainel(turmaId){
+/* Pula direto pra uma turma (ajustando disciplina/unidade/série/bimestre
+   junto, já que os 4 selects são em cascata) — usado pelo Painel e pela
+   busca rápida, pra não ter que clicar select por select toda vez. */
+function irParaTurma(turmaId, bimOverride){
   const t=turmas[turmaId]; if(!t) return;
-  scope.disc=t.disciplina; scope.unidade=t.unidade; scope.serie=t.serie; scope.turma=turmaId; scope.bim=_painelBim||scope.bim;
+  scope.disc=t.disciplina; scope.unidade=t.unidade; scope.serie=t.serie; scope.turma=turmaId; scope.bim=bimOverride||scope.bim;
   saveScope();
   setView('gestao');
   const selDisc=document.getElementById('selDisc'); if(selDisc) selDisc.value=scope.disc;
@@ -4270,6 +4288,29 @@ function abrirTurmaNoPainel(turmaId){
   const selTurma=document.getElementById('selTurma'); if(selTurma) selTurma.value=scope.turma;
   const selBim=document.getElementById('selBim'); if(selBim) selBim.value=scope.bim;
   renderThemes();
+}
+function abrirTurmaNoPainel(turmaId){ irParaTurma(turmaId, _painelBim); }
+function _normBusca(s){ return (s||'').toLowerCase().replace(/[ºª°\s]/g,''); }
+function buscarTurmaRapida(termo){
+  const box=document.getElementById('buscaTurmaResultados'); if(!box) return;
+  termo=(termo||'').trim().toLowerCase();
+  if(!termo){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  const termoNorm=_normBusca(termo);
+  const results=Object.values(turmas).filter(t=>t &&
+    (_normBusca(turmaNome(t)).includes(termoNorm) || (t.disciplina||'').toLowerCase().includes(termo) || (t.unidade||'').toLowerCase().includes(termo))
+  ).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b))).slice(0,10);
+  box.innerHTML = results.length
+    ? results.map(t=>'<div class="busca-turma-item" onmousedown="selecionarTurmaRapida(\''+t.id+'\')">'+esc(turmaNome(t))+'<small>'+esc(t.disciplina||'')+' · '+esc(t.unidade||'')+'</small></div>').join('')
+    : '<div class="busca-turma-item" style="cursor:default;opacity:.6">Nada encontrado.</div>';
+  box.classList.remove('hidden');
+}
+function fecharBuscaTurmaRapida(){
+  const box=document.getElementById('buscaTurmaResultados'); if(box) box.classList.add('hidden');
+}
+function selecionarTurmaRapida(turmaId){
+  const inp=document.getElementById('buscaTurmaRapida'); if(inp) inp.value='';
+  fecharBuscaTurmaRapida();
+  irParaTurma(turmaId);
 }
 
 function renderAcervo(){
@@ -4723,6 +4764,7 @@ function renderNotas(){
       '<option value="aritmetica"'+(getMediaModo(turmaId)==='aritmetica'?' selected':'')+'>aritmética (todos iguais)</option>'+
     '</select>'+
     '<button class="btn ghost sm" onclick="exportarNotasCSV()">↓ CSV</button>'+
+    '<button class="btn ghost sm" onclick="exportarNotasTodasTurmasCSV()" title="Exporta as notas de todas as turmas de '+esc(tu.disciplina||'')+'">↓ CSV — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
     '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
   '</div>';
 
@@ -4945,6 +4987,36 @@ function exportarNotasCSV(){
   a.download='Notas_'+esc(turmaNome(tu))+'_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
   toast('CSV exportado.','ok');
+}
+/* Exporta as notas de TODAS as turmas de uma disciplina de uma vez — cada
+   turma continua com suas próprias colunas de atividade (elas variam de
+   turma pra turma), separadas por um cabeçalho "TURMA: ..." dentro do mesmo
+   arquivo, pra não precisar baixar um CSV por turma manualmente. */
+function exportarNotasTodasTurmasCSV(){
+  const disc=scope.disc;
+  if(!disc){ toast('Selecione uma disciplina.','err'); return; }
+  const turmasDisc=Object.values(turmas).filter(t=>t&&t.disciplina===disc).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b)));
+  if(!turmasDisc.length){ toast('Nenhuma turma de '+disc+'.','err'); return; }
+  const blocos=[]; let totalAlunos=0;
+  turmasDisc.forEach(tu=>{
+    const als=alunosDaTurma(tu.id);
+    if(!als.length) return;
+    const atvs=atividadesDaTurma(tu.id);
+    const header=['Num','Nome',...atvs.map(av=>av.nome),'Média'].map(csvCell).join(',');
+    const rows=als.map(al=>{
+      const med=mediaAluno(al.id,atvs,tu.id);
+      return [csvCell(al.numero||''),csvCell(al.nome),...atvs.map(av=>{ const n=notaDoAluno(al.id,av.id); return csvCell(n&&n.valor!=null?n.valor:''); }),csvCell(med!=null?med.toFixed(1):'')].join(',');
+    });
+    blocos.push('TURMA: '+csvCell(turmaNome(tu))+'\n'+header+'\n'+rows.join('\n'));
+    totalAlunos+=als.length;
+  });
+  if(!blocos.length){ toast('Nenhuma turma de '+disc+' tem aluno cadastrado.','err'); return; }
+  const csv=blocos.join('\n\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='Notas_'+esc(disc)+'_todas_turmas_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('CSV de '+blocos.length+' turma(s) exportado ('+totalAlunos+' aluno(s) no total).','ok');
 }
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
