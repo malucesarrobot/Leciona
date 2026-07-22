@@ -627,6 +627,7 @@ const SERIES_BY_DISC = {
   'Filosofia':  ['1ª série EM','2ª série EM','3ª série EM'],
   'Sociologia': ['1ª série EM','2ª série EM','3ª série EM'],
   'Eletiva':    ['1ª série EM','2ª série EM','3ª série EM','6º ano','7º ano','8º ano','9º ano','—'],
+  'Estudo Orientado': ['1ª série EM','2ª série EM','3ª série EM'],
 };
 const UNIDADES = ['EFG','CEPI Marajó'];
 const LETRAS = ['A','B','C','D','E'];
@@ -2098,7 +2099,7 @@ async function popularTudoAutomaticamente(filtro){
   for(let ti=0; ti<turmasArr.length; ti++){
     const tu=turmasArr[ti];
     const disc=tu.disciplina, serie=tu.serie;
-    if(disc && serie && disc!=='Eletiva'){
+    if(disc && serie && disc!=='Eletiva' && disc!=='Estudo Orientado'){
       let turmaTocada=false;
       bimestresAlvo.forEach(bim=>{
         const arr=MATRIZ[matrizKey(disc,serie,bim)]||[];
