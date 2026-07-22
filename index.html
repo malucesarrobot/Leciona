@@ -4620,6 +4620,7 @@ function mediaGeralTurma(turmaId){
    quem foi marcado mais cedo, em média, fica na frente de quem empatou na
    nota mas foi marcado depois. */
 function medalha(pos){ return pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':pos+'º'; }
+let _rankingModoTurmas='geral'; // 'geral' | 'disciplina'
 function pontualidadeAluno(alunoId, atvs, turmaId){
   const tss=atvs.map(av=>{ const n=notaDoAluno(alunoId,av.id); return (n&&n.valor!=null)?n._ts:null; }).filter(Boolean);
   return tss.length ? tss.reduce((s,t)=>s+t,0)/tss.length : Infinity; // sem nenhuma nota lançada = "mais atrasado" possível
@@ -4655,19 +4656,36 @@ function renderRanking(){
     '<div class="rk-row'+(r.pos<=3?' rk-top':'')+'"><span class="rk-pos">'+medalha(r.pos)+'</span><span class="rk-nome">'+esc(r.aluno.nome)+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
   ).join('') : '<p style="opacity:.6">Ainda sem notas suficientes pra ranquear.</p>';
 
-  // Turmas comparadas: TODAS as suas turmas, de qualquer disciplina — a mesma
-  // turma pode aparecer bem colocada numa matéria e mal em outra, de propósito.
-  let rankingTurmas=Object.values(turmas).map(t=>({turma:t, media:mediaGeralTurma(t.id)}))
-    .filter(r=>r.media!=null)
-    .sort((a,b)=>b.media-a.media);
-  rankingTurmas=calcularPosicoes(rankingTurmas, (a,b)=>a.media===b.media);
-  const turmasHtml = rankingTurmas.length ? rankingTurmas.map(r=>
-    '<div class="rk-row'+(r.pos<=3?' rk-top':'')+(r.turma.id===turmaId?' rk-atual':'')+'"><span class="rk-pos">'+medalha(r.pos)+'</span><span class="rk-nome">'+esc(turmaNome(r.turma))+' <small style="opacity:.6">· '+esc(r.turma.disciplina||'')+'</small>'+(r.turma.id===turmaId?' — vocês!':'')+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
-  ).join('') : '<p style="opacity:.6">Sem dados suficientes pra comparar turmas ainda.</p>';
+  // Turmas comparadas: alterna entre visão Geral (todas juntas, qualquer
+  // disciplina) e Por disciplina (uma classificação própria pra cada
+  // matéria — a mesma turma pode ser 1ª numa e última noutra, de propósito).
+  const linha=(r,destacar)=>'<div class="rk-row'+(r.pos<=3?' rk-top':'')+(r.turma.id===turmaId?' rk-atual':'')+'"><span class="rk-pos">'+medalha(r.pos)+'</span><span class="rk-nome">'+esc(turmaNome(r.turma))+(destacar?'':' <small style="opacity:.6">· '+esc(r.turma.disciplina||'')+'</small>')+(r.turma.id===turmaId?' — vocês!':'')+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>';
+  const comMedia=Object.values(turmas).map(t=>({turma:t, media:mediaGeralTurma(t.id)})).filter(r=>r.media!=null);
+
+  const toggle='<div class="aval-tabs" style="justify-content:center">'+
+    '<button class="aval-tab'+(_rankingModoTurmas==='geral'?' active':'')+'" onclick="_rankingModoTurmas=\'geral\';renderRanking()">Geral</button>'+
+    '<button class="aval-tab'+(_rankingModoTurmas==='disciplina'?' active':'')+'" onclick="_rankingModoTurmas=\'disciplina\';renderRanking()">Por disciplina</button>'+
+  '</div>';
+
+  let turmasHtml;
+  if(!comMedia.length){
+    turmasHtml='<p style="opacity:.6">Sem dados suficientes pra comparar turmas ainda.</p>';
+  } else if(_rankingModoTurmas==='disciplina'){
+    const discs=[...new Set(comMedia.map(r=>r.turma.disciplina).filter(Boolean))].sort();
+    turmasHtml=discs.map(disc=>{
+      let lista=comMedia.filter(r=>r.turma.disciplina===disc).sort((a,b)=>b.media-a.media);
+      lista=calcularPosicoes(lista,(a,b)=>a.media===b.media);
+      return '<h4 style="color:var(--ochre);opacity:.85;font-size:14px;margin:14px 0 6px">'+esc(disc)+'</h4>'+lista.map(r=>linha(r,true)).join('');
+    }).join('');
+  } else {
+    let lista=comMedia.slice().sort((a,b)=>b.media-a.media);
+    lista=calcularPosicoes(lista,(a,b)=>a.media===b.media);
+    turmasHtml=lista.map(r=>linha(r,false)).join('');
+  }
 
   document.getElementById('rankingBody').innerHTML =
     '<div class="rk-section"><h3>Ranking da turma</h3>'+alunosHtml+'</div>'+
-    '<div class="rk-section"><h3>Todas as turmas, todas as disciplinas</h3>'+turmasHtml+'</div>';
+    '<div class="rk-section"><h3>Turmas</h3>'+toggle+turmasHtml+'</div>';
 }
 
 // ── Render principal ──────────────────────────────────────────────────────
