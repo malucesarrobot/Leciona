@@ -5070,9 +5070,12 @@ function renderMd(s, mode){
     if(/^([-*_])\1{2,}$/.test(t)){ closeL(); out+='<hr style="border:none;border-top:1px solid currentColor;opacity:.3;margin:.8em 0">'; i++; continue; }
     if(t.startsWith('>')){ closeL(); const ql=[]; while(i<lines.length && lines[i].trim().startsWith('>')){ ql.push(lines[i].trim().replace(/^>\s?/,'')); i++; } out+='<blockquote style="border-left:4px solid #c9762f;background:rgba(127,127,127,.12);padding:.3em .8em;margin:.6em 0;border-radius:4px">'+ql.map(q=>mdInline(q)).join('<br>')+'</blockquote>'; continue; }
     if(/^#{1,6}\s/.test(t)){ closeL(); out+=HB+mdInline(t.replace(/^#+\s/,''))+HE; tituloFeito=true; }
-    else if(t!=='' && !tituloFeito && ehCaixaAlta(t) && t.length<=100){
+    else if(t!=='' && !tituloFeito && !/^[-*•]\s/.test(t) && ehCaixaAlta(t) && t.length<=100){
       // primeira linha, em CAIXA ALTA e curta = título do texto (padrão do
       // Quadro). Parágrafos normais (mesmo na 1ª linha) NÃO viram título.
+      // Exclui linhas de lista: uma alternativa como "- B) A CLT" também bate
+      // no teste de "caixa alta" (sigla curta) e virava título por engano,
+      // quebrando a lista de alternativas no meio.
       closeL(); out+=HB+mdInline(t)+HE; tituloFeito=true;
     }
     else if(/^\d+[.)]\s+\S/.test(t) && ehCaixaAlta(t.replace(/^\d+[.)]\s+/,''))){
@@ -5272,7 +5275,16 @@ async function gerarAdaptado(){
   const bases=[...document.querySelectorAll('#adBases input[type=checkbox]:checked')].map(c=>c.value);
   if(!perfis.length){ toast('Marque ao menos um perfil.','err'); return; }
   if(!bases.length){ toast('Marque ao menos uma base com conteúdo.','err'); return; }
-  if(!confirm('Isto fará até '+(perfis.length*bases.length)+' geração(ões) na API (uma por base × perfil, mais robusto contra falhas; consome créditos da sua conta). Continuar?')) return;
+  // Checa ANTES de gastar créditos: base marcada mas sem texto nenhum nesse
+  // tema falha silenciosamente lá na frente — melhor avisar já aqui, com
+  // clareza do motivo, em vez de um "1 falhou" genérico depois.
+  const basesComConteudo=bases.filter(bk=>{ const v=adaptSourceText(editing,bk); return !!(v&&v.trim()); });
+  if(!basesComConteudo.length){ toast('Nenhuma das bases marcadas tem conteúdo neste tema ainda — gere/preencha Quadro, Estudo, Atividade ou Questões primeiro.','err'); return; }
+  if(basesComConteudo.length<bases.length){
+    const vazias=bases.filter(bk=>!basesComConteudo.includes(bk)).map(bk=>(ADAPT_BASES.find(b=>b.k===bk)||{}).label||bk);
+    toast('Aviso: "'+vazias.join('", "')+'" está vazia neste tema e vai ser pulada.','');
+  }
+  if(!confirm('Isto fará até '+(perfis.length*basesComConteudo.length)+' geração(ões) na API (uma por base × perfil, mais robusto contra falhas; consome créditos da sua conta). Continuar?')) return;
   const btn=document.getElementById('adBtn'); if(btn)btn.disabled=true;
   const prog=document.getElementById('adProg');
   if(!editing.adaptado) editing.adaptado={};
@@ -5297,7 +5309,10 @@ async function genAdaptOne(perfK,bases){
   const pl=(ADAPT_PERFIS.find(pf=>pf.k===perfK)||{}).label||perfK;
   const t=editing;
   const bimNum=(t.bimestre||'').charAt(0);
-  const sys='Você é professora especialista em educação inclusiva ('+t.disciplina+', '+t.serie+', Brasil). Produz material adaptado para o perfil "'+pl+'". REGRA INEGOCIÁVEL: mantenha o MESMO objetivo de aprendizagem e o conteúdo essencial da matriz (DC-GO/BNCC); adapte apenas a FORMA de acesso, NUNCA esvazie o conteúdo. Orientação para este perfil: '+(ADAPT_GUIA[perfK]||'')+' Responda APENAS o material adaptado em texto/markdown (use ## para títulos, - para listas; para questões mantenha alternativas A) B) C)), sem nenhum texto fora do conteúdo (sem JSON, sem preâmbulo).';
+  const sys='Você é professora especialista em educação inclusiva de '+t.disciplina+' ('+t.serie+'), rede estadual de Goiás, com lente decolonial e pan-africanista — a MESMA perspectiva já usada na produção do material original que você vai adaptar agora. '+
+    'REGRA INEGOCIÁVEL Nº1: mantenha o mesmo objetivo de aprendizagem, o conteúdo essencial da matriz (DC-GO/BNCC) E a mesma perspectiva crítica/decolonial do texto original — adapte só a FORMA de acesso (linguagem, estrutura), nunca a substância, o rigor historiográfico ou o ponto de vista já trabalhado. Não abrande, não neutralize e não generalize a abordagem crítica do original. '+
+    'REGRA INEGOCIÁVEL Nº2: não invente referências bibliográficas novas — se o original citar autores/obras, preserve exatamente como estão; se não citar nenhuma, não adicione nenhuma. '+
+    'Orientação de acessibilidade para este perfil: '+(ADAPT_GUIA[perfK]||'')+' Responda APENAS o material adaptado em markdown (## para títulos; listas com "- "; para questões, cada alternativa numa linha de lista própria, ex.: "- A) texto da alternativa"), sem nenhum texto fora do conteúdo (sem JSON, sem preâmbulo).';
   const out={}; let any=false;
   // Uma chamada por base: evita que uma falha de parse de JSON combinado derrube todas as adaptações de uma vez
   for(let i=0;i<bases.length;i++){
