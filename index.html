@@ -410,6 +410,22 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
   .meta-pane{display:none}
   .topbar nav button{padding:7px 10px}
 }
+
+/* Ranking — pra projetar no fim da aula */
+#viewRanking{position:fixed;inset:0;background:var(--ink);color:var(--board-fg);z-index:60;display:flex;flex-direction:column}
+.rk-top-bar{display:flex;align-items:center;gap:12px;padding:14px 60px 14px 24px;background:rgba(0,0,0,.25);flex:0 0 auto;position:relative}
+.rk-top-bar h2{font-family:var(--serif);font-size:18px;flex:1;margin:0}
+.rk-top-bar button{border:0;background:rgba(255,255,255,.08);color:inherit;width:36px;height:36px;border-radius:8px;font-size:16px}
+.rk-top-bar button:hover{background:rgba(255,255,255,.18)}
+.rk-stage{flex:1;overflow:auto;display:flex;flex-wrap:wrap;gap:36px;justify-content:center;padding:5vh 6vw}
+.rk-section{flex:1 1 380px;max-width:480px}
+.rk-section h3{font-family:var(--serif);font-size:22px;color:var(--ochre);margin:0 0 16px;text-align:center}
+.rk-row{display:flex;align-items:center;gap:14px;padding:10px 16px;border-radius:12px;margin-bottom:8px;background:rgba(255,255,255,.05)}
+.rk-row.rk-top{background:rgba(255,255,255,.1);font-weight:700}
+.rk-row.rk-atual{outline:2px solid var(--ochre)}
+.rk-pos{flex:0 0 40px;font-size:18px;text-align:center}
+.rk-nome{flex:1;font-size:16px}
+.rk-nota{font-size:18px;font-weight:700;color:#6fcaa9}
 </style>
 </head>
 <body>
@@ -552,6 +568,11 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
   </div>
   <div class="proj-stage" id="projStage"></div>
   <div class="proj-foot" id="projFoot"></div>
+</div>
+
+<div id="viewRanking" class="hidden">
+  <div class="rk-top-bar"><h2 id="rankingTitulo">🏆 Ranking</h2><button title="Sair" onclick="fecharRanking()">✕</button></div>
+  <div class="rk-stage" id="rankingBody"></div>
 </div>
 
 <div id="toast"></div>
@@ -4579,6 +4600,52 @@ function mediaAluno(alunoId,atvs,turmaId){
   const pesos=pares.reduce((s,x)=>s+x.p,0);
   return pesos>0?total/pesos:null;
 }
+function mediaGeralTurma(turmaId){
+  const als=alunosDaTurma(turmaId), atvs=atividadesDaTurma(turmaId);
+  if(!als.length || !atvs.length) return null;
+  const medias=als.map(a=>mediaAluno(a.id,atvs,turmaId)).filter(m=>m!=null);
+  if(!medias.length) return null;
+  return medias.reduce((s,m)=>s+m,0)/medias.length;
+}
+
+/* ── Ranking — pra projetar no fim da aula: quem está na frente na turma,
+   e como essa turma está colocada frente às outras da mesma disciplina.
+   Pedido explícito da Malu — era a função mais esperada no Cepi Marajó. ── */
+function medalha(i){ return i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'; }
+function abrirRanking(){
+  const turmaId=scope.turma;
+  if(!turmaId){ toast('Selecione uma turma.','err'); return; }
+  if(!alunosDaTurma(turmaId).length){ toast('Essa turma ainda não tem alunos cadastrados.','err'); return; }
+  document.getElementById('viewRanking').classList.remove('hidden');
+  renderRanking();
+}
+function fecharRanking(){ document.getElementById('viewRanking').classList.add('hidden'); }
+function renderRanking(){
+  const turmaId=scope.turma; const tu=turmas[turmaId]||{};
+  document.getElementById('rankingTitulo').textContent='🏆 '+turmaNome(tu)+' · '+(tu.disciplina||'');
+  const atvs=atividadesDaTurma(turmaId);
+  const als=alunosDaTurma(turmaId);
+
+  const ranking=als.map(a=>({aluno:a, media:mediaAluno(a.id,atvs,turmaId)}))
+    .filter(r=>r.media!=null)
+    .sort((a,b)=>b.media-a.media);
+  const alunosHtml = ranking.length ? ranking.map((r,i)=>
+    '<div class="rk-row'+(i<3?' rk-top':'')+'"><span class="rk-pos">'+medalha(i)+'</span><span class="rk-nome">'+esc(r.aluno.nome)+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
+  ).join('') : '<p style="opacity:.6">Ainda sem notas suficientes pra ranquear.</p>';
+
+  // Turmas comparadas: mesma disciplina, todas as suas turmas
+  const outras=Object.values(turmas).filter(t=>t.disciplina===tu.disciplina);
+  const rankingTurmas=outras.map(t=>({turma:t, media:mediaGeralTurma(t.id)}))
+    .filter(r=>r.media!=null)
+    .sort((a,b)=>b.media-a.media);
+  const turmasHtml = rankingTurmas.length ? rankingTurmas.map((r,i)=>
+    '<div class="rk-row'+(i<3?' rk-top':'')+(r.turma.id===turmaId?' rk-atual':'')+'"><span class="rk-pos">'+medalha(i)+'</span><span class="rk-nome">'+esc(turmaNome(r.turma))+(r.turma.id===turmaId?' — vocês!':'')+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
+  ).join('') : '<p style="opacity:.6">Sem dados suficientes pra comparar turmas ainda.</p>';
+
+  document.getElementById('rankingBody').innerHTML =
+    '<div class="rk-section"><h3>Ranking da turma</h3>'+alunosHtml+'</div>'+
+    '<div class="rk-section"><h3>Turmas de '+esc(tu.disciplina||'')+'</h3>'+turmasHtml+'</div>';
+}
 
 // ── Render principal ──────────────────────────────────────────────────────
 function renderNotas(){
@@ -4615,6 +4682,7 @@ function renderNotas(){
       '<option value="aritmetica"'+(getMediaModo(turmaId)==='aritmetica'?' selected':'')+'>aritmética (todos iguais)</option>'+
     '</select>'+
     '<button class="btn ghost sm" onclick="exportarNotasCSV()">↓ CSV</button>'+
+    '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
   '</div>';
 
   // Stats boxes
