@@ -250,6 +250,16 @@ textarea.big{width:100%;min-height:320px;padding:14px;border:1px solid var(--lin
 #viewProjecao.theme-light{background:#faf8f2;color:#1a1a1a}
 #viewProjecao.theme-contrast{background:#000;color:#fff}
 .proj-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(0,0,0,.25);flex:0 0 auto}
+#btnProjAdapt.active{background:#3a5f8a;color:#fff;border-color:#3a5f8a}
+.proj-adapt-panel{position:fixed;top:52px;right:0;bottom:0;width:min(380px,92vw);background:rgba(20,24,22,.97);color:#eef1ee;z-index:55;display:flex;flex-direction:column;box-shadow:-4px 0 18px rgba(0,0,0,.35)}
+.proj-adapt-panel.hidden{display:none!important}
+#viewProjecao.theme-light .proj-adapt-panel{background:rgba(255,255,255,.98);color:#1a1a1a;box-shadow:-4px 0 18px rgba(0,0,0,.12)}
+#viewProjecao.theme-contrast .proj-adapt-panel{background:#000;color:#fff;border-left:2px solid #fff}
+.proj-adapt-head{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.15);flex:0 0 auto}
+.proj-adapt-head select{flex:1;min-width:0}
+.proj-adapt-body{flex:1 1 auto;overflow-y:auto;padding:14px 16px;font-size:15px;line-height:1.5}
+.proj-adapt-body h4{margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;opacity:.7}
+.proj-adapt-body h4:first-child{margin-top:0}
 .theme-light .proj-bar{background:rgba(0,0,0,.05)}
 .proj-bar .ptitle{font-family:var(--serif);font-weight:600;font-size:15px;opacity:.85;max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .proj-bar .spacer{flex:1}
@@ -577,12 +587,20 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button title="Espaçamento" onclick="projSpacing()">↕</button>
       <button title="Tema de cor" onclick="projTheme()">◐</button>
       <button title="Buscar imagem" onclick="projImagem()">⛰</button>
+      <button id="btnProjAdapt" title="Fixar: ver o que o(a) aluno(a) em adaptação está vendo" onclick="toggleProjAdapt()">🧩 Adaptado</button>
       <button title="Registrar aplicação desta aula" onclick="abrirModalRegistro()" style="background:var(--green);color:#fff;border-color:var(--green)">✓ Registrar</button>
       <button title="Sair" onclick="fecharProjecao()">✕</button>
     </div>
   </div>
   <div class="proj-stage" id="projStage"></div>
   <div class="proj-foot" id="projFoot"></div>
+  <div class="proj-adapt-panel hidden" id="projAdaptPanel">
+    <div class="proj-adapt-head">
+      <select id="projAdaptSel" onchange="onProjAdaptPerfilChange()"></select>
+      <button class="btn ghost sm" title="Fechar" onclick="toggleProjAdapt()">✕</button>
+    </div>
+    <div class="proj-adapt-body" id="projAdaptBody"></div>
+  </div>
 </div>
 
 <div id="viewRanking" class="hidden">
@@ -2968,7 +2986,42 @@ function openProjecao(){
   document.getElementById('viewProjecao').classList.remove('hidden');
   document.getElementById('tabProjecao').classList.add('active');
   document.getElementById('tabGestao').classList.remove('active');
-  applyProjVars(); renderProjSwitch(); renderProj(); initProjSwipe();
+  applyProjVars(); renderProjSwitch(); renderProj(); initProjSwipe(); renderProjAdaptPanel();
+}
+/* Painel fixo "Adaptado" — o que o(a) aluno(a) em adaptação está vendo, acessível a qualquer momento durante a projeção */
+function toggleProjAdapt(){
+  const panel=document.getElementById('projAdaptPanel');
+  const btn=document.getElementById('btnProjAdapt');
+  const abrir=panel.classList.contains('hidden');
+  panel.classList.toggle('hidden',!abrir);
+  btn.classList.toggle('active',abrir);
+  if(abrir){ renderProjAdaptSelect(); renderProjAdaptPanel(); }
+}
+function renderProjAdaptSelect(){
+  const sel=document.getElementById('projAdaptSel');
+  if(!sel || sel.dataset.built) return;
+  sel.innerHTML=ADAPT_PERFIS.map(pf=>'<option value="'+pf.k+'">'+esc(pf.label)+'</option>').join('');
+  sel.value=localStorage.getItem('proj_adapt_perfil')||ADAPT_PERFIS[0].k;
+  sel.dataset.built='1';
+}
+function onProjAdaptPerfilChange(){
+  localStorage.setItem('proj_adapt_perfil', document.getElementById('projAdaptSel').value);
+  renderProjAdaptPanel();
+}
+function renderProjAdaptPanel(){
+  const panel=document.getElementById('projAdaptPanel');
+  if(!panel || panel.classList.contains('hidden')) return;
+  const body=document.getElementById('projAdaptBody');
+  const t=proj.tema;
+  if(!t){ body.innerHTML='<p style="opacity:.6">Nenhum tema selecionado.</p>'; return; }
+  const perfil=(document.getElementById('projAdaptSel')||{}).value||localStorage.getItem('proj_adapt_perfil')||ADAPT_PERFIS[0].k;
+  const ad=(t.adaptado||{})[perfil];
+  if(!ad || !Object.keys(ad).length){
+    const pl=(ADAPT_PERFIS.find(pf=>pf.k===perfil)||{}).label||perfil;
+    body.innerHTML='<p style="opacity:.75">Ainda não há material adaptado (<b>'+esc(pl)+'</b>) gerado para "'+esc(t.nome)+'". Gere em <b>&#9855; adaptar</b>, na edição do tema.</p>';
+    return;
+  }
+  body.innerHTML=_adaptBody(ad);
 }
 /* Lista achatada de temas com conteúdo, percorrendo TODAS as turmas da mesma disciplina/bimestre — permite circular entre turmas sem sair da projeção */
 function projListaGlobal(){
@@ -2993,7 +3046,7 @@ function projProximaTurma(dir){
   try{ const sel=document.getElementById('selTurma'); if(sel) sel.value=scope.turma; }catch(e){}
   proj.tema=temas[next.temaId]; proj.idx=0; proj.flip=false; proj.imgMode=false;
   proj.obj=PROJ_ORDER.find(k=>isFilled(proj.tema,k))||'quadro';
-  applyProjVars(); renderProjSwitch(); renderProj();
+  applyProjVars(); renderProjSwitch(); renderProj(); renderProjAdaptPanel();
   toast('Turma '+turmaNome(turmas[next.turmaId])+' · '+proj.tema.nome,'');
 }
 /* Deslizar (swipe) para navegar — útil sobretudo nos slides, sem precisar dos botões */
@@ -5312,6 +5365,7 @@ async function genAdaptOne(perfK,bases){
   const sys='Você é professora especialista em educação inclusiva de '+t.disciplina+' ('+t.serie+'), rede estadual de Goiás, com lente decolonial e pan-africanista — a MESMA perspectiva já usada na produção do material original que você vai adaptar agora. '+
     'REGRA INEGOCIÁVEL Nº1: mantenha o mesmo objetivo de aprendizagem, o conteúdo essencial da matriz (DC-GO/BNCC) E a mesma perspectiva crítica/decolonial do texto original — adapte só a FORMA de acesso (linguagem, estrutura), nunca a substância, o rigor historiográfico ou o ponto de vista já trabalhado. Não abrande, não neutralize e não generalize a abordagem crítica do original. '+
     'REGRA INEGOCIÁVEL Nº2: não invente referências bibliográficas novas — se o original citar autores/obras, preserve exatamente como estão; se não citar nenhuma, não adicione nenhuma. '+
+    'REGRA INEGOCIÁVEL Nº3: se para cumprir a adaptação (ex.: montar uma linha do tempo, dar contexto, aprofundar) você precisar introduzir algum evento, data ou fato que NÃO estava no texto original, esse conteúdo novo também precisa receber a mesma leitura crítica/decolonial do resto do texto — nunca apareça como rótulo neutro de manual didático (ex.: numa tabela, não deixe uma linha "seca" sem glosa enquanto as outras têm interpretação). Se não for possível dar essa leitura crítica ao fato novo com segurança, prefira omiti-lo a inseri-lo sem contexto. '+
     'Orientação de acessibilidade para este perfil: '+(ADAPT_GUIA[perfK]||'')+' Responda APENAS o material adaptado em markdown (## para títulos; listas com "- "; para questões, cada alternativa numa linha de lista própria, ex.: "- A) texto da alternativa"), sem nenhum texto fora do conteúdo (sem JSON, sem preâmbulo).';
   const out={}; let any=false;
   // Uma chamada por base: evita que uma falha de parse de JSON combinado derrube todas as adaptações de uma vez
