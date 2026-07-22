@@ -597,9 +597,9 @@ const SEED_TURMAS = [
 ];
 function seedTurmasIfEmpty(){
   if(localStorage.getItem('leciona_seeded')) return;
-  if(Object.keys(turmas).length){ localStorage.setItem('leciona_seeded','1'); return; }
+  if(Object.keys(turmas).length){ try{ localStorage.setItem('leciona_seeded','1'); }catch(e){} return; }
   SEED_TURMAS.forEach(([d,se,l,u])=>{ const t={id:uid(),disciplina:d,serie:se,letra:l,unidade:u,updatedAt:Date.now()}; t.nome=turmaNome(t); persistTurma(t); });
-  localStorage.setItem('leciona_seeded','1');
+  try{ localStorage.setItem('leciona_seeded','1'); }catch(e){}
   toast('Suas turmas foram pré-carregadas. Ajuste no botão "+ turmas".','ok');
 }
 const BIMESTRES = ['1º Bimestre','2º Bimestre','3º Bimestre','4º Bimestre'];
@@ -898,6 +898,7 @@ function repararObjTema(t){
 let DB = null;
 let conteudos = {};
 let registros = {};          // { id: registro } — histórico de aplicações
+let ocorrencias = {};        // { id: {turmaId,data,categoria,observacao,resolvida} } — quando a turma NÃO teve aula normal (passeio, palestra, dispensa...)
 let _temaIdx = null;         // índice temas por conteudoId (cache)
 let alunos = {};             // { id: aluno } — alunos por turma
 let atividadesCtrl = {};     // { id: atividade } — atividades de controle de notas
@@ -914,7 +915,8 @@ let expanded = {};          // conteudoId -> bool (aberto/fechado na lista)
 const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_turmas',
       LS_FB='leciona_fb_cfg', LS_MODEL='leciona_model',
       LS_REG='leciona_registros', LS_ALUNOS='leciona_alunos',
-      LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl';
+      LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl',
+      LS_OCORR='leciona_ocorrencias';
 // Versão do formato dos dados. Se uma futura versão do app mudar a estrutura,
 // este número sobe e a migração correspondente roda uma única vez, de forma
 // controlada — em vez de o app tentar ler dados antigos com código novo e
@@ -948,7 +950,7 @@ function loadRelCfg(){
       relCfg.ordem=ord; relCfg.rotulos=Object.assign({},REL_LABELS_DEFAULT,x.rotulos||{}); }
   }catch(e){}
 }
-function saveRelCfg(){ localStorage.setItem('leciona_relcfg', JSON.stringify(relCfg)); if(DB) DB.ref('relCfg').set(relCfg).catch(()=>{}); }
+function saveRelCfg(){ try{ localStorage.setItem('leciona_relcfg', JSON.stringify(relCfg)); }catch(e){} if(DB) DB.ref('relCfg').set(relCfg).catch(()=>{}); }
 function relLabel(k){ return (relCfg.rotulos&&relCfg.rotulos[k])||REL_LABELS_DEFAULT[k]||k; }
 
 function getModel(){ return localStorage.getItem(LS_MODEL) || 'claude-sonnet-4-6'; }
@@ -1070,6 +1072,16 @@ function initFirebase(){
       if(m.pushBack.length && !_modoSeguro){ const upd={}; m.pushBack.forEach(id=>upd['leciona/turmas/'+id]=turmas[id]); pushBackSeguro('turmas', upd); }
       seedTurmasIfEmpty(); renderThemes();
     });
+    _escutar('leciona/ocorrencias', s=>{
+      if(!s.val()) return;
+      const rem=s.val(); let changed=false;
+      Object.keys(rem).forEach(id=>{ if(!ocorrencias[id]||ocorrencias[id]._ts<rem[id]._ts){ ocorrencias[id]=rem[id]; changed=true; } });
+      if(changed){
+        lsSet(LS_OCORR, JSON.stringify(ocorrencias));
+        if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+        if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
+      }
+    });
   }catch(e){ console.error(e); setConn(false); toast('Falha ao conectar Firebase: '+e.message,'err'); }
 }
 function setConn(on){
@@ -1079,6 +1091,7 @@ function setConn(on){
 }
 function loadLocal(){
   try{ registros=JSON.parse(localStorage.getItem(LS_REG)||'{}'); }catch(e){ registros={}; }
+  try{ ocorrencias=JSON.parse(localStorage.getItem(LS_OCORR)||'{}'); }catch(e){ ocorrencias={}; }
   try{ alunos=JSON.parse(localStorage.getItem(LS_ALUNOS)||'{}'); }catch(e){ alunos={}; }
   try{ atividadesCtrl=JSON.parse(localStorage.getItem(LS_ATVCTRL)||'{}'); }catch(e){ atividadesCtrl={}; }
   try{ notasCtrl=JSON.parse(localStorage.getItem(LS_NOTAS)||'{}'); }catch(e){ notasCtrl={}; }
@@ -1151,6 +1164,105 @@ function removerRegistro(id){
 function registrosDoTema(temaId){
   return Object.values(registros).filter(r=>r.temaId===temaId).sort((a,b)=>b.data.localeCompare(a.data));
 }
+
+/* ── Ocorrências (turma sem aula normal: passeio, palestra, dispensa...) ──
+   Registro rápido, sem precisar entrar na turma nem escolher tema — feito
+   direto da tela Hoje. Enquanto existir uma ocorrência não resolvida pra uma
+   turma, ela aparece marcada como "atrasada" até a professora resolver (na
+   mão, ou gerando uma aula condensada de recuperação). ────────────────── */
+const OCORR_CATEGORIAS = {
+  atividade_extra: 'Atividade extra',
+  palestra: 'Palestra',
+  passeio: 'Passeio',
+  dispensada: 'Dispensada / sem aula',
+  outro: 'Outro',
+};
+function persistOcorrencia(o){
+  o._ts=Date.now();
+  ocorrencias[o.id]=o;
+  lsSet(LS_OCORR, JSON.stringify(ocorrencias));
+  if(DB) DB.ref('leciona/ocorrencias/'+o.id).set(o).catch(e=>toast('⚠ Salvo localmente, mas falhou ao sincronizar com o Firebase: '+e.message,'err'));
+}
+function registrarOcorrencia(turmaId, categoria, observacao){
+  const o={id:uid(), turmaId, data:new Date().toISOString().slice(0,10), categoria, observacao:observacao||'', resolvida:false};
+  persistOcorrencia(o);
+  return o;
+}
+function ocorrenciasAbertas(turmaId){
+  return Object.values(ocorrencias).filter(o=>o.turmaId===turmaId && !o.resolvida).sort((a,b)=>b.data.localeCompare(a.data));
+}
+function turmaAtrasada(turmaId){
+  return ocorrenciasAbertas(turmaId).length>0;
+}
+function resolverOcorrencia(id){
+  const o=ocorrencias[id]; if(!o) return;
+  o.resolvida=true;
+  persistOcorrencia(o);
+}
+function resolverOcorrenciasDaTurma(turmaId){
+  ocorrenciasAbertas(turmaId).forEach(o=>{ o.resolvida=true; persistOcorrencia(o); });
+}
+
+/* Aula de recuperação: condensa 2 temas num quadro só, via IA, pra turma que
+   ficou pra trás (passeio/palestra/dispensa) não atrasar em relação às
+   outras. Cria um tema novo marcado "⚡ Recuperação" e resolve as
+   ocorrências em aberto da turma. */
+function abrirRecuperacao(){
+  if(!scope.turma){ toast('Selecione uma turma.','err'); return; }
+  const tu=turmas[scope.turma]||{};
+  const conts=conteudosDoScope();
+  const todosTemas=[];
+  conts.forEach(c=>temasDoConteudo(c.id).forEach(t=>todosTemas.push(t)));
+  if(todosTemas.length<2){ toast('Essa turma precisa de pelo menos 2 temas cadastrados pra condensar.','err'); return; }
+  const naoAplicados=todosTemas.filter(t=>!registrosDoTema(t.id).some(r=>r.turmaId===scope.turma));
+  const sugestao=(naoAplicados.length>=2?naoAplicados:todosTemas).slice(0,2);
+  const opts=(sel)=>todosTemas.map(t=>'<option value="'+t.id+'"'+(sel&&sel.id===t.id?' selected':'')+'>'+esc((t.nome||'(sem nome)').slice(0,60))+'</option>').join('');
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:480px">'+
+    '<div class="modal-h"><h3>⚡ Aula de recuperação — '+esc(turmaNome(tu))+'</h3></div>'+
+    '<div class="modal-b">'+
+      '<small>A IA condensa os dois temas escolhidos num quadro só, enxuto o bastante pra dar numa aula, pra essa turma não ficar pra trás das outras.</small>'+
+      '<div class="field" style="margin-top:10px"><label>Tema que ficou pra trás</label><select id="recTema1">'+opts(sugestao[0])+'</select></div>'+
+      '<div class="field"><label>Próximo tema planejado</label><select id="recTema2">'+opts(sugestao[1])+'</select></div>'+
+      '<div class="field"><label>Foco opcional</label><input id="recFoco" placeholder="ex.: priorizar o essencial de cada um"></div>'+
+      '<div id="recProg" class="statusdot"></div>'+
+    '</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" id="recBtn" onclick="gerarRecuperacao()">Gerar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+async function gerarRecuperacao(){
+  const id1=(document.getElementById('recTema1')||{}).value, id2=(document.getElementById('recTema2')||{}).value;
+  if(!id1||!id2||id1===id2){ toast('Escolha dois temas diferentes.','err'); return; }
+  const t1=temas[id1], t2=temas[id2]; if(!t1||!t2) return;
+  const foco=(document.getElementById('recFoco')||{}).value||'';
+  const btn=document.getElementById('recBtn'); const prog=document.getElementById('recProg');
+  if(btn) btn.disabled=true; if(prog) prog.innerHTML='<span class="spin dark"></span> gerando…';
+  try{
+    const sys='Você é professora experiente de '+(t1.disciplina||scope.disc)+' ('+(t1.serie||scope.serie)+'), rede estadual de Goiás, com lente decolonial e pan-africanista. Uma turma ficou sem uma aula (passeio, palestra, imprevisto da escola) e precisa recuperar o conteúdo sem atrasar em relação às outras turmas.';
+    const usr='Condense os DOIS temas abaixo num único TEXTO DE QUADRO (esquemático, pra copiar da lousa), enxuto o bastante pra caber em UMA aula, cobrindo o essencial de cada um sem virar uma lista corrida — priorize os pontos que realmente não podem faltar em cada tema.'+(foco?(' Foco adicional: '+foco):'')+'\n\n'+
+      'TEMA 1 ('+(t1.nome||'')+'):\n'+((t1.obj&&(t1.obj.quadro||t1.obj.estudo))||'(sem conteúdo gerado ainda — use o título e a habilidade abaixo)')+
+      (t1.habilidade?('\nHabilidade: '+t1.habilidade):'')+
+      '\n\nTEMA 2 ('+(t2.nome||'')+'):\n'+((t2.obj&&(t2.obj.quadro||t2.obj.estudo))||'(sem conteúdo gerado ainda — use o título e a habilidade abaixo)')+
+      (t2.habilidade?('\nHabilidade: '+t2.habilidade):'');
+    const quadro=await callClaude(sys,usr);
+    const cid=t1.conteudoId||t2.conteudoId;
+    const novo=blankTema(cid,{
+      nome:'⚡ Recuperação: '+(t1.nome||'')+' + '+(t2.nome||''),
+      dcgo:t1.dcgo||t2.dcgo||'',
+      habilidade:[t1.habilidade,t2.habilidade].filter(Boolean).join(' · '),
+      resumo:'Aula condensada de recuperação — turma ficou sem aula normal e precisou juntar dois temas numa aula só.',
+      ordem:nextOrdemTema(cid),
+    });
+    novo.obj.quadro=quadro;
+    persistTema(novo);
+    resolverOcorrenciasDaTurma(scope.turma);
+    closeModal();
+    renderThemes(); renderProgressoBar();
+    toast('Aula de recuperação criada e a turma foi marcada como em dia.','ok');
+  }catch(e){
+    if(prog) prog.textContent='Erro ao gerar: '+e.message;
+    if(btn) btn.disabled=false;
+  }
+}
 /* Prepara um valor para célula CSV com segurança:
    - escapa aspas, vírgulas e quebras de linha (senão quebram as colunas);
    - neutraliza "CSV injection": valores iniciados por = + - @ podem ser
@@ -1214,11 +1326,11 @@ function persistTurma(t){
   if(DB) DB.ref('leciona/turmas/'+t.id).set(t).catch(e=>toast('⚠ Falha ao gravar turma no Firebase (mantida localmente). '+e.message,'err'));
 }
 function removeConteudo(id){
-  delete conteudos[id]; localStorage.setItem(LS_CONT, JSON.stringify(conteudos));
+  delete conteudos[id]; lsSet(LS_CONT, JSON.stringify(conteudos));
   if(DB) DB.ref('leciona/conteudos/'+id).remove();
 }
 function removeTema(id){
-  delete temas[id]; localStorage.setItem(LS_TEMAS, JSON.stringify(temas));
+  delete temas[id]; lsSet(LS_TEMAS, JSON.stringify(temas));
   _temaIdx=null; // senão o índice por conteudoId continua listando o tema apagado
   if(DB) DB.ref('leciona/temas/'+id).remove();
   // registros de aplicação deste tema ficariam órfãos (apontando pra um tema
@@ -1230,7 +1342,7 @@ function removeTema(id){
   }
 }
 function removeTurma(id){
-  delete turmas[id]; localStorage.setItem(LS_TURMAS, JSON.stringify(turmas));
+  delete turmas[id]; lsSet(LS_TURMAS, JSON.stringify(turmas));
   if(DB) DB.ref('leciona/turmas/'+id).remove();
 }
 
@@ -1871,8 +1983,8 @@ function excluirTodosDados(){
   if(confirmacao!=='APAGAR TUDO'){ toast('Cancelado — o texto de confirmação não bateu. Nada foi apagado.',''); return; }
   closeModal();
 
-  [LS_CONT,LS_TEMAS,LS_TURMAS,LS_REG,LS_ALUNOS,LS_ATVCTRL,LS_NOTAS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
-  conteudos={}; temas={}; turmas={}; registros={}; alunos={}; atividadesCtrl={}; notasCtrl={}; _temaIdx=null;
+  [LS_CONT,LS_TEMAS,LS_TURMAS,LS_REG,LS_ALUNOS,LS_ATVCTRL,LS_NOTAS,LS_OCORR].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  conteudos={}; temas={}; turmas={}; registros={}; alunos={}; atividadesCtrl={}; notasCtrl={}; ocorrencias={}; _temaIdx=null;
 
   if(DB){
     DB.ref('leciona').remove()
@@ -2861,6 +2973,38 @@ function initProjSwipe(){
     }
   },{passive:true});
 }
+/* ── Ocorrência rápida (turma sem aula normal), disparada da tela Hoje ──── */
+function abrirOcorrenciaHoje(turmaId){
+  const t=turmas[turmaId]; if(!t) return;
+  const abertas=ocorrenciasAbertas(turmaId);
+  const cats=Object.entries(OCORR_CATEGORIAS).map(([k,label])=>
+    '<button class="btn full" style="margin-bottom:6px;text-align:left" onclick="salvarOcorrenciaHoje(\''+turmaId+'\',\''+k+'\')">'+esc(label)+'</button>'
+  ).join('');
+  const listaAbertas=abertas.length
+    ? '<div class="field"><label>Já registrado(s), sem resolver</label>'+
+      abertas.map(o=>'<div class="turma-row"><span class="tn" style="flex:1;font-size:12px">'+esc(o.data)+' · '+esc(OCORR_CATEGORIAS[o.categoria]||o.categoria)+(o.observacao?(' — '+esc(o.observacao)):'')+'</span>'+
+        '<button class="btn ghost sm" onclick="resolverOcorrencia(\''+o.id+'\');closeModal();renderHoje();toast(\'Marcado como resolvido.\',\'ok\')">resolver</button></div>').join('')+
+      '</div>' : '';
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
+    '<div class="modal-h"><h3>⚠ '+esc(turmaNome(t))+' — sem aula normal hoje</h3></div>'+
+    '<div class="modal-b">'+
+      '<small>Registra rapidinho o motivo, sem precisar entrar na turma. Enquanto não resolver, ela fica marcada como "atrasada" nas telas Hoje e Gestão.</small>'+
+      '<div class="field" style="margin-top:10px"><label>Observação (opcional)</label><input id="ocorrObs" placeholder="ex.: liberados às 10h"></div>'+
+      '<div class="field"><label>Motivo — toque pra registrar</label>'+cats+'</div>'+
+      listaAbertas+
+    '</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  setTimeout(()=>document.getElementById('ocorrObs')?.focus(),50);
+}
+function salvarOcorrenciaHoje(turmaId, categoria){
+  const obs=(document.getElementById('ocorrObs')?.value||'').trim();
+  registrarOcorrencia(turmaId, categoria, obs);
+  closeModal();
+  renderHoje();
+  toast('Registrado: '+turmaNome(turmas[turmaId])+' — '+OCORR_CATEGORIAS[categoria]+'. Marcada como atrasada até você resolver.','ok');
+}
+
 /* ── Registro de Aplicação ──────────────────────────────────────────────── */
 function abrirModalRegistro(){
   if(!proj.tema){ toast('Nenhum tema em projeção.','err'); return; }
@@ -3281,6 +3425,7 @@ function excluirTurma(id){
   const registrosDaT=Object.values(registros).filter(r=>r.turmaId===id);
   const notasDaT=Object.values(notasCtrl).filter(n=>n.turmaId===id);
   const ativsAfetadas=Object.values(atividadesCtrl).filter(av=>(av.turmaIds||[]).includes(id));
+  const ocorrDaT=Object.values(ocorrencias).filter(o=>o.turmaId===id);
 
   const partes=[];
   if(conts.length) partes.push(conts.length+' conteúdo(s)');
@@ -3288,6 +3433,7 @@ function excluirTurma(id){
   if(alunosDaT.length) partes.push(alunosDaT.length+' aluno(s)');
   if(registrosDaT.length) partes.push(registrosDaT.length+' registro(s) de aplicação');
   if(notasDaT.length) partes.push(notasDaT.length+' nota(s) lançada(s)');
+  if(ocorrDaT.length) partes.push(ocorrDaT.length+' ocorrência(s)');
   const aviso = partes.length
     ? 'Excluir a turma "'+turmaNome(t)+'" também vai apagar: '+partes.join(', ')+'. Não pode ser desfeito. Continuar?'
     : 'Excluir a turma "'+turmaNome(t)+'"? Não pode ser desfeito.';
@@ -3304,6 +3450,8 @@ function excluirTurma(id){
     if(av.turmaIds.length) persistAtivCtrl(av);
     else { delete atividadesCtrl[av.id]; lsSet(LS_ATVCTRL, JSON.stringify(atividadesCtrl)); if(DB) DB.ref('leciona/atividades_ctrl/'+av.id).remove().catch(()=>{}); }
   });
+  ocorrDaT.forEach(o=>{ delete ocorrencias[o.id]; if(DB) DB.ref('leciona/ocorrencias/'+o.id).remove().catch(()=>{}); });
+  if(ocorrDaT.length) lsSet(LS_OCORR, JSON.stringify(ocorrencias));
 
   removeTurma(id);
   closeModal(); if(!DB) renderThemes(); openTurmas();
@@ -3649,11 +3797,12 @@ function closeModal(){ _relTemasIncluidos=null; const w=document.getElementById(
 function saveConfig(){
   const model=document.getElementById('cfgModel').value.trim()||'claude-sonnet-4-6';
   const fb=document.getElementById('cfgFb').value.trim();
-  localStorage.setItem(LS_MODEL,model);
+  try{ localStorage.setItem(LS_MODEL,model); }catch(e){}
   let fbChanged=false;
   if(fb!==(localStorage.getItem(LS_FB)||'')){
     if(fb){ try{ JSON.parse(fb); }catch(e){ toast('Firebase: JSON inválido.','err'); return; } }
-    localStorage.setItem(LS_FB,fb); fbChanged=true;
+    try{ localStorage.setItem(LS_FB,fb); }catch(e){}
+    fbChanged=true;
   }
   closeModal();
   if(fbChanged){ toast('Configurações salvas. Recarregando…','ok'); setTimeout(()=>location.reload(),700); }
@@ -3768,12 +3917,14 @@ function renderHoje(){
     const dataHoje=now.toISOString().slice(0,10);
     const regHoje=tuHoje?Object.values(registros).filter(r=>r.turmaId===tuHoje.id&&r.data===dataHoje):[];
     const badgeReg=regHoje.length?'<span class="reg-badge" title="'+regHoje.map(r=>r.objetos.join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
+    const badgeAtraso=(tuHoje&&turmaAtrasada(tuHoje.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
     const acoes = x.disc==='Estudo Orientado'
       ? '<span class="statusdot">sem planejamento</span>'
       : '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
-        '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>';
+        '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
+        (tuHoje?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuHoje.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'');
     return '<div class="hoje-row'+(regHoje.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
-      '<div class="hoje-info"><b>'+esc(titulo)+'</b><span>'+esc(u)+'</span>'+badgeReg+'</div>'+
+      '<div class="hoje-info"><b>'+esc(titulo)+'</b><span>'+esc(u)+'</span>'+badgeReg+badgeAtraso+'</div>'+
       '<div class="hoje-acoes">'+acoes+'</div></div>';
   }).join('')+'</div>';
   box.innerHTML=html;
@@ -3900,6 +4051,12 @@ function executarLancarNotas(){
 function renderProgressoBar(){
   const box=document.getElementById('progressoBar'); if(!box||!scope.turma) return;
   const tu=turmas[scope.turma]||{};
+  const abertas=ocorrenciasAbertas(scope.turma);
+  const avisoAtraso = abertas.length ?
+    '<div class="notas-progresso" style="border:1px solid #a8442f;background:#fdecea;margin-bottom:10px">'+
+      '<div class="prog-titulo"><span>⚠ '+esc(turmaNome(tu))+' está atrasada — '+abertas.length+' ocorrência(s) sem resolver ('+abertas.map(o=>esc(OCORR_CATEGORIAS[o.categoria]||o.categoria)).join(', ')+')</span>'+
+      '<button class="btn sm" style="border-color:#a8442f;color:#a8442f" onclick="abrirRecuperacao()">⚡ Gerar aula de recuperação</button></div>'+
+    '</div>' : '';
   const conts=conteudosDoScope();
   let totalTemas=0, temasComReg=0;
   const objContadores={};
@@ -3912,14 +4069,14 @@ function renderProgressoBar(){
       regsT.forEach(r=>(r.objetos||[]).forEach(k=>{ if(k in objContadores) objContadores[k]++; }));
     });
   });
-  if(!totalTemas){ box.innerHTML=''; return; }
+  if(!totalTemas){ box.innerHTML=avisoAtraso; return; }
   const pct=Math.round(temasComReg/totalTemas*100);
   const objDots=PROJ_ORDER.map(k=>{
     const label=OBJ_DEFS.find(o=>o.k===k)?.label||k;
     const n=objContadores[k];
     return '<span class="prog-obj'+(n>0?' feito':'')+'" title="'+label+(n?' — '+n+'x':'')+'">'+label+(n?' ×'+n:'')+'</span>';
   }).join('');
-  box.innerHTML='<div class="notas-progresso">'+
+  box.innerHTML=avisoAtraso+'<div class="notas-progresso">'+
     '<div class="prog-titulo">'+
       '<span>'+esc(turmaNome(tu))+' · '+esc(scope.bim)+' · '+temasComReg+'/'+totalTemas+' temas aplicados</span>'+
       '<button class="btn ghost sm" onclick="abrirRelatorioTurma()">📈 Relatório</button>'+
