@@ -4609,9 +4609,30 @@ function mediaGeralTurma(turmaId){
 }
 
 /* ── Ranking — pra projetar no fim da aula: quem está na frente na turma,
-   e como essa turma está colocada frente às outras da mesma disciplina.
-   Pedido explícito da Malu — era a função mais esperada no Cepi Marajó. ── */
-function medalha(i){ return i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'; }
+   e como cada turma está colocada em cada disciplina.
+   Pedido explícito da Malu — era a função mais esperada no Cepi Marajó.
+
+   Empate: não é competição oficial, é brincadeira — mas resolvido com "1224"
+   (quem empata divide a posição; a próxima já pula, ex.: 3 empatados em 1º,
+   o próximo é 4º, não 2º). Desempate por pontualidade: como o Leciona não
+   tem portal do aluno com data de entrega própria, uso a data/hora que a
+   professora marcou a nota/check como aproximação de "entregou no prazo" —
+   quem foi marcado mais cedo, em média, fica na frente de quem empatou na
+   nota mas foi marcado depois. */
+function medalha(pos){ return pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':pos+'º'; }
+function pontualidadeAluno(alunoId, atvs, turmaId){
+  const tss=atvs.map(av=>{ const n=notaDoAluno(alunoId,av.id); return (n&&n.valor!=null)?n._ts:null; }).filter(Boolean);
+  return tss.length ? tss.reduce((s,t)=>s+t,0)/tss.length : Infinity; // sem nenhuma nota lançada = "mais atrasado" possível
+}
+/* Recebe uma lista já ordenada do melhor pro pior; "mesmaChave" diz se dois
+   itens vizinhos são realmente empatados em tudo que importa pro critério. */
+function calcularPosicoes(lista, mesmaChave){
+  let pos=1;
+  return lista.map((item,i)=>{
+    if(i>0 && !mesmaChave(lista[i-1],item)) pos=i+1;
+    return {...item, pos};
+  });
+}
 function abrirRanking(){
   const turmaId=scope.turma;
   if(!turmaId){ toast('Selecione uma turma.','err'); return; }
@@ -4626,25 +4647,27 @@ function renderRanking(){
   const atvs=atividadesDaTurma(turmaId);
   const als=alunosDaTurma(turmaId);
 
-  const ranking=als.map(a=>({aluno:a, media:mediaAluno(a.id,atvs,turmaId)}))
+  let ranking=als.map(a=>({aluno:a, media:mediaAluno(a.id,atvs,turmaId), pont:pontualidadeAluno(a.id,atvs,turmaId)}))
     .filter(r=>r.media!=null)
-    .sort((a,b)=>b.media-a.media);
-  const alunosHtml = ranking.length ? ranking.map((r,i)=>
-    '<div class="rk-row'+(i<3?' rk-top':'')+'"><span class="rk-pos">'+medalha(i)+'</span><span class="rk-nome">'+esc(r.aluno.nome)+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
+    .sort((a,b)=>b.media-a.media || a.pont-b.pont);
+  ranking=calcularPosicoes(ranking, (a,b)=>a.media===b.media && a.pont===b.pont);
+  const alunosHtml = ranking.length ? ranking.map(r=>
+    '<div class="rk-row'+(r.pos<=3?' rk-top':'')+'"><span class="rk-pos">'+medalha(r.pos)+'</span><span class="rk-nome">'+esc(r.aluno.nome)+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
   ).join('') : '<p style="opacity:.6">Ainda sem notas suficientes pra ranquear.</p>';
 
-  // Turmas comparadas: mesma disciplina, todas as suas turmas
-  const outras=Object.values(turmas).filter(t=>t.disciplina===tu.disciplina);
-  const rankingTurmas=outras.map(t=>({turma:t, media:mediaGeralTurma(t.id)}))
+  // Turmas comparadas: TODAS as suas turmas, de qualquer disciplina — a mesma
+  // turma pode aparecer bem colocada numa matéria e mal em outra, de propósito.
+  let rankingTurmas=Object.values(turmas).map(t=>({turma:t, media:mediaGeralTurma(t.id)}))
     .filter(r=>r.media!=null)
     .sort((a,b)=>b.media-a.media);
-  const turmasHtml = rankingTurmas.length ? rankingTurmas.map((r,i)=>
-    '<div class="rk-row'+(i<3?' rk-top':'')+(r.turma.id===turmaId?' rk-atual':'')+'"><span class="rk-pos">'+medalha(i)+'</span><span class="rk-nome">'+esc(turmaNome(r.turma))+(r.turma.id===turmaId?' — vocês!':'')+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
+  rankingTurmas=calcularPosicoes(rankingTurmas, (a,b)=>a.media===b.media);
+  const turmasHtml = rankingTurmas.length ? rankingTurmas.map(r=>
+    '<div class="rk-row'+(r.pos<=3?' rk-top':'')+(r.turma.id===turmaId?' rk-atual':'')+'"><span class="rk-pos">'+medalha(r.pos)+'</span><span class="rk-nome">'+esc(turmaNome(r.turma))+' <small style="opacity:.6">· '+esc(r.turma.disciplina||'')+'</small>'+(r.turma.id===turmaId?' — vocês!':'')+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
   ).join('') : '<p style="opacity:.6">Sem dados suficientes pra comparar turmas ainda.</p>';
 
   document.getElementById('rankingBody').innerHTML =
     '<div class="rk-section"><h3>Ranking da turma</h3>'+alunosHtml+'</div>'+
-    '<div class="rk-section"><h3>Turmas de '+esc(tu.disciplina||'')+'</h3>'+turmasHtml+'</div>';
+    '<div class="rk-section"><h3>Todas as turmas, todas as disciplinas</h3>'+turmasHtml+'</div>';
 }
 
 // ── Render principal ──────────────────────────────────────────────────────
