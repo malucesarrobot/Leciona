@@ -425,6 +425,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <div class="spacer"></div>
     <nav>
       <button id="tabHoje" class="active" onclick="setView('hoje')">Hoje</button>
+      <button id="tabPainel" onclick="setView('painel')">📈 Painel</button>
       <button id="tabAcervo" onclick="setView('acervo')">📚 Acervo</button>
       <button id="tabNotas" onclick="setView('notas')">📊 Notas</button>
       <button id="tabGestao" onclick="setView('gestao')">Gestão</button>
@@ -437,6 +438,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
   </header>
 
   <div id="viewHoje"><div class="hoje-wrap" id="hojeBody"></div></div>
+  <div id="viewPainel" class="hidden"><div class="acervo-wrap" id="painelBody"></div></div>
   <div id="viewAcervo" class="hidden"><div class="acervo-wrap" id="acervoBody"></div></div>
   <div id="viewNotas" class="hidden"><div class="notas-wrap" id="notasBody"></div></div>
   <div id="viewGestao" class="hidden">
@@ -3954,14 +3956,15 @@ function projetarAula(disc,uni,serie,letra){
 }
 function setView(v){
   fecharProjecao();
-  ['viewHoje','viewAcervo','viewNotas','viewGestao'].forEach(id=>{
+  ['viewHoje','viewPainel','viewAcervo','viewNotas','viewGestao'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('hidden', id!=='view'+v.charAt(0).toUpperCase()+v.slice(1));
   });
-  ['tabHoje','tabAcervo','tabNotas','tabGestao'].forEach(id=>{
+  ['tabHoje','tabPainel','tabAcervo','tabNotas','tabGestao'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('active', id==='tab'+v.charAt(0).toUpperCase()+v.slice(1));
   });
   try{ localStorage.setItem('leciona_lastview', v); }catch(e){}
   if(v==='hoje') renderHoje();
+  if(v==='painel') renderPainel();
   if(v==='acervo') renderAcervo();
   if(v==='notas') renderNotas();
 }
@@ -4167,6 +4170,86 @@ function exportarRelatorioCSV(){
    ACERVO — Navegação global cross-turma
    ═══════════════════════════════════════════════════════════════════════ */
 let _acervoBusca='', _acervoDisc='', _acervoSerie='', _acervoBim='';
+
+/* ── Painel geral — visão de todas as turmas de uma vez ──────────────────
+   Pensado pra quem tem muitas turmas/disciplinas: mostra % aplicado por
+   turma num bimestre, destaca quem está atrasada (ocorrência sem resolver)
+   e dá um atalho direto pra abrir aquela turma na Gestão. */
+let _painelBim = null, _painelDisc = '';
+function renderPainel(){
+  const box=document.getElementById('painelBody'); if(!box) return;
+  if(_painelBim==null) _painelBim = bimAtual();
+  const discs=[...new Set(Object.values(turmas).map(t=>t.disciplina).filter(Boolean))].sort();
+
+  const linhas = Object.values(turmas)
+    .filter(t=>t && (!_painelDisc || t.disciplina===_painelDisc))
+    .map(t=>{
+      const conts = Object.values(conteudos).filter(c=>c.turmaId===t.id && c.bimestre===_painelBim);
+      let total=0, comReg=0;
+      conts.forEach(c=>{
+        temasDoConteudo(c.id).forEach(tm=>{
+          total++;
+          if(registrosDoTema(tm.id).some(r=>r.turmaId===t.id)) comReg++;
+        });
+      });
+      const pct = total ? Math.round(comReg/total*100) : null;
+      return {t, total, comReg, pct, atrasada:turmaAtrasada(t.id)};
+    })
+    .sort((a,b)=>{
+      if(a.atrasada!==b.atrasada) return a.atrasada?-1:1; // atrasadas primeiro
+      const pa=a.pct==null?101:a.pct, pb=b.pct==null?101:b.pct; // sem conteúdo no fim
+      return pa-pb;
+    });
+
+  const nAtrasadas = linhas.filter(l=>l.atrasada).length;
+  const comConteudo = linhas.filter(l=>l.total>0);
+  const pctMedio = comConteudo.length ? Math.round(comConteudo.reduce((s,l)=>s+l.pct,0)/comConteudo.length) : 0;
+
+  let html = '<div class="acervo-filtros">'+
+    '<select onchange="_painelDisc=this.value;renderPainel()"><option value="">Todas disciplinas</option>'+
+      discs.map(d=>'<option value="'+esc(d)+'"'+(d===_painelDisc?' selected':'')+'>'+esc(d)+'</option>').join('')+
+    '</select>'+
+    '<select onchange="_painelBim=this.value;renderPainel()">'+
+      BIMESTRES.map(b=>'<option value="'+esc(b)+'"'+(b===_painelBim?' selected':'')+'>'+esc(b)+'</option>').join('')+
+    '</select>'+
+  '</div>';
+
+  html += '<div class="notas-stats">'+
+    '<div class="stat-box"><strong>'+linhas.length+'</strong><span>turma(s)</span></div>'+
+    '<div class="stat-box"><strong style="'+(nAtrasadas?'color:#a8442f':'')+'">'+nAtrasadas+'</strong><span>atrasada(s)</span></div>'+
+    '<div class="stat-box"><strong>'+pctMedio+'%</strong><span>aplicado em média — '+esc(_painelBim)+'</span></div>'+
+  '</div>';
+
+  if(!linhas.length){ html += '<div class="empty"><p>Nenhuma turma cadastrada ainda.</p></div>'; box.innerHTML=html; return; }
+
+  html += '<div class="card-list">'+linhas.map(l=>{
+    const cor = l.atrasada ? '#a8442f' : (l.pct==null?'#ccc': l.pct<30?'#c47a3d':'#2f6b5e');
+    return '<div class="mini-card" style="cursor:pointer" onclick="abrirTurmaNoPainel(\''+l.t.id+'\')">'+
+      '<div class="row">'+
+        '<b style="flex:1">'+esc(turmaNome(l.t))+' <span style="font-weight:400;color:var(--muted);font-size:12px">· '+esc(l.t.disciplina||'')+' · '+esc(l.t.unidade||'—')+'</span></b>'+
+        (l.atrasada?'<span class="reg-badge" style="background:#a8442f">⚠ atrasada</span>':'')+
+        '<span style="font-size:13px;font-weight:600;min-width:42px;text-align:right">'+(l.pct==null?'—':l.pct+'%')+'</span>'+
+      '</div>'+
+      '<div class="prog-barra-wrap" style="margin:0"><div class="prog-barra" style="width:'+(l.pct||0)+'%;background:'+cor+'"></div></div>'+
+    '</div>';
+  }).join('')+'</div>';
+
+  box.innerHTML=html;
+}
+function abrirTurmaNoPainel(turmaId){
+  const t=turmas[turmaId]; if(!t) return;
+  scope.disc=t.disciplina; scope.unidade=t.unidade; scope.serie=t.serie; scope.turma=turmaId; scope.bim=_painelBim||scope.bim;
+  saveScope();
+  setView('gestao');
+  const selDisc=document.getElementById('selDisc'); if(selDisc) selDisc.value=scope.disc;
+  refreshSeries();
+  const selSerie=document.getElementById('selSerie'); if(selSerie) selSerie.value=scope.serie;
+  const selUnidade=document.getElementById('selUnidade'); if(selUnidade) selUnidade.value=scope.unidade;
+  refreshTurmas();
+  const selTurma=document.getElementById('selTurma'); if(selTurma) selTurma.value=scope.turma;
+  const selBim=document.getElementById('selBim'); if(selBim) selBim.value=scope.bim;
+  renderThemes();
+}
 
 function renderAcervo(){
   const box=document.getElementById('acervoBody'); if(!box) return;
