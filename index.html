@@ -5454,15 +5454,25 @@ async function genAdaptOne(perfK,bases){
   const pl=(ADAPT_PERFIS.find(pf=>pf.k===perfK)||{}).label||perfK;
   const t=editing;
   const bimNum=(t.bimestre||'').charAt(0);
+  const out={}; let any=false;
+  // Pré-pronto: se já existe adaptação gerada pra esse tema+perfil (mesmo nome exato,
+  // vindo de outra turma), reaproveita em vez de chamar a IA de novo — mesma lógica
+  // do PREBUILT_OBJ pro conteúdo base, mas pra adaptação.
+  const pronto = (typeof PREBUILT_ADAPT!=='undefined' && t.nome && PREBUILT_ADAPT[t.nome] && PREBUILT_ADAPT[t.nome][perfK]) || null;
+  const basesFaltando=[];
+  bases.forEach(bk=>{
+    if(pronto && pronto[bk]){ out[bk]=pronto[bk]; any=true; }
+    else basesFaltando.push(bk);
+  });
+  if(!basesFaltando.length) return any?out:null;
   const sys='Você é professora especialista em educação inclusiva de '+t.disciplina+' ('+t.serie+'), rede estadual de Goiás, com lente decolonial e pan-africanista — a MESMA perspectiva já usada na produção do material original que você vai adaptar agora. '+
     'REGRA INEGOCIÁVEL Nº1: mantenha o mesmo objetivo de aprendizagem, o conteúdo essencial da matriz (DC-GO/BNCC) E a mesma perspectiva crítica/decolonial do texto original — adapte só a FORMA de acesso (linguagem, estrutura), nunca a substância, o rigor historiográfico ou o ponto de vista já trabalhado. Não abrande, não neutralize e não generalize a abordagem crítica do original. '+
     'REGRA INEGOCIÁVEL Nº2: não invente referências bibliográficas novas — se o original citar autores/obras, preserve exatamente como estão; se não citar nenhuma, não adicione nenhuma. '+
     'REGRA INEGOCIÁVEL Nº3: se para cumprir a adaptação (ex.: montar uma linha do tempo, dar contexto, aprofundar) você precisar introduzir algum evento, data ou fato que NÃO estava no texto original, esse conteúdo novo também precisa receber a mesma leitura crítica/decolonial do resto do texto — nunca apareça como rótulo neutro de manual didático (ex.: numa tabela, não deixe uma linha "seca" sem glosa enquanto as outras têm interpretação). Se não for possível dar essa leitura crítica ao fato novo com segurança, prefira omiti-lo a inseri-lo sem contexto. '+
     'Orientação de acessibilidade para este perfil: '+(ADAPT_GUIA[perfK]||'')+' Responda APENAS o material adaptado em markdown (## para títulos; listas com "- "; para questões, cada alternativa numa linha de lista própria, ex.: "- A) texto da alternativa"), sem nenhum texto fora do conteúdo (sem JSON, sem preâmbulo).';
-  const out={}; let any=false;
   // Uma chamada por base: evita que uma falha de parse de JSON combinado derrube todas as adaptações de uma vez
-  for(let i=0;i<bases.length;i++){
-    const bk=bases[i];
+  for(let i=0;i<basesFaltando.length;i++){
+    const bk=basesFaltando[i];
     const label=(ADAPT_BASES.find(b=>b.k===bk)||{}).label||bk;
     const txt=adaptSourceText(t,bk);
     if(!txt || !txt.trim()) continue;
