@@ -5411,7 +5411,7 @@ function removerAdaptado(perfK){
 
 function imprimirAdaptado(perfK){
   const ad=(editing.adaptado||{})[perfK]; if(!ad){ toast('Sem adaptação gerada.','err'); return; }
-  const tu=turmas[scope.turma]||{};
+  const tu=turmas[editing.turmaId]||{};
   let body='<div class="tema">';
   ADAPT_BASES.forEach(b=>{ const v=ad[b.k]; if(!v) return;
     body+='<h4>'+esc(b.label)+'</h4>'+(b.k==='mapaMental'?mdMapToHtml(v):renderMd(v,'print'));
@@ -5421,12 +5421,12 @@ function imprimirAdaptado(perfK){
   const titulo=editing.nome||'Atividade';
   const win=window.open('','_blank');
   if(!win){ toast('Libere pop-ups para imprimir.','err'); return; }
-  win.document.write(adaptShell(titulo, body, tu));
+  win.document.write(adaptShell(titulo, body, tu, editing.disciplina, editing.bimestre));
   win.document.close();
   setTimeout(()=>{ try{win.focus();win.print();}catch(e){} },400);
 }
 
-function adaptShell(titulo, body, tu){
+function adaptShell(titulo, body, tu, disc, bim){
   return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+esc(titulo)+'</title><style>'+
     'body{font-family:Verdana,Arial,sans-serif;color:#1a1a1a;max-width:720px;margin:26px auto;padding:0 22px;line-height:1.75;font-size:15px;letter-spacing:.2px}'+
     'h1{font-size:20px;margin:0 0 2px}.sub{color:#555;font-size:12px;margin-bottom:14px;border-bottom:2px solid #333;padding-bottom:8px}'+
@@ -5438,7 +5438,7 @@ function adaptShell(titulo, body, tu){
     '.aluno{margin:6px 0 14px;font-size:13px;color:#333}'+
     '@media print{body{margin:0}}'+
     '</style></head><body>'+
-    '<h1>'+esc(titulo)+'</h1><div class="sub">'+esc(scope.disc)+' \u00b7 Turma '+esc(turmaNome(tu))+' \u00b7 '+esc(scope.bim)+'</div>'+
+    '<h1>'+esc(titulo)+'</h1><div class="sub">'+esc(disc)+' \u00b7 Turma '+esc(turmaNome(tu))+' \u00b7 '+esc(bim)+'</div>'+
     '<div class="aluno">Nome: ____________________________________   Data: ____ / ____ / ______</div>'+
     body+'</body></html>';
 }
