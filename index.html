@@ -2004,6 +2004,34 @@ async function limparTurmasDuplicadas(){
   renderThemes();
   toast(turmasRemovidas+' turma(s) duplicada(s) unificada(s) em '+gruposAfetados+' grupo(s). Agora rode "Limpar duplicatas (banco inteiro)" de novo, pra juntar os temas que ficaram repetidos na turma unificada.','ok');
 }
+/* Corrige temas cujo turmaId ficou desalinhado do conteudoId real (sobra de
+   fusões de turma antigas que não migraram esse campo em todos os temas —
+   o conteudoId é a fonte confiável, então realinha turmaId a partir dele).
+   Não apaga nada, só corrige a referência; roda ANTES de limparDuplicatasGeral
+   pra que ela consiga agrupar corretamente por turma+código. */
+async function corrigirTurmaIdTemas(){
+  if(!confirm('Isso vai corrigir o turmaId de temas cujo campo ficou desalinhado do conteúdo real onde estão (sobra de fusões antigas de turma). Não apaga nada, só realinha a referência. Continuar?')) return;
+  closeModal();
+  toast('Corrigindo referências… não feche a aba.','');
+  let corrigidos=0;
+  const temasCorrigidos=[];
+  Object.values(temas).forEach(t=>{
+    if(!t||!t.conteudoId) return;
+    const c=conteudos[t.conteudoId];
+    if(!c) return;
+    if(t.turmaId!==c.turmaId){ t.turmaId=c.turmaId; corrigidos++; temasCorrigidos.push(t); }
+  });
+  if(!corrigidos){ toast('Nenhuma referência desalinhada encontrada.','ok'); return; }
+  _temaIdx=null;
+  lsSet(LS_TEMAS, JSON.stringify(temas));
+  if(DB){
+    const updates={};
+    temasCorrigidos.forEach(t=>updates['leciona/temas/'+t.id+'/turmaId']=t.turmaId);
+    DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
+  }
+  renderThemes();
+  toast(corrigidos+' tema(s) com turmaId corrigido. Agora rode "Limpar duplicatas (banco inteiro)" pra juntar os que ficaram repetidos.','ok');
+}
 async function limparDuplicatasGeral(){
   if(typeof PREBUILT_OBJ==='undefined'){ toast('Aguarde o carregamento terminar e tente de novo.','err'); return; }
   if(!confirm('Isso vai varrer TODOS os seus temas, agrupar por turma+código DC-GO, manter só o mais completo de cada grupo (priorizando o que já foi aplicado em sala) e apagar os duplicados. Não pode ser desfeito. Continuar?')) return;
@@ -3964,6 +3992,8 @@ function openConfig(){
         '<small>Cria os temas que faltam a partir da matriz oficial e já aplica o conteúdo pré-pronto disponível, em todas as suas turmas de uma vez. Não gasta créditos de IA. Não altera temas que já têm conteúdo.</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="corrigirPrebuiltAplicadoErrado()">🔧 Verificar conteúdo trocado</button>'+
         '<small>Confere se algum tema recebeu o conteúdo de outro subtema do mesmo código (bug já corrigido, mas pode ter afetado temas de antes). Corrige automaticamente os casos encontrados.</small>'+
+        '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="corrigirTurmaIdTemas()">🔗 Corrigir turmaId desalinhado</button>'+
+        '<small>Realinha o turmaId de temas cujo campo ficou desatualizado (sobra de fusões antigas de turma) — não apaga nada, só corrige a referência. Rode este primeiro de todos.</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="limparTurmasDuplicadas()">🏫 Unificar turmas duplicadas</button>'+
         '<small>Junta turmas com o mesmo nome e mesma escola (ex.: duas cópias de "9ºC") numa só, movendo todo o conteúdo antes de apagar a cópia. Rode este primeiro.</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="limparDuplicatasGeral()">🧹 Limpar duplicatas (banco inteiro)</button>'+
