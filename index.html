@@ -55,11 +55,11 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .notas-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
 .notas-toolbar h3{font-family:var(--serif);font-size:17px;flex:1;margin:0}
 .notas-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
-.notas-table{border-collapse:collapse;width:100%;min-width:600px;font-size:13px}
-.notas-table th{background:var(--surface);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;font-weight:600;position:sticky;top:0;z-index:2}
-.notas-table th.aluno-col{min-width:160px;position:sticky;left:0;z-index:3;background:var(--surface)}
-.notas-table td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
-.notas-table td.aluno-nome{font-weight:500;position:sticky;left:0;background:var(--card);z-index:1;min-width:160px}
+.notas-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:13px}
+.notas-table th{background:var(--surface);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;font-weight:600;position:sticky;top:0;z-index:2;overflow:hidden;text-overflow:ellipsis}
+.notas-table th.aluno-col{position:sticky;left:0;z-index:3;background:var(--surface)}
+.notas-table td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
+.notas-table td.aluno-nome{font-weight:500;position:sticky;left:0;background:var(--card);z-index:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .notas-table tr:hover td{background:var(--hover)}
 .notas-table tr:hover td.aluno-nome{background:var(--hover)}
 .nota-input{width:48px;padding:3px 5px;border:1px solid var(--border);border-radius:5px;background:var(--card);color:var(--text);font-size:13px;text-align:center}
@@ -485,6 +485,8 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <span class="conn" id="conn" onclick="location.reload()" style="cursor:pointer" title="Toque para recarregar o app"><span class="led"></span><span id="connTxt">Local</span></span>
     <button class="icon-btn" title="Assistente (chat livre com IA)" onclick="openAssistente()">&#128172;</button>
     <button class="icon-btn" title="Turmas" onclick="openTurmas()">&#128101;</button>
+    <button class="icon-btn" title="Voltar" onclick="voltarHeader()">&#8592;</button>
+    <button class="icon-btn" title="Recarregar" onclick="location.reload()">&#8635;</button>
     <button class="icon-btn" title="Configurações" onclick="openConfig()">&#9881;</button>
   </header>
 
@@ -660,6 +662,13 @@ function turmaNome(t){
    de CEPI Marajó, duas turmas diferentes com o mesmo nome curto. Sempre
    mostra a escola junto pra não ter ambiguidade nos seletores. */
 function turmaNomeEscola(t){ return turmaNome(t)+' — '+(t.unidade||'?'); }
+/* Nome curto pra tabela de Notas apertada (muitas colunas de atividade):
+   últimos 2 sobrenomes em vez do nome completo. O nome completo continua
+   no title do texto pra conferir na dúvida. */
+function nomeSobrenome(nome){
+  const partes=(nome||'').trim().split(/\s+/);
+  return partes.length>2 ? partes.slice(-2).join(' ') : (nome||'');
+}
 /* <option>s agrupadas por disciplina, com a escola sempre visível — usado
    tanto em Notas quanto em Gestão, pra trocar de turma com um só seletor
    em vez dos 4 em cascata (disciplina/unidade/série/turma). */
@@ -1613,7 +1622,16 @@ function _migrateAndRenderReal(){
     if(DB){
       const updates={};
       contsTocados.forEach(c=>updates['leciona/conteudos/'+c.id]=c);
-      temasTocados.forEach(t=>{ t._ts=Date.now(); t.updatedAt=t._ts; updates['leciona/temas/'+t.id]=t; });
+      // Nunca reenvia um tema cujo turmaId não aponta pra uma turma real —
+      // bug real encontrado em produção: se o cache local deste aparelho
+      // ainda tiver um tema órfão (turma apagada em outro lugar/aparelho,
+      // ou numa limpeza anterior), "reparar" e regravar ele aqui mesmo
+      // ressuscitava a referência morta, mesmo com mergeRemote() já corrigido
+      // (esse bug era num caminho DIFERENTE: reparo+regravação, não merge).
+      temasTocados.forEach(t=>{
+        if(!t.turmaId || !turmas[t.turmaId]) return;
+        t._ts=Date.now(); t.updatedAt=t._ts; updates['leciona/temas/'+t.id]=t;
+      });
       if(Object.keys(updates).length) DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
     }
   }
@@ -2573,6 +2591,15 @@ function fecharEditor(){
   if(editing){ try{ saveActiveObj(); collectMeta(); persistTema(editing); }catch(e){} }   // salva pendências
   document.getElementById('editor').classList.add('hidden'); editing=null; dirty=false;
 }
+/* "Voltar" do cabeçalho principal — se tiver um editor de tema aberto,
+   fecha ele (salvando antes); senão, volta no histórico do navegador. */
+function voltarHeader(){
+  const ed=document.getElementById('editor');
+  if(editing && ed && !ed.classList.contains('hidden')){ fecharEditor(); return; }
+  const modal=document.getElementById('modalWrap');
+  if(modal){ closeModal(); return; }
+  history.back();
+}
 let _saveT=null;
 function setSaveStatus(estado){
   const el=document.getElementById('saveStatus'); if(!el) return;
@@ -2885,7 +2912,7 @@ function renderObjContent(){
   const focoVal = esc(window.__foco||'');
   c.innerHTML='<div class="obj-actions"><span class="title">'+def.label+'</span>'+
     '<button class="btn primary" onclick="openGerarTudo(\''+def.k+'\')" title="Gerar esta aba (ou marcar mais) com IA">&#10022; Gerar com IA</button>'+maisBtn+
-    '<button class="btn ghost" onclick="abrirLancarNotas(activeObj)" title="Lançar este objeto no controle de notas">↳ Notas</button>'+'<button class="btn ghost" onclick="openExportTema(editing.id)" title="Copiar esta aula para outra turma">📤 Exportar</button>'+'<button class="btn ghost" onclick="openAdaptar()" title="Gerar versões adaptadas (inclusão) para imprimir ao aluno">&#9855; adaptar</button>'+'<button class="btn ghost" onclick="undoObj()" title="Desfazer a última geração/exclusão">&#8634;</button>'+'<button class="btn ghost sm" onclick="forcarPrebuilt()" title="Recarregar o conteúdo pré-pronto original deste subtema (se disponível), substituindo o que está aqui">↓</button></div>'+
+    '<button class="btn ghost" onclick="abrirLancarNotas(activeObj)" title="Lançar este objeto no controle de notas">↳ Notas</button>'+'<button class="btn ghost" onclick="openExportTema(editing.id)" title="Copiar esta aula para outra turma">📤 Exportar</button>'+'<button class="btn ghost" onclick="openAdaptar()" title="Gerar versões adaptadas (inclusão) para imprimir ao aluno">&#9855; adaptar</button></div>'+
     '<input id="genFoco" class="foco" value="'+focoVal+'" oninput="window.__foco=this.value" placeholder="Foco opcional (ex.: governos populistas na América Latina — Vargas, Perón, Cárdenas)">'+
     '<div class="obj-hint">'+def.hint+'</div>'+body;
 }
@@ -5387,14 +5414,23 @@ function renderNotas(){
   }
   const chamadaHoje = temHorarioChamada ? chamadaDoDia(turmaId, window.__chamadaColData) : null;
 
-  // Tabela
-  h+='<div class="notas-table-wrap"><table class="notas-table"><thead><tr>'+
-    '<th class="aluno-col">Aluno</th>'+
+  // Tabela — table-layout:fixed com só as colunas "fixas" (aluno/chamada/
+  // média/remover) com largura definida; as colunas de atividade ficam sem
+  // largura própria, então o navegador já divide o espaço que sobra entre
+  // elas igualmente sozinho — cresce a lista, cada uma encolhe na hora,
+  // sem eu precisar recalcular nada. Só o nome do aluno encolhe (mostra só
+  // o último sobrenome) quando tem muita atividade e o espaço aperta.
+  const nAtv=atvs.length;
+  const alunoColPct = nAtv<=3?22 : nAtv<=6?17 : nAtv<=10?13 : 10;
+  const nomesCurtos = nAtv>6;
+  const tabelaMinWidth = Math.max(640, 330+nAtv*66);
+  h+='<div class="notas-table-wrap"><table class="notas-table" style="min-width:'+tabelaMinWidth+'px"><thead><tr>'+
+    '<th class="aluno-col" style="width:'+alunoColPct+'%">Aluno</th>'+
     (temHorarioChamada
-      ? '<th style="min-width:110px"><select onchange="mudarDataColunaChamada(this.value)" style="font-size:11px;font-weight:600;border:0;background:transparent;color:inherit;width:100%">'+
+      ? '<th style="width:90px"><select onchange="mudarDataColunaChamada(this.value)" style="font-size:11px;font-weight:600;border:0;background:transparent;color:inherit;width:100%">'+
           datasChamada.slice(-12).reverse().map(d=>'<option value="'+d+'"'+(d===window.__chamadaColData?' selected':'')+'>'+d.split('-').reverse().join('/')+'</option>').join('')+
         '</select></th>'
-      : '<th style="min-width:110px"><button class="btn ghost sm" style="font-size:10px;padding:2px 6px" onclick="window.__configurarHorario=true;abrirTodasChamadas()" title="Configurar dias de aula pra habilitar a chamada aqui">📋 configurar</button></th>')+
+      : '<th style="width:90px"><button class="btn ghost sm" style="font-size:10px;padding:2px 6px" onclick="window.__configurarHorario=true;abrirTodasChamadas()" title="Configurar dias de aula pra habilitar a chamada aqui">📋 configurar</button></th>')+
     atvs.map(av=>{
       const tp=ATIV_TIPOS[av.tipo]||{label:av.tipo,cor:'#888',bg:'#f5f5f5'};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
@@ -5403,16 +5439,16 @@ function renderNotas(){
         '<span class="atv-tipo">peso '+av.peso+(isCheck?' &middot; &check;':'')+'</span>'+
       '</th>';
     }).join('')+
-    '<th>Média</th><th></th>'+
+    '<th style="width:56px">Média</th><th style="width:36px"></th>'+
   '</tr></thead><tbody>';
 
   als.forEach(al=>{
     const med=mediaAluno(al.id,atvs,turmaId);
     const medStr=med!=null?med.toFixed(1):'-';
     const medCls=med==null?'':(med>=6?'aprovado':'reprovado');
-    h+='<tr><td class="aluno-nome" style="cursor:pointer" onclick="abrirEditarAluno(\''+al.id+'\')" title="Clique para editar nome/número">'+
+    h+='<tr><td class="aluno-nome" style="cursor:pointer" onclick="abrirEditarAluno(\''+al.id+'\')" title="'+esc(al.nome)+' — clique para editar nome/número">'+
       (al.numero?'<span style="color:var(--muted);font-size:11px;margin-right:4px">'+al.numero+'</span>':'')+
-      esc(al.nome)+
+      esc(nomesCurtos ? nomeSobrenome(al.nome) : al.nome)+
     '</td>'+
     (temHorarioChamada
       ? (()=>{ const falta=chamadaHoje && chamadaHoje.presencas[al.id]===false;
