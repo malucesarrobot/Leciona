@@ -3318,11 +3318,19 @@ function parseJSON(raw){
 /* Todas as chamadas de IA passam pela Cloud Function gerarComIA — a chave da
    API Anthropic fica só no servidor (Secret Manager), nunca no navegador.
    A function já faz o retry em 429 internamente; aqui só repassamos o erro. */
-async function chamarIA(system, messages, opts){
+/* Variante que devolve a resposta inteira (blocos de conteúdo + stop_reason),
+   não só o texto — usada pelo Assistente pra rodar o loop de ferramentas.
+   As chamadas simples (callClaude etc.) continuam usando chamarIA(), que só
+   quer o texto. */
+async function chamarIARaw(system, messages, opts){
   opts=opts||{};
   const fn=firebase.app().functions('southamerica-east1').httpsCallable('gerarComIA');
-  const r=await fn({system, messages, maxTokens:opts.maxTokens||2500, useWeb:!!opts.useWeb, model:getModel()});
-  return (r.data&&r.data.resposta)||'';
+  const r=await fn({system, messages, maxTokens:opts.maxTokens||2500, useWeb:!!opts.useWeb, model:getModel(), tools:opts.tools});
+  return r.data||{};
+}
+async function chamarIA(system, messages, opts){
+  const data=await chamarIARaw(system, messages, opts);
+  return data.resposta||'';
 }
 async function callClaude(system,user,maxTokens){
   return chamarIA(system,[{role:'user',content:user}],maxTokens?{maxTokens}:undefined);
@@ -3332,12 +3340,104 @@ async function callClaudeWeb(system,user){
 }
 
 /* =========================================================
-   ASSISTENTE — chat livre com IA, com opção de anexar
-   qualquer resposta a um tema aberto.
+   ASSISTENTE — chat com IA, com ferramentas (agenda + anotação em
+   tema) e opção de anexar qualquer resposta a um tema aberto.
+
+   A Cloud Function gerarComIA é um proxy burro: só repassa `tools` pra
+   API da Anthropic e devolve os blocos de conteúdo crus. Todo o "o que
+   uma ferramenta faz de verdade" mora aqui, no cliente — mesma filosofia
+   do resto do Leciona (o servidor nunca toca nos dados, só na chamada de
+   IA). Isso também evita duplicar a lógica de negócio em dois lugares:
+   quem cria um compromisso pelo chat usa a MESMA persistCompromisso() que
+   o formulário da Agenda usa.
+
+   Escopo de ferramentas deliberadamente conservador nesta primeira
+   versão: só ações aditivas/reversíveis (criar/editar/apagar compromisso,
+   consultar agenda, anexar anotação a um tema). Nada que crie/apague
+   tema, turma, aluno ou nota — isso fica pra depois, se fizer sentido.
    ========================================================= */
-let _chatMsgs=[]; // {role:'user'|'assistant', text}
-async function callClaudeChat(system, msgs, useWeb){
-  return chamarIA(system, msgs.map(m=>({role:m.role, content:m.text})), {maxTokens:3000,useWeb});
+let _chatMsgs=[];     // exibição: {role:'user'|'assistant'|'tool', text}
+let _chatApiMsgs=[];  // histórico real no formato da API (inclui tool_use/tool_result)
+const FERRAMENTAS_ASSISTENTE=[
+  {name:'criar_compromisso', description:'Cria um compromisso/lembrete na Agenda do Leciona — reunião, entrega de diário, prova, etc. NÃO use pra aulas normais (essas já vêm do horário da turma).', input_schema:{type:'object',properties:{
+    titulo:{type:'string', description:'Título curto do compromisso'},
+    data:{type:'string', description:'Data no formato YYYY-MM-DD'},
+    hora:{type:'string', description:'Horário HH:MM, opcional'},
+    descricao:{type:'string', description:'Detalhe opcional'}
+  }, required:['titulo','data']}},
+  {name:'editar_compromisso', description:'Edita um compromisso existente da Agenda pelo id, ou apaga (apagar:true). Use consultar_agenda antes se não souber o id.', input_schema:{type:'object',properties:{
+    id:{type:'string'}, titulo:{type:'string'}, data:{type:'string'}, hora:{type:'string'}, descricao:{type:'string'},
+    apagar:{type:'boolean', description:'true pra remover o compromisso em vez de editar'}
+  }, required:['id']}},
+  {name:'consultar_agenda', description:'Lista aulas (do horário real da turma), cronograma de conteúdo planejado e compromissos entre duas datas.', input_schema:{type:'object',properties:{
+    data_inicio:{type:'string', description:'YYYY-MM-DD'}, data_fim:{type:'string', description:'YYYY-MM-DD'}
+  }, required:['data_inicio','data_fim']}},
+  {name:'deixar_nota_tema', description:'Anexa uma anotação ao tema de aula atualmente aberto no editor (ou, se nenhum estiver aberto, a um tema existente pelo nome exato).', input_schema:{type:'object',properties:{
+    texto:{type:'string'}, tema_nome:{type:'string', description:'Nome exato do tema, só necessário se nenhum tema estiver aberto no editor'}
+  }, required:['texto']}},
+];
+function rotuloFerramentaAssistente(nome, input){
+  input=input||{};
+  const labels={
+    criar_compromisso:'criando compromisso "'+(input.titulo||'')+'"',
+    editar_compromisso:input.apagar?'apagando compromisso da agenda':'editando compromisso da agenda',
+    consultar_agenda:'consultando a agenda ('+(input.data_inicio||'?')+' a '+(input.data_fim||'?')+')',
+    deixar_nota_tema:'anexando anotação'+(input.tema_nome?(' a "'+input.tema_nome+'"'):' ao tema aberto'),
+  };
+  return labels[nome]||nome;
+}
+function executarFerramentaAssistente(nome, input){
+  input=input||{};
+  try{
+    if(nome==='criar_compromisso'){
+      if(!input.titulo||!input.data) return {erro:'faltam titulo/data'};
+      const c={id:uid(), titulo:String(input.titulo).slice(0,120), data:input.data, hora:input.hora||'', descricao:input.descricao||'', concluido:false};
+      persistCompromisso(c);
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+      return {ok:true, id:c.id};
+    }
+    if(nome==='editar_compromisso'){
+      const c=compromissos[input.id]; if(!c) return {erro:'compromisso não encontrado — use consultar_agenda pra achar o id'};
+      if(input.apagar){
+        delete compromissos[input.id];
+        lsSet(LS_COMP, JSON.stringify(compromissos));
+        if(DB) DB.ref('leciona/compromissos/'+input.id).remove().catch(()=>{});
+        if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+        return {ok:true, apagado:true};
+      }
+      ['titulo','data','hora','descricao'].forEach(k=>{ if(input[k]!=null) c[k]=input[k]; });
+      persistCompromisso(c);
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+      return {ok:true};
+    }
+    if(nome==='consultar_agenda'){
+      const {data_inicio,data_fim}=input;
+      if(!data_inicio||!data_fim) return {erro:'faltam data_inicio/data_fim'};
+      const out=[];
+      let cur=new Date(data_inicio+'T00:00:00'); const fim=new Date(data_fim+'T00:00:00');
+      let dias=0;
+      while(cur<=fim && dias<93){ // limite de segurança (~3 meses)
+        const iso=isoLocal(cur);
+        aulasDoDiaISO(iso).forEach(x=>out.push({tipo:'aula', data:iso, hora:x.ini, titulo:x.disc+' · '+serieCurta(SERIE_NUM[x.serie])+x.letra}));
+        planejamentosDoDia(iso).forEach(({tema})=>out.push({tipo:'cronograma', data:iso, titulo:tema.nome||''}));
+        compromissosDoDia(iso).forEach(c=>out.push({tipo:'compromisso', id:c.id, data:iso, hora:c.hora||'', titulo:c.titulo, concluido:!!c.concluido}));
+        cur.setDate(cur.getDate()+1); dias++;
+      }
+      return {itens: out};
+    }
+    if(nome==='deixar_nota_tema'){
+      let t=editing;
+      if(!t && input.tema_nome){ const nomeLow=String(input.tema_nome).toLowerCase(); t=Object.values(temas).find(x=>x && (x.nome||'').toLowerCase()===nomeLow); }
+      if(!t) return {erro:'nenhum tema aberto no editor e tema_nome não encontrado'};
+      if(!input.texto) return {erro:'falta texto'};
+      if(!Array.isArray(t.notasAssistente)) t.notasAssistente=[];
+      t.notasAssistente.push({texto:input.texto, ts:Date.now()});
+      persistTema(t);
+      if(editing && editing.id===t.id) renderNotasAssistente();
+      return {ok:true, tema:t.nome};
+    }
+    return {erro:'ferramenta desconhecida: '+nome};
+  }catch(e){ return {erro:e.message}; }
 }
 function openAssistente(){
   const contexto = editing ? (editing.nome+' — '+(editing.disciplina||'')+' '+(editing.serie||'')) : null;
@@ -3353,7 +3453,7 @@ function openAssistente(){
     '</div>'+
     '<label class="check" style="margin-top:8px"><input type="checkbox" id="chatWeb"> buscar na web (custo maior, mais lento)</label>'+
     '</div>'+
-    '<div class="modal-f"><button class="btn ghost" onclick="_chatMsgs=[];closeModal();">Encerrar conversa</button><button class="btn ghost" onclick="closeModal()">Fechar (manter conversa)</button></div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="_chatMsgs=[];_chatApiMsgs=[];closeModal();">Encerrar conversa</button><button class="btn ghost" onclick="closeModal()">Fechar (manter conversa)</button></div>'+
   '</div></div>';
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   renderChat();
@@ -3361,6 +3461,9 @@ function openAssistente(){
 function renderChat(){
   const box=document.getElementById('chatBody'); if(!box) return;
   box.innerHTML=_chatMsgs.map((m,i)=>{
+    if(m.role==='tool'){
+      return '<div style="font-size:11.5px;color:var(--muted);padding:2px 4px">'+esc(m.text)+'</div>';
+    }
     const bg = m.role==='user' ? 'var(--accent-10,#eef2ff)' : 'var(--paper2,#f5f5f0)';
     const anexar = (m.role==='assistant') ? '<button class="btn ghost sm" style="margin-top:6px" onclick="anexarAoTema('+i+')">📌 Anexar a um tema</button>' : '';
     return '<div style="background:'+bg+';border-radius:10px;padding:8px 10px;white-space:pre-wrap">'+
@@ -3373,15 +3476,39 @@ async function enviarChat(){
   if(!txt) return;
   inp.value='';
   _chatMsgs.push({role:'user', text:txt});
+  _chatApiMsgs.push({role:'user', content:txt});
   renderChat();
   const btn=document.getElementById('chatSendBtn'); const prog=document.getElementById('chatProg');
-  if(btn) btn.disabled=true; if(prog) prog.innerHTML='<span class="spin dark"></span> pensando…';
+  if(btn) btn.disabled=true;
   const useWeb=(document.getElementById('chatWeb')||{}).checked;
   const contexto = editing ? ('O usuário está atualmente com o tema "'+editing.nome+'" ('+editing.disciplina+', '+editing.serie+') aberto no app Leciona. Se a pergunta parecer relacionada, considere esse contexto — mas responda livremente qualquer outra pergunta também.') : '';
-  const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+contexto+' Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
+  const hoje='Hoje é '+isoLocal(new Date())+' ('+DIAS_LONGO[new Date().getDay()]+').';
+  const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+hoje+' '+contexto+' Você pode usar ferramentas pra mexer na Agenda do Leciona (criar/editar/apagar compromissos, consultar aulas e compromissos por período) e pra anexar uma anotação a um tema de aula. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
   try{
-    const resp = await callClaudeChat(sys,_chatMsgs,useWeb);
-    _chatMsgs.push({role:'assistant', text:resp||'(sem resposta)'});
+    let iter=0; const MAX_ITER=6; let respostaFinal='';
+    while(iter<MAX_ITER){
+      iter++;
+      if(prog) prog.innerHTML='<span class="spin dark"></span> '+(iter===1?'pensando…':'trabalhando…');
+      const data=await chamarIARaw(sys, _chatApiMsgs, {maxTokens:3000, useWeb, tools:FERRAMENTAS_ASSISTENTE});
+      const content=data.content||[];
+      if(data.stop_reason==='pause_turn'){ _chatApiMsgs.push({role:'assistant', content}); continue; }
+      const chamadas=content.filter(b=>b.type==='tool_use');
+      _chatApiMsgs.push({role:'assistant', content});
+      if(data.stop_reason==='tool_use' && chamadas.length){
+        const resultados=[];
+        for(const c of chamadas){
+          _chatMsgs.push({role:'tool', text:'🔧 '+rotuloFerramentaAssistente(c.name, c.input)});
+          const r=executarFerramentaAssistente(c.name, c.input||{});
+          resultados.push({type:'tool_result', tool_use_id:c.id, content:JSON.stringify(r)});
+        }
+        _chatApiMsgs.push({role:'user', content:resultados});
+        renderChat();
+        continue;
+      }
+      respostaFinal=content.filter(b=>b.type==='text').map(b=>b.text).join('\n');
+      break;
+    }
+    _chatMsgs.push({role:'assistant', text:respostaFinal||'(sem resposta)'});
   }catch(e){
     _chatMsgs.push({role:'assistant', text:'⚠ Erro: '+e.message});
   }
