@@ -348,6 +348,7 @@ p.msh{font-weight:700;margin:.8em 0 .2em;font-size:1.05em}
 .pm-subs{margin:6px 0 0 24px;display:flex;flex-direction:column;gap:4px}
 .pm-sub{display:flex;align-items:flex-start;gap:8px;margin:0;font-size:12.5px;color:var(--ink-soft)}
 .pm-existe{font-size:10px;color:var(--green);background:rgba(47,107,94,.1);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.pm-pronto{font-size:10px;color:var(--ochre);background:rgba(196,122,61,.12);border-radius:6px;padding:1px 6px;white-space:nowrap}
 .bim-n{width:54px;padding:5px;border:1px solid var(--line);border-radius:7px;text-align:center}
 .bim-saldo{margin-top:10px;font-size:13px}
 /* editor de ordem do PDF */
@@ -1997,6 +1998,9 @@ function openPartirMatriz(){
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" id="pmBtn" onclick="criarPartirMatriz()">Criar selecionados</button></div></div></div>';
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   renderPmList();
+  // pr\u00e9-pronto pode ainda n\u00e3o estar carregado (\u00e9 sob demanda, por
+  // disciplina) \u2014 renderiza de novo quando chegar, pra acender os selos.
+  ensurePrebuiltDiscLoaded(scope.disc).then(()=>{ if(document.getElementById('pmList')) renderPmList(); });
 }
 function pmModeChange(){ const v=document.querySelector('input[name=pmMode]:checked').value; document.getElementById('pmObjs').style.display = v==='gerar'?'':'none'; }
 function renderPmList(){
@@ -2007,15 +2011,21 @@ function renderPmList(){
   const cont=Object.values(conteudos).find(c=>c.turmaId===scope.turma&&c.bimestre===scope.bim&&c.nome==='Matriz \u2014 '+scope.bim);
   const existentes=cont?temasDoConteudo(cont.id):[];
   const jaExiste=(codigo,nome)=>existentes.some(t=>t.dcgo===codigo&&t.nome===String(nome).slice(0,80));
+  // Selo: se j\u00e1 existe na turma, mostra isso; sen\u00e3o, se tem pr\u00e9-pronto
+  // pronto pra usar sem gastar IA, mostra "pr\u00e9-pronto"; sen\u00e3o fica sem selo
+  // (vai precisar gerar com IA quando criar).
+  const pmBadge=(codigo,nome)=>{
+    if(jaExiste(codigo,nome)) return ' <span class="pm-existe">j\u00e1 existe na turma</span>';
+    if(typeof PREBUILT_OBJ!=='undefined' && PREBUILT_OBJ[nome]) return ' <span class="pm-pronto" title="J\u00e1 tem conte\u00fado pronto \u2014 n\u00e3o gasta IA ao criar">pr\u00e9-pronto</span>';
+    return '';
+  };
   box.innerHTML=arr.map((it,i)=>{
     const subs=pmSubs[i]||[];
     const habNome=it.t||it.h||it.c;
-    const habBadge=jaExiste(it.c,habNome)?' <span class="pm-existe">j\u00e1 existe na turma</span>':'';
-    const head='<label class="check pm-hab"><input type="checkbox" '+(pmSel.has('h:'+i)?'checked':'')+' onchange="pmToggle(\'h:'+i+'\')"><b>'+esc(habNome)+'</b> <span class="pm-cod">'+esc(it.c)+'</span>'+habBadge+'</label>';
+    const head='<label class="check pm-hab"><input type="checkbox" '+(pmSel.has('h:'+i)?'checked':'')+' onchange="pmToggle(\'h:'+i+'\')"><b>'+esc(habNome)+'</b> <span class="pm-cod">'+esc(it.c)+'</span>'+pmBadge(it.c,habNome)+'</label>';
     const subHtml=subs.map((sb,j)=>{
       const nome=(sb&&sb.s)||sb;
-      const subBadge=jaExiste(it.c,nome)?' <span class="pm-existe">j\u00e1 existe na turma</span>':'';
-      return '<label class="check pm-sub"><input type="checkbox" '+(pmSel.has('s:'+i+':'+j)?'checked':'')+' onchange="pmToggle(\'s:'+i+':'+j+'\')">'+esc(nome)+((sb&&sb.a)?(' <span style="color:#8a8f98;font-size:.82em">\u00b7 '+sb.a+' aula'+(sb.a>1?'s':'')+'</span>'):'')+subBadge+'</label>';
+      return '<label class="check pm-sub"><input type="checkbox" '+(pmSel.has('s:'+i+':'+j)?'checked':'')+' onchange="pmToggle(\'s:'+i+':'+j+'\')">'+esc(nome)+((sb&&sb.a)?(' <span style="color:#8a8f98;font-size:.82em">\u00b7 '+sb.a+' aula'+(sb.a>1?'s':'')+'</span>'):'')+pmBadge(it.c,nome)+'</label>';
     }).join('');
     return '<div class="pm-group">'+head+(subHtml?('<div class="pm-subs">'+subHtml+'</div>'):'')+'</div>';
   }).join('');
