@@ -123,6 +123,9 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .dup-fix:hover{opacity:.7}
 .acervo-acoes{display:flex;gap:6px}
 .acervo-vazio{text-align:center;color:var(--muted);padding:40px 20px}
+.acervo-preprontos-head{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ochre);margin:20px 0 10px;padding-top:14px;border-top:1px solid var(--border)}
+.acervo-card.pronto{border-style:dashed;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.acervo-badge-pronto{font-size:10px;color:var(--ochre);background:rgba(196,122,61,.12);border-radius:6px;padding:1px 6px;margin-left:6px;white-space:nowrap}
 .obj-status-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}
 .obj-dot{font-size:11px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);color:var(--muted)}
 .obj-dot.feito{background:var(--green);color:#fff;border-color:var(--green)}
@@ -204,6 +207,10 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .meta-pane label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
 .meta-pane input,.meta-pane textarea,.meta-pane select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
 .meta-pane textarea{resize:vertical;min-height:60px}
+.meta-pane input.meta-cod-badge{width:auto;max-width:160px;margin-top:6px;padding:2px 8px;font-size:10.5px;font-family:ui-monospace,monospace;color:#8a938c;background:rgba(127,127,127,.1);border:none;border-radius:6px}
+.meta-pane input.meta-cod-badge:focus{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.meta-pane textarea.meta-anot{min-height:32px;font-size:12.5px;font-style:italic;color:var(--ink-soft);background:transparent;border:1px dashed var(--line)}
+.meta-pane textarea.meta-anot:focus{font-style:normal;color:var(--ink);background:#fff;border-style:solid}
 .meta-block{border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px;margin-bottom:14px}
 .meta-block h4{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:9px;display:flex;align-items:center;gap:7px}
 .turma-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex-wrap:wrap}
@@ -515,6 +522,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button class="btn primary full" onclick="novoConteudo()">+ Novo conteúdo</button>
       <button class="btn full" onclick="openRelatorio()">&#128196; Gerar relatório / PDF</button>
       <button class="btn full" onclick="setView('acervo')">&#128218; Acervo — buscar em tudo</button>
+      <button class="btn full" onclick="_painelOrigin='gestao';setView('painel')">&#128200; Painel geral — progresso de todas as turmas</button>
       <div class="sep"></div>
       <button class="btn ghost full" onclick="toggleMaisOpcoesGestao()" id="btnMaisOpcoesGestao">&#8943; mais opções</button>
       <div class="hidden" id="maisOpcoesGestao">
@@ -553,11 +561,10 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <div class="field"><label>Conteúdo</label>
         <select id="edConteudo" onchange="edDirty();renderCronograma()"></select></div>
       <div class="field"><label>Habilidade (DC-GO / corte)</label>
-        <select id="edHab" onchange="aplicarHab()"></select></div>
-      <div class="field"><label>Código DC-GO</label>
-        <input id="edDcgo" oninput="onDcgoInput()" placeholder="ex: GO-EF09HI13-A"></div>
-      <div class="field"><label>Resumo</label>
-        <textarea id="edResumo" oninput="edDirty()"></textarea></div>
+        <select id="edHab" onchange="aplicarHab()"></select>
+        <input id="edDcgo" class="meta-cod-badge" oninput="onDcgoInput()" placeholder="código" title="Código DC-GO — normalmente vem da habilidade escolhida acima; só edite pra um código fora da matriz."></div>
+      <div class="field"><label>Anotação</label>
+        <textarea id="edResumo" class="meta-anot" oninput="edDirty()" placeholder="anotação opcional sobre este tema…"></textarea></div>
       <div class="field"><label>Palavras-chave</label>
         <input id="edPalavras" oninput="edDirty()" placeholder="separe por vírgula"></div>
       <div class="field"><label>Tempo estimado (aulas)</label>
@@ -4743,7 +4750,7 @@ let _acervoBusca='', _acervoDisc='', _acervoSerie='', _acervoBim='';
    Pensado pra quem tem muitas turmas/disciplinas: mostra % aplicado por
    turma num bimestre, destaca quem está atrasada (ocorrência sem resolver)
    e dá um atalho direto pra abrir aquela turma na Gestão. */
-let _painelBim = null, _painelDisc = '';
+let _painelBim = null, _painelDisc = '', _painelOrigin = 'gestao';
 function renderPainel(){
   const box=document.getElementById('painelBody'); if(!box) return;
   if(_painelBim==null) _painelBim = bimAtual();
@@ -4773,7 +4780,7 @@ function renderPainel(){
   const comConteudo = linhas.filter(l=>l.total>0);
   const pctMedio = comConteudo.length ? Math.round(comConteudo.reduce((s,l)=>s+l.pct,0)/comConteudo.length) : 0;
 
-  let html = '<button class="btn ghost sm" style="margin-bottom:10px" onclick="setView(\'notas\')">← Voltar pra Notas</button>'+
+  let html = '<button class="btn ghost sm" style="margin-bottom:10px" onclick="setView(\''+_painelOrigin+'\')">← Voltar'+(_painelOrigin==='notas'?' pra Notas':' pra Gestão')+'</button>'+
     '<div class="acervo-filtros">'+
     '<select onchange="_painelDisc=this.value;renderPainel()"><option value="">Todas disciplinas</option>'+
       discs.map(d=>'<option value="'+esc(d)+'"'+(d===_painelDisc?' selected':'')+'>'+esc(d)+'</option>').join('')+
@@ -4871,7 +4878,7 @@ function renderAcervo(){
       '<option value="">Todos bimestres</option>'+
       bims.map(b=>'<option value="'+esc(b)+'"'+(b===_acervoBim?' selected':'')+'>'+esc(b)+'</option>').join('')+
     '</select>'+
-  '</div><div id="acervoLista"></div>';
+  '</div><div id="acervoLista"></div><div id="acervoPrePronto"></div>';
 
   box.innerHTML=filtrosHtml;
   renderAcervoLista();
@@ -4928,7 +4935,8 @@ function renderAcervoLista(){
   }
 
   if(!itens.length){
-    box.innerHTML='<div class="acervo-vazio"><p>'+(_acervoBusca?'Nenhum tema encontrado para "'+esc(_acervoBusca)+'"':'Nenhum tema no acervo. Crie conteúdos na Gestão.')+'</p></div>';
+    box.innerHTML='<div class="acervo-vazio"><p>'+(_acervoBusca?'Nenhum tema encontrado para "'+esc(_acervoBusca)+'"':'Nenhum tema no acervo ainda.')+'</p></div>';
+    renderAcervoPreProntos(new Set());
     return;
   }
 
@@ -5003,6 +5011,99 @@ function renderAcervoLista(){
   });
 
   box.innerHTML=html;
+  renderAcervoPreProntos(new Set(Object.keys(grupos)));
+}
+
+/* ── Pré-prontos ainda não usados em nenhuma turma ────────────────────────
+   O Acervo, até aqui, só mostra temas que já foram criados de verdade em
+   alguma turma. Mas boa parte do conteúdo pré-pronto (matriz + subtemas do
+   catálogo, com PREBUILT_OBJ já escrito) nunca chegou a virar tema em
+   turma nenhuma — fica invisível. Esta seção lista esse restante e deixa
+   aplicar direto numa turma, sem passar pelo "Partir da matriz" turma por
+   turma. */
+const PREBUILT_DISCS = Object.keys(PREBUILT_DISC_FILE);
+let _acervoPreProntoAtual = [];
+function candidatosPreProntoDoRecorte(disc, serie, bim){
+  const arr = MATRIZ[disc+'|'+serie+'|'+bim] || [];
+  const out = [];
+  arr.forEach(it=>{
+    const nomeHab = it.t||it.h||it.c;
+    if(PREBUILT_OBJ[nomeHab]) out.push({nome:nomeHab, dcgo:it.c, habilidade:it.h, disc, serie, bim});
+    (catalogoSubtemas(it, disc)||[]).forEach(sb=>{
+      const nome=(sb&&sb.s)||sb;
+      if(nome && PREBUILT_OBJ[nome]) out.push({nome, dcgo:it.c, habilidade:it.h, disc, serie, bim});
+    });
+  });
+  return out;
+}
+async function renderAcervoPreProntos(existentesKeys){
+  const box=document.getElementById('acervoPrePronto'); if(!box) return;
+  const discsAlvo = (_acervoDisc ? [_acervoDisc] : PREBUILT_DISCS).filter(d=>PREBUILT_DISC_FILE[d]);
+  if(!discsAlvo.length){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="acervo-preprontos-head">📦 carregando pré-prontos…</div>';
+  await Promise.all(discsAlvo.map(ensurePrebuiltDiscLoaded));
+  const combos=[];
+  Object.keys(MATRIZ).forEach(k=>{
+    const [d,s,b]=k.split('|');
+    if(!discsAlvo.includes(d)) return;
+    if(_acervoSerie && s!==_acervoSerie) return;
+    if(_acervoBim && b!==_acervoBim) return;
+    combos.push([d,s,b]);
+  });
+  let candidatos=[];
+  combos.forEach(([d,s,b])=>candidatos.push(...candidatosPreProntoDoRecorte(d,s,b)));
+  candidatos = candidatos.filter(c=>!existentesKeys.has(c.dcgo+'::'+c.nome));
+  const vistos=new Set();
+  candidatos = candidatos.filter(c=>{ const k=c.disc+'|'+c.serie+'|'+c.bim+'|'+c.nome; if(vistos.has(k))return false; vistos.add(k); return true; });
+  if(_acervoBusca){
+    candidatos = candidatos.filter(c=>c.nome.toLowerCase().includes(_acervoBusca)||(c.dcgo||'').toLowerCase().includes(_acervoBusca)||(c.habilidade||'').toLowerCase().includes(_acervoBusca));
+  }
+  candidatos.sort((a,b)=>a.nome.localeCompare(b.nome));
+  _acervoPreProntoAtual = candidatos;
+  if(!candidatos.length){ box.innerHTML=''; return; }
+  let html='<div class="acervo-preprontos-head">📦 Pré-prontos disponíveis, ainda não usados em nenhuma turma ('+candidatos.length+')</div>';
+  html += candidatos.map((c,i)=>
+    '<div class="acervo-card pronto">'+
+      '<div style="flex:1">'+
+        '<h4>'+esc(c.nome)+' <span class="acervo-badge-pronto">pré-pronto</span></h4>'+
+        '<div class="acervo-meta">'+esc(c.disc)+' · '+esc(c.serie)+' · '+esc(c.bim)+(c.dcgo?' · '+esc(c.dcgo):'')+'</div>'+
+      '</div>'+
+      '<div class="acervo-acoes"><button class="btn ghost sm" onclick="abrirUsarPrePronto('+i+')">usar numa turma…</button></div>'+
+    '</div>'
+  ).join('');
+  box.innerHTML=html;
+}
+function abrirUsarPrePronto(i){
+  const c=_acervoPreProntoAtual[i]; if(!c) return;
+  const turmasDisc=Object.values(turmas).filter(t=>t&&t.disciplina===c.disc&&t.serie===c.serie).sort((a,b)=>turmaNomeEscola(a).localeCompare(turmaNomeEscola(b)));
+  if(!turmasDisc.length){ toast('Nenhuma turma de '+c.disc+' · '+c.serie+' cadastrada ainda. Crie a turma primeiro.','err'); return; }
+  const opts=turmasDisc.map(t=>'<option value="'+t.id+'">'+esc(turmaNomeEscola(t))+'</option>').join('');
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:420px">'+
+    '<div class="modal-h"><h3>Usar "'+esc(c.nome.slice(0,40))+'"</h3></div>'+
+    '<div class="modal-b"><small>'+esc(c.disc)+' · '+esc(c.serie)+' · '+esc(c.bim)+(c.dcgo?' · '+esc(c.dcgo):'')+'</small>'+
+    '<div class="field" style="margin-top:10px"><label>Em qual turma</label><select id="upTurma">'+opts+'</select></div>'+
+    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarUsarPrePronto('+i+')">Adicionar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+function confirmarUsarPrePronto(i){
+  const c=_acervoPreProntoAtual[i]; if(!c) return;
+  const turmaId=(document.getElementById('upTurma')||{}).value; if(!turmaId) return;
+  let cont=Object.values(conteudos).find(co=>co.turmaId===turmaId&&co.bimestre===c.bim&&co.nome==='Matriz — '+c.bim);
+  if(!cont){
+    const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===turmaId&&co.bimestre===c.bim);
+    const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
+    cont={id:uid(),disciplina:c.disc,serie:c.serie,turmaId,bimestre:c.bim,nome:'Matriz — '+c.bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
+    persistConteudo(cont);
+  }
+  // mesmo critério de dedup do criarPartirMatriz(): nunca duplica se já existe
+  // um tema com mesmo dcgo+nome neste conteúdo.
+  const jaExiste=temasDoConteudo(cont.id).find(t=>t.dcgo===c.dcgo&&t.nome===String(c.nome).slice(0,80));
+  const tema=jaExiste||blankTema(cont.id,{turmaId,disciplina:c.disc,serie:c.serie,bimestre:c.bim,nome:String(c.nome).slice(0,80),dcgo:c.dcgo,habilidade:c.habilidade,resumo:c.habilidade,ordem:nextOrdemTema(cont.id)});
+  applyPrebuiltIfEmpty(tema);
+  if(!jaExiste) persistTema(tema);
+  closeModal();
+  toast('"'+c.nome+'" adicionado à turma.','ok');
+  renderAcervoLista();
 }
 
 function acervoAbrir(turmaId, temaId){
@@ -5464,7 +5565,7 @@ function renderNotas(){
     '<button class="btn ghost sm" onclick="exportarNotasCSV()">↓ CSV</button>'+
     '<button class="btn ghost sm" onclick="exportarNotasTodasTurmasCSV()" title="Exporta as notas de todas as turmas de '+esc(tu.disciplina||'')+'">↓ CSV — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
     '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
-    '<button class="btn ghost sm" onclick="setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
+    '<button class="btn ghost sm" onclick="_painelOrigin=\'notas\';setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
   '</div>';
 
   // Stats boxes
