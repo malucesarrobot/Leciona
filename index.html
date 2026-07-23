@@ -94,6 +94,18 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .stat-box strong{display:block;font-size:20px;font-weight:700;color:var(--green)}
 .stat-box span{font-size:11px;color:var(--muted)}
 .atv-tipo{font-size:10px;display:block;color:var(--muted);font-weight:normal}
+.chamada-wrap{max-width:640px}
+.chamada-datas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
+.chamada-resumo{font-size:13px;color:var(--muted);margin-bottom:10px}
+.chamada-lista{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.chamada-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--card);transition:background .1s}
+.chamada-row:last-child{border-bottom:none}
+.chamada-row:hover{background:var(--bg)}
+.chamada-row.falta{background:rgba(200,60,60,.08)}
+.chamada-nome{font-size:14px}
+.chamada-status{font-size:12px;font-weight:600;color:var(--green)}
+.chamada-row.falta .chamada-status{color:var(--err)}
+.chamada-salvar{margin-top:14px}
 .acervo-wrap{max-width:860px;margin:0 auto;padding:16px}
 .acervo-filtros{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
 .acervo-filtros input{flex:1;min-width:180px;padding:8px 14px;border:1.5px solid var(--border);border-radius:20px;background:var(--card);color:var(--text);font-size:14px;outline:none}
@@ -989,6 +1001,7 @@ let _temaIdx = null;         // índice temas por conteudoId (cache)
 let alunos = {};             // { id: aluno } — alunos por turma
 let atividadesCtrl = {};     // { id: atividade } — atividades de controle de notas
 let notasCtrl = {};          // { id: nota } — notas dos alunos
+let chamadas = {};           // { id: {turmaId,data,presencas:{alunoId:true/false},_ts} } — chamada (presença) por turma+dia
 let _buscaTerm = '';          // termo de busca atual (sincronizado via setBusca)
 let temas = {};
 let turmas = {};            // turmas reais (9º A, 9º B...)
@@ -1002,7 +1015,7 @@ const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_
       LS_FB='leciona_fb_cfg', LS_MODEL='leciona_model',
       LS_REG='leciona_registros', LS_ALUNOS='leciona_alunos',
       LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl',
-      LS_OCORR='leciona_ocorrencias';
+      LS_OCORR='leciona_ocorrencias', LS_CHAMADAS='leciona_chamadas';
 // Versão do formato dos dados. Se uma futura versão do app mudar a estrutura,
 // este número sobe e a migração correspondente roda uma única vez, de forma
 // controlada — em vez de o app tentar ler dados antigos com código novo e
@@ -1232,6 +1245,15 @@ function initFirebase(){
         if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
       }
     });
+    _escutar('leciona/chamadas', s=>{
+      if(!s.val()) return;
+      const rem=s.val(); let changed=false;
+      Object.keys(rem).forEach(id=>{ if(!chamadas[id]||chamadas[id]._ts<rem[id]._ts){ chamadas[id]=rem[id]; changed=true; } });
+      if(changed){
+        lsSet(LS_CHAMADAS, JSON.stringify(chamadas));
+        if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas();
+      }
+    });
   }catch(e){ console.error(e); setConn(false); toast('Falha ao conectar Firebase: '+e.message,'err'); }
 }
 function setConn(on){
@@ -1242,6 +1264,7 @@ function setConn(on){
 function loadLocal(){
   try{ registros=JSON.parse(localStorage.getItem(LS_REG)||'{}'); }catch(e){ registros={}; }
   try{ ocorrencias=JSON.parse(localStorage.getItem(LS_OCORR)||'{}'); }catch(e){ ocorrencias={}; }
+  try{ chamadas=JSON.parse(localStorage.getItem(LS_CHAMADAS)||'{}'); }catch(e){ chamadas={}; }
   try{ alunos=JSON.parse(localStorage.getItem(LS_ALUNOS)||'{}'); }catch(e){ alunos={}; }
   try{ atividadesCtrl=JSON.parse(localStorage.getItem(LS_ATVCTRL)||'{}'); }catch(e){ atividadesCtrl={}; }
   try{ notasCtrl=JSON.parse(localStorage.getItem(LS_NOTAS)||'{}'); }catch(e){ notasCtrl={}; }
@@ -2248,8 +2271,8 @@ function excluirTodosDados(){
   if(confirmacao!=='APAGAR TUDO'){ toast('Cancelado — o texto de confirmação não bateu. Nada foi apagado.',''); return; }
   closeModal();
 
-  [LS_CONT,LS_TEMAS,LS_TURMAS,LS_REG,LS_ALUNOS,LS_ATVCTRL,LS_NOTAS,LS_OCORR].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
-  conteudos={}; temas={}; turmas={}; registros={}; alunos={}; atividadesCtrl={}; notasCtrl={}; ocorrencias={}; _temaIdx=null;
+  [LS_CONT,LS_TEMAS,LS_TURMAS,LS_REG,LS_ALUNOS,LS_ATVCTRL,LS_NOTAS,LS_OCORR,LS_CHAMADAS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  conteudos={}; temas={}; turmas={}; registros={}; alunos={}; atividadesCtrl={}; notasCtrl={}; ocorrencias={}; chamadas={}; _temaIdx=null;
 
   if(DB){
     DB.ref('leciona').remove()
@@ -3817,6 +3840,30 @@ function contarAulas(t, bim){
   while(cur<=end){ const wd=cur.getDay(); if(grade[wd] && !FERIADOS_2026.has(isoLocal(cur))) total+=grade[wd]; cur.setDate(cur.getDate()+1); }
   return {total};
 }
+/* Lista as datas reais de aula de uma turma num bimestre (calendário oficial
+   ∩ dia da semana em que a turma tem aula, menos feriados) — base pra
+   Chamada saber quais dias oferecer sem ela ter que digitar nada, e também
+   pra futuras automações no SIAP (mesmos dados, mesma fonte). */
+function datasDeAula(t, bim){
+  const r=BIM_RANGES[bim]; const grade=gradeDe(t); if(!r || !Object.keys(grade).length) return [];
+  const [iy,im,id]=r[0].split('-').map(Number), [fy,fm,fd]=r[1].split('-').map(Number);
+  let cur=new Date(iy,im-1,id); const end=new Date(fy,fm-1,fd);
+  const hoje=isoLocal(new Date());
+  const datas=[];
+  while(cur<=end){
+    const wd=cur.getDay(), iso=isoLocal(cur);
+    if(grade[wd] && !FERIADOS_2026.has(iso) && iso<=hoje) datas.push(iso);
+    cur.setDate(cur.getDate()+1);
+  }
+  return datas;
+}
+/* true se hoje é dia de aula desta turma segundo o horário configurado. */
+function hojeTemAula(t){
+  const grade=gradeDe(t); const wd=new Date().getDay();
+  return !!(grade[wd] && !FERIADOS_2026.has(isoLocal(new Date())));
+}
+function persistChamada(c){ c._ts=Date.now(); chamadas[c.id]=c; lsSet(LS_CHAMADAS,JSON.stringify(chamadas)); if(DB) DB.ref('leciona/chamadas/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar chamada no Firebase (mantida localmente). '+e.message,'err')); }
+function chamadaDoDia(turmaId,data){ return Object.values(chamadas).find(c=>c&&c.turmaId===turmaId&&c.data===data)||null; }
 function openBimestre(){
   if(!scope.turma){ toast('Selecione uma turma primeiro.','err'); return; }
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:680px">'+
@@ -5030,7 +5077,104 @@ function trocarTurmaNotas(turmaId){
   const t=turmas[turmaId]; if(!t) return;
   scope.turma=turmaId; scope.disc=t.disciplina; scope.serie=t.serie; scope.unidade=t.unidade||scope.unidade;
   saveScope();
+  window.__configurarHorario=false;
   renderNotas();
+}
+/* ---------- Chamada (presença) ----------
+   Objetivo: o mínimo de cliques possível pra registrar quem faltou hoje.
+   As datas de aula são calculadas sozinhas (calendário oficial 2026 ∩ dia
+   da semana em que a turma tem aula, ver datasDeAula/gradeDe) — ela só
+   configura o horário da turma UMA vez; depois disso, abrir "Chamada" já
+   cai direto no dia de aula certo, com todo mundo presente por padrão
+   (só toca no nome de quem faltou). Esses mesmos dados (calendário +
+   horário por turma) servem de base pras automações no SIAP no futuro. */
+function renderChamadaBody(tu, als){
+  const grade=gradeDe(tu);
+  if(!Object.keys(grade).length || window.__configurarHorario) return renderConfigurarHorario(tu);
+  const datas=datasDeAula(tu, scope.bim);
+  if(!datas.length){ return '<div class="acervo-vazio"><p>Nenhum dia de aula ainda neste bimestre pra essa turma (segundo o horário configurado).</p>'+botaoReconfigurarHorario(tu)+'</div>'; }
+  const dataFoco = window.__chamadaData && datas.includes(window.__chamadaData) ? window.__chamadaData : datas[datas.length-1];
+  window.__chamadaData = dataFoco;
+  const existente = chamadaDoDia(tu.id, dataFoco);
+  if(!window.__chamadaPresencas || window.__chamadaPresencasData!==dataFoco){
+    window.__chamadaPresencas = existente ? Object.assign({}, existente.presencas) : {};
+    window.__chamadaPresencasData = dataFoco;
+  }
+  const pres=window.__chamadaPresencas;
+  const faltas=als.filter(a=>pres[a.id]===false).length;
+  const ultimasDatas=datas.slice(-10).reverse();
+  const pills=ultimasDatas.map(d=>{
+    const [y,m,dd]=d.split('-');
+    const tem=chamadaDoDia(tu.id,d);
+    return '<button class="btn'+(d===dataFoco?' primary':' ghost')+' sm" style="padding:4px 9px" onclick="selecionarDataChamada(\''+d+'\')" title="'+(tem?'Já tem chamada salva':'Sem chamada ainda')+'">'+dd+'/'+m+(tem?' ✓':'')+'</button>';
+  }).join('');
+  let h='<div class="chamada-wrap">';
+  h+='<div class="chamada-datas"><span style="font-size:12px;color:var(--muted);margin-right:6px">Dia:</span>'+pills+
+     '<input type="date" value="'+dataFoco+'" min="'+datas[0]+'" max="'+datas[datas.length-1]+'" onchange="selecionarDataChamada(this.value)" style="margin-left:8px;padding:4px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:12px">'+
+     botaoReconfigurarHorario(tu)+
+  '</div>';
+  h+='<div class="chamada-resumo">'+als.length+' aluno(s) · <span style="color:'+(faltas?'var(--err)':'var(--green)')+'">'+faltas+' falta(s)</span></div>';
+  h+='<div class="chamada-lista">'+als.map(a=>{
+    const falta=pres[a.id]===false;
+    return '<div class="chamada-row'+(falta?' falta':'')+'" onclick="toggleFaltaChamada(\''+a.id+'\')">'+
+      '<span class="chamada-nome">'+esc(a.nome)+'</span>'+
+      '<span class="chamada-status">'+(falta?'✕ falta':'✓ presente')+'</span>'+
+    '</div>';
+  }).join('')+'</div>';
+  h+='<div class="chamada-salvar"><button class="btn primary" onclick="salvarChamada()">Salvar chamada de '+dataFoco.split('-').reverse().join('/')+'</button></div>';
+  h+='</div>';
+  return h;
+}
+function botaoReconfigurarHorario(tu){
+  return '<button class="btn ghost sm" style="margin-left:8px" onclick="window.__configurarHorario=true;renderNotas()" title="Mudar os dias de aula desta turma">⚙ horário</button>';
+}
+function renderConfigurarHorario(tu){
+  window.__configurarHorario=false;
+  const grade=gradeDe(tu)||{};
+  const dias=[[1,'Segunda'],[2,'Terça'],[3,'Quarta'],[4,'Quinta'],[5,'Sexta']];
+  return '<div class="acervo-vazio"><div style="max-width:420px;margin:0 auto;text-align:left">'+
+    '<p style="text-align:center">Antes da primeira chamada, configure em quais dias da semana essa turma tem aula (só precisa fazer isso uma vez — depois a Chamada já cai direto no dia certo sozinha).</p>'+
+    dias.map(([wd,nome])=>{
+      const n=grade[wd]||0;
+      return '<label class="check" style="display:flex;align-items:center;gap:8px;margin:6px 0"><input type="checkbox" id="hd'+wd+'" '+(n?'checked':'')+'> '+nome+
+        ' <input type="number" id="hn'+wd+'" min="1" max="4" value="'+(n||1)+'" style="width:50px;margin-left:auto;padding:3px 6px" title="Quantas aulas nesse dia"> aula(s)</label>';
+    }).join('')+
+    '<button class="btn primary full" style="margin-top:12px" onclick="salvarHorarioTurma(\''+tu.id+'\')">Salvar horário</button>'+
+  '</div></div>';
+}
+function salvarHorarioTurma(turmaId){
+  const tu=turmas[turmaId]; if(!tu) return;
+  const grade={};
+  [1,2,3,4,5].forEach(wd=>{
+    const chk=document.getElementById('hd'+wd);
+    if(chk && chk.checked){ const n=parseInt(document.getElementById('hn'+wd).value,10)||1; grade[wd]=n; }
+  });
+  if(!Object.keys(grade).length){ toast('Marque pelo menos um dia da semana.','err'); return; }
+  tu.grade=grade;
+  persistTurma(tu);
+  toast('Horário salvo. Agora a Chamada já cai direto no dia certo.','ok');
+  window.__chamadaPresencas=null; window.__chamadaData=null;
+  renderNotas();
+}
+function selecionarDataChamada(d){
+  window.__chamadaData=d;
+  window.__chamadaPresencas=null;
+  renderNotas();
+}
+function toggleFaltaChamada(alunoId){
+  const pres=window.__chamadaPresencas||(window.__chamadaPresencas={});
+  pres[alunoId] = pres[alunoId]===false ? true : false;
+  renderNotas();
+}
+function salvarChamada(){
+  const turmaId=scope.turma, data=window.__chamadaData;
+  if(!turmaId||!data) return;
+  const existente=chamadaDoDia(turmaId,data);
+  const c=existente || {id:uid(), turmaId, data};
+  c.presencas=Object.assign({}, window.__chamadaPresencas);
+  persistChamada(c);
+  const faltas=Object.values(c.presencas).filter(v=>v===false).length;
+  toast('Chamada de '+data.split('-').reverse().join('/')+' salva — '+faltas+' falta(s).','ok');
 }
 function renderNotas(){
   const box=document.getElementById('notasBody'); if(!box) return;
@@ -5062,11 +5206,14 @@ function renderNotas(){
       return '<optgroup label="'+esc(d)+'">'+opts.map(t=>'<option value="'+t.id+'"'+(t.id===turmaId?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('')+'</optgroup>';
     }).join('')+
   '</select>';
+  const modoChamada = window.__notasView==='chamada';
   let h='<div class="notas-toolbar">'+
     '<span style="font-size:18px">📊</span>'+trocaTurmaSel+
+    '<button class="btn'+(modoChamada?' ghost':' primary')+' sm" onclick="window.__notasView=\'notas\';renderNotas()">📊 Notas</button>'+
+    '<button class="btn'+(modoChamada?' primary':' ghost')+' sm" onclick="window.__notasView=\'chamada\';renderNotas()">📋 Chamada</button>'+
     '<button class="btn ghost sm" onclick="abrirAddAluno()">+ Aluno</button>'+
     '<button class="btn ghost sm" onclick="abrirAddAlunoLista()">+ Lista</button>'+
-    '<button class="btn ghost sm" onclick="abrirAddAtividade()">+ Atividade</button>'+
+    (modoChamada?'':'<button class="btn ghost sm" onclick="abrirAddAtividade()">+ Atividade</button>'+
     '<span style="margin-left:auto;font-size:12px;color:var(--muted)">Média: </span>'+
     '<select onchange="setMediaModo(scope.turma,this.value)" style="padding:4px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:12px">'+
       '<option value="ponderada"'+(getMediaModo(turmaId)==='ponderada'?' selected':'')+'>ponderada (usa pesos)</option>'+
@@ -5074,8 +5221,13 @@ function renderNotas(){
     '</select>'+
     '<button class="btn ghost sm" onclick="exportarNotasCSV()">↓ CSV</button>'+
     '<button class="btn ghost sm" onclick="exportarNotasTodasTurmasCSV()" title="Exporta as notas de todas as turmas de '+esc(tu.disciplina||'')+'">↓ CSV — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
-    '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
+    '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>')+
   '</div>';
+  if(modoChamada){
+    if(!als.length){ h+='<div class="acervo-vazio"><p>Nenhum aluno cadastrado. Clique em "+ Aluno" ou "+ Lista".</p></div>'; box.innerHTML=h; return; }
+    box.innerHTML=h+renderChamadaBody(tu, als);
+    return;
+  }
 
   // Stats boxes
   h+='<div class="notas-stats">'+
