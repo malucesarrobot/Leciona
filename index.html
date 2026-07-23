@@ -474,11 +474,11 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <div class="spacer"></div>
     <nav>
       <button id="tabHoje" class="active" onclick="setView('hoje')">Hoje</button>
-      <button id="tabPainel" onclick="setView('painel')">📈 Painel</button>
-      <button id="tabAcervo" onclick="setView('acervo')">📚 Acervo</button>
       <button id="tabNotas" onclick="setView('notas')">📊 Notas</button>
       <button id="tabGestao" onclick="setView('gestao')">Gestão</button>
       <button id="tabProjecao" onclick="abrirProjecaoAtual()">Projetar</button>
+      <button id="tabPainel" class="hidden" onclick="setView('painel')">📈 Painel</button>
+      <button id="tabAcervo" class="hidden" onclick="setView('acervo')">📚 Acervo</button>
     </nav>
     <span class="conn" id="conn" onclick="location.reload()" style="cursor:pointer" title="Toque para recarregar o app"><span class="led"></span><span id="connTxt">Local</span></span>
     <button class="icon-btn" title="Assistente (chat livre com IA)" onclick="openAssistente()">&#128172;</button>
@@ -507,6 +507,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button class="btn full" onclick="openPartirMatriz()">&#10022; Partir da matriz (temas + subtemas)</button>
       <button class="btn full" onclick="openBimestre()">&#128197; Bimestre — aulas &amp; distribuição</button>
       <button class="btn full" onclick="openRelatorio()">&#128196; Gerar relatório / PDF</button>
+      <button class="btn full" onclick="setView('acervo')">&#128218; Acervo — buscar em tudo</button>
       <div class="sep"></div>
       <button class="btn full" onclick="exportBackup()">Exportar backup (JSON)</button>
       <label class="btn ghost full" style="text-align:center;cursor:pointer">Importar backup
@@ -4580,7 +4581,8 @@ function renderPainel(){
   const comConteudo = linhas.filter(l=>l.total>0);
   const pctMedio = comConteudo.length ? Math.round(comConteudo.reduce((s,l)=>s+l.pct,0)/comConteudo.length) : 0;
 
-  let html = '<div class="acervo-filtros">'+
+  let html = '<button class="btn ghost sm" style="margin-bottom:10px" onclick="setView(\'notas\')">← Voltar pra Notas</button>'+
+    '<div class="acervo-filtros">'+
     '<select onchange="_painelDisc=this.value;renderPainel()"><option value="">Todas disciplinas</option>'+
       discs.map(d=>'<option value="'+esc(d)+'"'+(d===_painelDisc?' selected':'')+'>'+esc(d)+'</option>').join('')+
     '</select>'+
@@ -4660,7 +4662,8 @@ function renderAcervo(){
   const series=[...new Set(Object.values(turmas).map(t=>t.serie).filter(Boolean))].sort();
   const bims=['1º Bimestre','2º Bimestre','3º Bimestre','4º Bimestre'];
 
-  const filtrosHtml='<div class="acervo-filtros">'+
+  const filtrosHtml='<button class="btn ghost sm" style="margin-bottom:10px" onclick="setView(\'gestao\')">← Voltar pra Gestão</button>'+
+    '<div class="acervo-filtros">'+
     '<input id="acervoBuscaInput" type="search" placeholder="🔍 Buscar em todo o acervo…" value="'+esc(_acervoBusca)+'" '+
       'oninput="_acervoBusca=this.value.toLowerCase().trim();renderAcervoLista()" '+
       'onsearch="_acervoBusca=this.value.toLowerCase().trim();renderAcervoLista()">'+
@@ -5221,7 +5224,8 @@ function renderNotas(){
     '</select>'+
     '<button class="btn ghost sm" onclick="exportarNotasCSV()">↓ CSV</button>'+
     '<button class="btn ghost sm" onclick="exportarNotasTodasTurmasCSV()" title="Exporta as notas de todas as turmas de '+esc(tu.disciplina||'')+'">↓ CSV — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
-    '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>')+
+    '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
+    '<button class="btn ghost sm" onclick="setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>')+
   '</div>';
   if(modoChamada){
     if(!als.length){ h+='<div class="acervo-vazio"><p>Nenhum aluno cadastrado. Clique em "+ Aluno" ou "+ Lista".</p></div>'; box.innerHTML=h; return; }
