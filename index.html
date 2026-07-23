@@ -520,6 +520,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <div class="hidden" id="maisOpcoesGestao">
         <button class="btn full" onclick="openPartirMatriz()">&#10022; Partir da matriz (temas + subtemas)</button>
         <button class="btn full" onclick="openBimestre()">&#128197; Bimestre — aulas &amp; distribuição</button>
+        <button class="btn full" onclick="abrirRecuperacao()">&#9889; Resumir/condensar 2 temas numa aula</button>
       </div>
     </aside>
 
@@ -2095,10 +2096,17 @@ function sugerirNoConteudo(cid){
   const arr=matrizDoScope();
   if(!arr.length){ toast('Sem dados da matriz para este recorte.',''); return; }
   const existentes=new Set(temasDoConteudo(cid).map(t=>t.dcgo));
-  let base=nextOrdemTema(cid),n=0;
-  arr.forEach(it=>{ if(existentes.has(it.c))return; persistTema(blankTema(cid,{nome:it.t,dcgo:it.c,habilidade:it.h,resumo:it.h,ordem:base++})); n++; });
+  let base=nextOrdemTema(cid),n=0,nPrebuilt=0;
+  arr.forEach(it=>{
+    if(existentes.has(it.c))return;
+    const t=blankTema(cid,{nome:it.t,dcgo:it.c,habilidade:it.h,resumo:it.h,ordem:base++});
+    // mesmo comportamento do "Partir da matriz": puxa o pré-pronto na hora,
+    // se existir, em vez de deixar o tema vazio esperando geração manual.
+    if(typeof applyPrebuiltIfEmpty!=='undefined' && applyPrebuiltIfEmpty(t)) nPrebuilt++;
+    persistTema(t); n++;
+  });
   if(!DB) renderThemes();
-  toast(n?n+' tema(s) adicionados ao conteúdo.':'Os temas da matriz já estavam aqui.','ok');
+  toast(n?(n+' tema(s) adicionados'+(nPrebuilt?(', '+nPrebuilt+' já com conteúdo pré-pronto'):'')+'.'):'Os temas da matriz já estavam aqui.','ok');
 }
 
 /* Popula TODAS as turmas, em TODOS os bimestres que a matriz cobre, de uma vez:
@@ -4113,15 +4121,30 @@ function sectionsWithContent(){
   }));
   return present;
 }
+/* Tem conteúdo de verdade nesse perfil de adaptação (não só o objeto vazio
+   criado por padrão)? Mesmo critério do isFilled(), mas pra t.adaptado[perfil]. */
+function temaTemAdaptacao(t,perfilKey){
+  const ad=t&&t.adaptado&&t.adaptado[perfilKey]; if(!ad) return false;
+  return Object.values(ad).some(v=>Array.isArray(v)?v.length>0:String(v||'').trim().length>0);
+}
 function openRelatorio(){
   if(!scope.turma){ toast('Selecione uma turma para gerar o relatório.','err'); return; }
   const tu=turmas[scope.turma]||{};
   const present=sectionsWithContent(); relIncluded = present.size ? new Set([...present].filter(k=>k!=='gabarito')) : new Set(['quadro','estudo','slides','mapaMental','avaliacao']);
+  // quantos temas deste recorte já têm cada versão adaptada pronta — pra
+  // saber antes de imprimir se vale a pena escolher aquele perfil ou se vai
+  // sair quase tudo "Original" por falta de adaptação gerada ainda.
+  const temasEscopo=[]; conteudosDoScope().forEach(c=>temasDoConteudo(c.id).forEach(t=>temasEscopo.push(t)));
+  const totalTemasEscopo=temasEscopo.length;
+  const perfilOptsHtml=ADAPT_PERFIS.map(pf=>{
+    const n=temasEscopo.filter(t=>temaTemAdaptacao(t,pf.k)).length;
+    return '<option value="'+pf.k+'">Adaptado — '+pf.label+' ('+n+'/'+totalTemasEscopo+' temas)</option>';
+  }).join('');
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+
     '<div class="modal-h"><h3>Gerar relatório / PDF</h3></div>'+
     '<div class="modal-b"><small>'+esc(scope.disc)+' · Turma '+esc(turmaNome(tu))+' · '+esc(scope.bim)+'. Abre uma janela → <b>Imprimir → Salvar como PDF</b>. Use ↑↓ para ordenar e renomeie os títulos (padrão salvo para todos os PDFs). Os temas saem sempre em ordem cronológica.</small>'+
     '<label class="check" style="margin-top:10px"><input type="checkbox" id="relApl"> Somente temas <b>&nbsp;aplicados</b></label>'+
-    '<label class="check"><input type="checkbox" id="relFlashResp"> Flash cards <b>&nbsp;com respostas</b> (padrão: só perguntas)</label>'+'<div class="field" style="margin-top:10px"><label>Versão do material</label><select id="relPerfil"><option value="">Original</option>'+ADAPT_PERFIS.map(pf=>'<option value="'+pf.k+'">Adaptado \u2014 '+pf.label+'</option>').join('')+'</select> <small style="color:#6a7370;display:block;margin-top:4px">Nas se\u00e7\u00f5es Atividade, Quest\u00f5es, Estudo e Mapa mental, usa a vers\u00e3o adaptada quando existir (monta a apostila inteira de uma vez).</small></div>'+
+    '<label class="check"><input type="checkbox" id="relFlashResp"> Flash cards <b>&nbsp;com respostas</b> (padrão: só perguntas)</label>'+'<div class="field" style="margin-top:10px"><label>Versão do material</label><select id="relPerfil"><option value="">Original</option>'+perfilOptsHtml+'</select> <small style="color:#6a7370;display:block;margin-top:4px">O número entre parênteses é quantos temas desta turma/bimestre já têm essa adaptação pronta — os que não tiverem saem com o conteúdo Original no lugar. Nas seções Atividade, Questões, Estudo e Mapa mental, usa a versão adaptada quando existir (monta a apostila inteira de uma vez).</small></div>'+
     '<div class="field" style="margin-top:10px"><label>Conteúdos no PDF — incluir · ordenar · renomear</label><div id="relList" class="rel-list"></div></div>'+
     '<hr style="margin:14px 0;border:none;border-top:1px solid var(--line)">'+
     '<div class="field"><label style="font-size:14px;font-weight:600">📋 Quais temas incluir no PDF?</label>'+
