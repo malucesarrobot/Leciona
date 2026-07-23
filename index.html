@@ -1041,12 +1041,21 @@ function getModel(){ return localStorage.getItem(LS_MODEL) || 'claude-sonnet-4-6
 function uid(){ return crypto.randomUUID ? crypto.randomUUID() : 't'+Date.now()+Math.random().toString(16).slice(2); }
 
 /* ---------- Firebase / localStorage ---------- */
+/* Um item que existe só localmente e não no servidor foi APAGADO no servidor
+   (por este ou outro aparelho) — nunca ressuscita. Toda gravação real (criar/
+   editar tema, turma, conteúdo) já grava no Firebase na hora via persistX();
+   a única forma de "só existir local" é uma exclusão que aconteceu em outro
+   lugar enquanto este aparelho estava com cache desatualizado (ex.: reabrir o
+   app depois de uma limpeza de duplicatas feita alhures) — nesse caso, o
+   certo é respeitar a exclusão, não reenviar. (Bug real encontrado em
+   produção: um aparelho com cache velho "trazia de volta" temas já apagados
+   por outro aparelho/sessão a cada reload.) */
 function mergeRemote(local, remote){
   remote = remote||{}; local = local||{};
   const out = Object.assign({}, remote); const pushBack=[];
   for(const id in local){ const l=local[id], r=remote[id];
-    if(!r){ out[id]=l; pushBack.push(id); }                         // só existe local: mantém e re-sincroniza
-    else if((l.updatedAt||0) > (r.updatedAt||0)){ out[id]=l; pushBack.push(id); } // local mais novo: mantém
+    if(!r) continue; // só existe local: foi apagado no servidor — respeita, não ressuscita
+    if((l.updatedAt||0) > (r.updatedAt||0)){ out[id]=l; pushBack.push(id); } // mesma id, local mais novo: mantém
   }
   return {merged:out, pushBack};
 }
@@ -1934,10 +1943,12 @@ function chaveTurma(t){
   const unidade=(t.unidade||'').trim().toUpperCase();
   return (t.disciplina||'')+'|'+serieLetra+'|'+unidade;
 }
-async function limparTurmasDuplicadas(){
-  if(!confirm('Isso vai unificar turmas duplicadas (mesmo nome e mesma escola), movendo todo o conteúdo pra uma só e apagando as cópias vazias. Continuar?')) return;
-  closeModal();
-  toast('Verificando turmas duplicadas…','');
+async function limparTurmasDuplicadas(silent){
+  if(!silent){
+    if(!confirm('Isso vai unificar turmas duplicadas (mesmo nome e mesma escola), movendo todo o conteúdo pra uma só e apagando as cópias vazias. Continuar?')) return;
+    closeModal();
+    toast('Verificando turmas duplicadas…','');
+  }
 
   const grupos={};
   Object.values(turmas).forEach(t=>{ if(!t) return; const k=chaveTurma(t); (grupos[k]=grupos[k]||[]).push(t); });
@@ -1980,7 +1991,7 @@ async function limparTurmasDuplicadas(){
     if(i>0 && i%200===0) await new Promise(r=>setTimeout(r,0));
   }
 
-  if(!turmasRemovidas){ toast('Nenhuma turma duplicada encontrada.','ok'); return; }
+  if(!turmasRemovidas){ if(!silent) toast('Nenhuma turma duplicada encontrada.','ok'); return {turmasRemovidas:0}; }
 
   turmasApagar.forEach(id=>delete turmas[id]);
   _temaIdx=null;
@@ -2003,17 +2014,20 @@ async function limparTurmasDuplicadas(){
     DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
   }
   renderThemes();
-  toast(turmasRemovidas+' turma(s) duplicada(s) unificada(s) em '+gruposAfetados+' grupo(s). Agora rode "Limpar duplicatas (banco inteiro)" de novo, pra juntar os temas que ficaram repetidos na turma unificada.','ok');
+  if(!silent) toast(turmasRemovidas+' turma(s) duplicada(s) unificada(s) em '+gruposAfetados+' grupo(s). Agora rode "Limpar duplicatas (banco inteiro)" de novo, pra juntar os temas que ficaram repetidos na turma unificada.','ok');
+  return {turmasRemovidas,gruposAfetados};
 }
 /* Corrige temas cujo turmaId ficou desalinhado do conteudoId real (sobra de
    fusões de turma antigas que não migraram esse campo em todos os temas —
    o conteudoId é a fonte confiável, então realinha turmaId a partir dele).
    Não apaga nada, só corrige a referência; roda ANTES de limparDuplicatasGeral
    pra que ela consiga agrupar corretamente por turma+código. */
-async function corrigirTurmaIdTemas(){
-  if(!confirm('Isso vai corrigir o turmaId de temas cujo campo ficou desalinhado do conteúdo real onde estão (sobra de fusões antigas de turma). Não apaga nada, só realinha a referência. Continuar?')) return;
-  closeModal();
-  toast('Corrigindo referências… não feche a aba.','');
+async function corrigirTurmaIdTemas(silent){
+  if(!silent){
+    if(!confirm('Isso vai corrigir o turmaId de temas cujo campo ficou desalinhado do conteúdo real onde estão (sobra de fusões antigas de turma). Não apaga nada, só realinha a referência. Continuar?')) return;
+    closeModal();
+    toast('Corrigindo referências… não feche a aba.','');
+  }
   let corrigidos=0;
   const temasCorrigidos=[];
   Object.values(temas).forEach(t=>{
@@ -2022,7 +2036,7 @@ async function corrigirTurmaIdTemas(){
     if(!c) return;
     if(t.turmaId!==c.turmaId){ t.turmaId=c.turmaId; corrigidos++; temasCorrigidos.push(t); }
   });
-  if(!corrigidos){ toast('Nenhuma referência desalinhada encontrada.','ok'); return; }
+  if(!corrigidos){ if(!silent) toast('Nenhuma referência desalinhada encontrada.','ok'); return {corrigidos:0}; }
   _temaIdx=null;
   lsSet(LS_TEMAS, JSON.stringify(temas));
   if(DB){
@@ -2031,13 +2045,16 @@ async function corrigirTurmaIdTemas(){
     DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
   }
   renderThemes();
-  toast(corrigidos+' tema(s) com turmaId corrigido. Agora rode "Limpar duplicatas (banco inteiro)" pra juntar os que ficaram repetidos.','ok');
+  if(!silent) toast(corrigidos+' tema(s) com turmaId corrigido. Agora rode "Limpar duplicatas (banco inteiro)" pra juntar os que ficaram repetidos.','ok');
+  return {corrigidos};
 }
-async function limparDuplicatasGeral(){
-  if(typeof PREBUILT_OBJ==='undefined'){ toast('Aguarde o carregamento terminar e tente de novo.','err'); return; }
-  if(!confirm('Isso vai varrer TODOS os seus temas, agrupar por turma+código DC-GO, manter só o mais completo de cada grupo (priorizando o que já foi aplicado em sala) e apagar os duplicados. Não pode ser desfeito. Continuar?')) return;
-  closeModal();
-  toast('Varrendo o banco inteiro… não feche a aba.','');
+async function limparDuplicatasGeral(silent){
+  if(typeof PREBUILT_OBJ==='undefined'){ if(!silent) toast('Aguarde o carregamento terminar e tente de novo.','err'); return; }
+  if(!silent){
+    if(!confirm('Isso vai varrer TODOS os seus temas, agrupar por turma+código DC-GO, manter só o mais completo de cada grupo (priorizando o que já foi aplicado em sala) e apagar os duplicados. Não pode ser desfeito. Continuar?')) return;
+    closeModal();
+    toast('Varrendo o banco inteiro… não feche a aba.','');
+  }
 
   const grupos={};
   Object.values(temas).forEach(t=>{
@@ -2061,10 +2078,10 @@ async function limparDuplicatasGeral(){
       const ordenado=lista.slice().sort((a,b)=>pontuar(b)-pontuar(a));
       ordenado.slice(1).forEach(t=>idsParaApagar.push(t.id));
     }
-    if(i>0 && i%200===0){ toast('Varrendo… '+i+'/'+chaves.length+' grupos.',''); await new Promise(r=>setTimeout(r,0)); }
+    if(i>0 && i%200===0){ if(!silent) toast('Varrendo… '+i+'/'+chaves.length+' grupos.',''); await new Promise(r=>setTimeout(r,0)); }
   }
 
-  if(!idsParaApagar.length){ toast('Nenhuma duplicata encontrada — está tudo limpo.','ok'); return; }
+  if(!idsParaApagar.length){ if(!silent) toast('Nenhuma duplicata encontrada — está tudo limpo.','ok'); return {idsParaApagar:[]}; }
 
   // registros de aplicação do tema perdedor ficariam órfãos (apontando pra um
   // tema que não existe mais) se não forem removidos junto.
@@ -2083,7 +2100,8 @@ async function limparDuplicatasGeral(){
     DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar exclusões com o Firebase (removido localmente). '+e.message,'err'));
   }
   renderThemes();
-  toast(idsParaApagar.length+' tema(s) duplicado(s) removidos, em '+gruposAfetados+' grupo(s) — mantido sempre o mais completo de cada um.'+(regsApagar.length?(' '+regsApagar.length+' registro(s) órfão(s) também limpo(s).'):''), 'ok');
+  if(!silent) toast(idsParaApagar.length+' tema(s) duplicado(s) removidos, em '+gruposAfetados+' grupo(s) — mantido sempre o mais completo de cada um.'+(regsApagar.length?(' '+regsApagar.length+' registro(s) órfão(s) também limpo(s).'):''), 'ok');
+  return {idsParaApagar,gruposAfetados,regsApagar};
 }
 /* limparDuplicatasGeral() dedupe TEMAS (mesma turma+código), mas não funde os
    containers de "conteúdo" (ex.: vários "Matriz — 3º Bimestre" pra mesma turma)
@@ -2094,10 +2112,12 @@ async function limparDuplicatasGeral(){
    priorizando os já aplicados em sala) e apaga os containers que ficaram vazios.
    Depois roda o mesmo dedupe de temas de novo, já que a fusão pode ter colocado
    dois temas do mesmo código no mesmo container. */
-async function limparConteudosDuplicados(){
-  if(!confirm('Isso vai unificar os containers de conteúdo duplicados (mesma turma+bimestre), migrando os temas pro container mais completo e apagando os containers redundantes. Depois roda de novo a limpeza de temas duplicados, por segurança. Não pode ser desfeito. Continuar?')) return;
-  closeModal();
-  toast('Unificando containers duplicados… não feche a aba.','');
+async function limparConteudosDuplicados(silent){
+  if(!silent){
+    if(!confirm('Isso vai unificar os containers de conteúdo duplicados (mesma turma+bimestre), migrando os temas pro container mais completo e apagando os containers redundantes. Depois roda de novo a limpeza de temas duplicados, por segurança. Não pode ser desfeito. Continuar?')) return;
+    closeModal();
+    toast('Unificando containers duplicados… não feche a aba.','');
+  }
 
   const grupos={};
   Object.values(conteudos).forEach(c=>{
@@ -2127,10 +2147,10 @@ async function limparConteudosDuplicados(){
         idsContApagar.push(perdedor.id);
       });
     }
-    if(i>0 && i%200===0){ toast('Unificando… '+i+'/'+chaves.length+' grupos.',''); await new Promise(r=>setTimeout(r,0)); }
+    if(i>0 && i%200===0){ if(!silent) toast('Unificando… '+i+'/'+chaves.length+' grupos.',''); await new Promise(r=>setTimeout(r,0)); }
   }
 
-  if(!idsContApagar.length){ toast('Nenhum container duplicado encontrado.','ok'); return; }
+  if(!idsContApagar.length){ if(!silent) toast('Nenhum container duplicado encontrado.','ok'); return {idsContApagar:[],temasMigrados:0}; }
 
   idsContApagar.forEach(id=>{ delete conteudos[id]; });
   _temaIdx=null;
@@ -2142,10 +2162,10 @@ async function limparConteudosDuplicados(){
     Object.values(temas).forEach(t=>{ if(temasMigrados && t.conteudoId) updates['leciona/temas/'+t.id+'/conteudoId']=t.conteudoId; });
     DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
   }
-  toast(idsContApagar.length+' container(s) duplicado(s) removido(s) em '+gruposAfetados+' grupo(s), '+temasMigrados+' tema(s) migrado(s). Rodando limpeza de temas duplicados…','');
-  await new Promise(r=>setTimeout(r,300));
-  await limparDuplicatasGeral();
+  if(!silent){ toast(idsContApagar.length+' container(s) duplicado(s) removido(s) em '+gruposAfetados+' grupo(s), '+temasMigrados+' tema(s) migrado(s). Rodando limpeza de temas duplicados…',''); await new Promise(r=>setTimeout(r,300)); }
+  const dedupe = await limparDuplicatasGeral(true);
   renderThemes();
+  return {idsContApagar,gruposAfetados,temasMigrados,dedupe};
 }
 /* Apaga TODOS os dados pedagógicos (conteúdos, temas, turmas, registros,
    alunos, notas) — local e no Firebase. Não mexe em configurações (chave da
@@ -2302,8 +2322,8 @@ function applyPrebuiltIfEmptySilent(t){
    antes do nome), veio o conteúdo de outro subtema do mesmo código.
    Corrige em lote, uma única gravação no final (mesma lição do
    Popular tudo agora — nunca gravar tema por tema num loop). */
-async function corrigirPrebuiltAplicadoErrado(){
-  if(typeof PREBUILT_OBJ==='undefined'){ toast('O conteúdo pré-pronto ainda está carregando. Aguarde e tente de novo.','err'); return; }
+async function corrigirPrebuiltAplicadoErrado(silent){
+  if(typeof PREBUILT_OBJ==='undefined'){ if(!silent) toast('O conteúdo pré-pronto ainda está carregando. Aguarde e tente de novo.','err'); return; }
   if(typeof ensurePrebuiltDiscLoaded!=='undefined'){
     await Promise.all(Object.keys(PREBUILT_DISC_FILE).map(ensurePrebuiltDiscLoaded));
   }
@@ -2319,8 +2339,8 @@ async function corrigirPrebuiltAplicadoErrado(){
       divergentes.push(t);
     }
   });
-  if(!divergentes.length){ toast('Nenhum tema com conteúdo trocado encontrado. Tudo certo.','ok'); return; }
-  if(!confirm('Encontrei '+divergentes.length+' tema(s) cujo nome bate com um subtema específico, mas o conteúdo aplicado é de OUTRO subtema do mesmo código (bug de correspondência). Corrigir agora, substituindo pelo conteúdo certo?')) return;
+  if(!divergentes.length){ if(!silent) toast('Nenhum tema com conteúdo trocado encontrado. Tudo certo.','ok'); return {divergentes:0}; }
+  if(!silent && !confirm('Encontrei '+divergentes.length+' tema(s) cujo nome bate com um subtema específico, mas o conteúdo aplicado é de OUTRO subtema do mesmo código (bug de correspondência). Corrigir agora, substituindo pelo conteúdo certo?')) return;
   divergentes.forEach(t=>{ t.obj=Object.assign({}, PREBUILT_OBJ[t.nome.trim()]); t._ts=Date.now(); t.updatedAt=t._ts; });
   _temaIdx=null;
   lsSet(LS_TEMAS, JSON.stringify(temas));
@@ -2330,7 +2350,31 @@ async function corrigirPrebuiltAplicadoErrado(){
     DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
   }
   renderThemes();
-  toast(divergentes.length+' tema(s) corrigido(s) — conteúdo trocado pelo certo.','ok');
+  if(!silent) toast(divergentes.length+' tema(s) corrigido(s) — conteúdo trocado pelo certo.','ok');
+  return {divergentes:divergentes.length};
+}
+
+/* Botão único de manutenção: encadeia as 5 correções/limpezas acima na ordem
+   certa (cada uma dependia da anterior já ter rodado — motivo de existirem
+   5 botões separados antes, com instruções de ordem só no texto do toast).
+   Roda tudo silenciosamente e mostra um resumo único no final. */
+async function manutencaoCompleta(){
+  if(!confirm('Isso vai verificar e corrigir os dados automaticamente, nesta ordem: realinhar turmaId desatualizado, unificar turmas duplicadas, unificar containers de conteúdo duplicados, remover temas duplicados e corrigir conteúdo trocado por engano. Pode levar alguns segundos e não pode ser desfeito. Continuar?')) return;
+  closeModal();
+  toast('Verificando e corrigindo tudo… não feche a aba.','');
+  const r1 = (await corrigirTurmaIdTemas(true)) || {corrigidos:0};
+  const r2 = (await limparTurmasDuplicadas(true)) || {turmasRemovidas:0};
+  const r3 = (await limparConteudosDuplicados(true)) || {idsContApagar:[],temasMigrados:0,dedupe:{idsParaApagar:[]}};
+  const r4 = (r3.dedupe) || (await limparDuplicatasGeral(true)) || {idsParaApagar:[]};
+  const r5 = (await corrigirPrebuiltAplicadoErrado(true)) || {divergentes:0};
+  const partes=[];
+  if(r1.corrigidos) partes.push(r1.corrigidos+' turmaId realinhado(s)');
+  if(r2.turmasRemovidas) partes.push(r2.turmasRemovidas+' turma(s) duplicada(s) unificada(s)');
+  if(r3.idsContApagar&&r3.idsContApagar.length) partes.push(r3.idsContApagar.length+' container(s) de conteúdo unificado(s)');
+  if(r4.idsParaApagar&&r4.idsParaApagar.length) partes.push(r4.idsParaApagar.length+' tema(s) duplicado(s) removido(s)');
+  if(r5.divergentes) partes.push(r5.divergentes+' tema(s) com conteúdo trocado corrigido(s)');
+  renderThemes();
+  toast(partes.length ? ('Tudo verificado — '+partes.join(', ')+'.') : 'Tudo verificado — nenhum problema encontrado, seus dados estão em ordem.', 'ok');
 }
 
 /* ---------- CRUD Tema ---------- */
@@ -4000,16 +4044,8 @@ function openConfig(){
         '<label>Manutenção</label>'+
         '<button class="btn primary" style="width:100%" onclick="abrirPopularSeletivo()">⚡ Popular conteúdo (escolher disciplina, escola, bimestre)</button>'+
         '<small>Cria os temas que faltam a partir da matriz oficial e já aplica o conteúdo pré-pronto disponível, em todas as suas turmas de uma vez. Não gasta créditos de IA. Não altera temas que já têm conteúdo.</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px" onclick="corrigirPrebuiltAplicadoErrado()">🔧 Verificar conteúdo trocado</button>'+
-        '<small>Confere se algum tema recebeu o conteúdo de outro subtema do mesmo código (bug já corrigido, mas pode ter afetado temas de antes). Corrige automaticamente os casos encontrados.</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="corrigirTurmaIdTemas()">🔗 Corrigir turmaId desalinhado</button>'+
-        '<small>Realinha o turmaId de temas cujo campo ficou desatualizado (sobra de fusões antigas de turma) — não apaga nada, só corrige a referência. Rode este primeiro de todos.</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="limparTurmasDuplicadas()">🏫 Unificar turmas duplicadas</button>'+
-        '<small>Junta turmas com o mesmo nome e mesma escola (ex.: duas cópias de "9ºC") numa só, movendo todo o conteúdo antes de apagar a cópia. Rode este primeiro.</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="limparDuplicatasGeral()">🧹 Limpar duplicatas (banco inteiro)</button>'+
-        '<small>Varre todos os temas, agrupa por turma+código, e mantém só o mais completo de cada grupo (o que já foi aplicado em sala tem prioridade). Apaga os duplicados de vez — não pode ser desfeito. Rode este depois do botão acima.</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="limparConteudosDuplicados()">🗂 Unificar containers de conteúdo duplicados</button>'+
-        '<small>Junta os containers "Matriz — Bimestre" duplicados de uma mesma turma+bimestre (sobra de rodar "Popular pela matriz" mais de uma vez), migrando os temas pro mais completo e rodando a limpeza de duplicatas de novo em seguida. Rode este por último.</small>'+
+        '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="manutencaoCompleta()">🧹 Verificar e corrigir tudo</button>'+
+        '<small>Um único botão pra tudo: realinha referências desatualizadas, unifica turmas e conteúdos duplicados, remove temas repetidos e corrige conteúdo trocado por engano — na ordem certa, automaticamente. Não pode ser desfeito. Use quando notar algo estranho (temas repetidos, aula sumida etc.) — na dúvida, não faz mal rodar de novo.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
         '<small>Apaga TODOS os conteúdos, temas, turmas, registros, alunos e notas — local e no Firebase (se conectado). Suas configurações (modelo, credenciais) não são afetadas. <strong>Não pode ser desfeito.</strong></small></div>'+
     '</div>'+
