@@ -497,11 +497,14 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
         <input id="buscaTurmaRapida" type="search" placeholder="🔍 digite pra pular direto…" oninput="buscarTurmaRapida(this.value)" onblur="setTimeout(fecharBuscaTurmaRapida,150)" autocomplete="off">
         <div id="buscaTurmaResultados" class="busca-turma-resultados hidden"></div>
       </div>
-      <div class="field"><label>Disciplina</label><select id="selDisc" onchange="onScopeChange()"></select></div>
-      <div class="field"><label>Unidade / Escola</label><select id="selUnidade" onchange="onScopeChange()"></select></div>
-      <div class="field"><label>Série / Ano</label><select id="selSerie" onchange="onScopeChange()"></select></div>
-      <div class="field"><label class="lbl-row">Turma <button class="btn ghost sm" onclick="openTurmas()">+ turmas</button></label><select id="selTurma" onchange="onScopeChange()"></select></div>
+      <div class="field"><label class="lbl-row">Turma <button class="btn ghost sm" onclick="openTurmas()">+ turmas</button></label><select id="selTurmaUnica" onchange="trocarTurmaGestao(this.value)"></select></div>
       <div class="field"><label>Bimestre</label><select id="selBim" onchange="onScopeChange()"></select></div>
+      <div class="hidden">
+        <select id="selDisc" onchange="onScopeChange()"></select>
+        <select id="selUnidade" onchange="onScopeChange()"></select>
+        <select id="selSerie" onchange="onScopeChange()"></select>
+        <select id="selTurma" onchange="onScopeChange()"></select>
+      </div>
       <div class="sep"></div>
       <button class="btn primary full" onclick="novoConteudo()">+ Novo conteúdo</button>
       <button class="btn full" onclick="openPartirMatriz()">&#10022; Partir da matriz (temas + subtemas)</button>
@@ -653,6 +656,21 @@ function turmaNome(t){
   if(t.letra) return serieCurta(t.serie||'')+t.letra;          // modelo novo: 9ºA
   if(t.nome && t.nome.trim()) return t.nome.trim();             // turma antiga: nome digitado (ex.: '9º A')
   return serieCurta(t.serie||'')||'(turma)';
+}
+/* turmaNome() sozinho não basta pra escolher — "1ªA" pode ser a de EFG OU a
+   de CEPI Marajó, duas turmas diferentes com o mesmo nome curto. Sempre
+   mostra a escola junto pra não ter ambiguidade nos seletores. */
+function turmaNomeEscola(t){ return turmaNome(t)+' — '+(t.unidade||'?'); }
+/* <option>s agrupadas por disciplina, com a escola sempre visível — usado
+   tanto em Notas quanto em Gestão, pra trocar de turma com um só seletor
+   em vez dos 4 em cascata (disciplina/unidade/série/turma). */
+function turmaOptionsHtml(selectedId){
+  const todas=Object.values(turmas).filter(Boolean).sort((a,b)=>turmaNomeEscola(a).localeCompare(turmaNomeEscola(b)));
+  return Object.keys(SERIES_BY_DISC).map(d=>{
+    const opts=todas.filter(t=>t.disciplina===d);
+    if(!opts.length) return '';
+    return '<optgroup label="'+esc(d)+'">'+opts.map(t=>'<option value="'+t.id+'"'+(t.id===selectedId?' selected':'')+'>'+esc(turmaNomeEscola(t))+'</option>').join('')+'</optgroup>';
+  }).join('');
 }
 /* Turmas pré-carregadas: [disciplina, série, letra, unidade] */
 const SEED_TURMAS = [
@@ -1672,6 +1690,24 @@ function refreshTurmas(preferId){
   const want = (preferId && list.find(t=>t.id===preferId)) ? preferId
              : (list.find(t=>t.id===scope.turma) ? scope.turma : (list.length?list[0].id:''));
   scope.turma = want; sel.value = want;
+  const selUnica=document.getElementById('selTurmaUnica');
+  if(selUnica){ selUnica.innerHTML=turmaOptionsHtml(want); selUnica.value=want; }
+}
+/* Seletor único de turma em Gestão (mesmo padrão de Notas) — troca a turma
+   direto, sincronizando os 4 selects antigos (escondidos, ainda usados por
+   onScopeChange/refreshTurmas por baixo dos panos) e recarregando o resto. */
+function trocarTurmaGestao(turmaId){
+  const t=turmas[turmaId]; if(!t) return;
+  // onScopeChange() só reconstrói #selSerie de novo (e perde o valor que a
+  // gente acabou de setar) se achar que scope.disc ainda está desatualizado
+  // — por isso já deixa certo aqui antes de chamar.
+  scope.disc=t.disciplina;
+  document.getElementById('selDisc').value=t.disciplina;
+  refreshSeries();
+  document.getElementById('selUnidade').value=t.unidade||scope.unidade;
+  document.getElementById('selSerie').value=t.serie;
+  refreshTurmas(turmaId);
+  onScopeChange();
 }
 function onScopeChange(){
   try{ const ed=document.getElementById('editor'); if(editing && ed && !ed.classList.contains('hidden')) flushEditor(); }catch(e){}
@@ -5202,12 +5238,8 @@ function renderNotas(){
   const aprovados=medias.filter(m=>m>=6).length;
   const reprovados=medias.filter(m=>m<6).length;
 
-  const trocaTurmaSel='<select onchange="trocarTurmaNotas(this.value)" title="Trocar de turma sem sair de Notas" style="font-weight:700;font-size:15px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);min-width:180px;max-width:260px;flex:0 0 auto">'+
-    Object.keys(SERIES_BY_DISC).map(d=>{
-      const opts=todasTurmasInit.filter(t=>t.disciplina===d);
-      if(!opts.length) return '';
-      return '<optgroup label="'+esc(d)+'">'+opts.map(t=>'<option value="'+t.id+'"'+(t.id===turmaId?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('')+'</optgroup>';
-    }).join('')+
+  const trocaTurmaSel='<select onchange="trocarTurmaNotas(this.value)" title="Trocar de turma sem sair de Notas" style="font-weight:700;font-size:15px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);min-width:220px;max-width:300px;flex:0 0 auto">'+
+    turmaOptionsHtml(turmaId)+
   '</select>';
   const modoChamada = window.__notasView==='chamada';
   let h='<div class="notas-toolbar">'+
