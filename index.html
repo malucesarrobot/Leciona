@@ -4951,6 +4951,15 @@ function renderRanking(){
 }
 
 // ── Render principal ──────────────────────────────────────────────────────
+/* Troca de turma direto na aba Notas (sem passar por Gestão). Atualiza o
+   scope inteiro (disciplina/série/unidade) pra ficar consistente se ela for
+   pra outra aba depois, e recarrega a tabela de notas na hora. */
+function trocarTurmaNotas(turmaId){
+  const t=turmas[turmaId]; if(!t) return;
+  scope.turma=turmaId; scope.disc=t.disciplina; scope.serie=t.serie; scope.unidade=t.unidade||scope.unidade;
+  saveScope();
+  renderNotas();
+}
 function renderNotas(){
   const box=document.getElementById('notasBody'); if(!box) return;
   const turmaId=scope.turma;
@@ -4974,8 +4983,15 @@ function renderNotas(){
   const aprovados=medias.filter(m=>m>=6).length;
   const reprovados=medias.filter(m=>m<6).length;
 
+  const trocaTurmaSel='<select onchange="trocarTurmaNotas(this.value)" title="Trocar de turma sem sair de Notas" style="font-weight:700;font-size:15px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);min-width:180px;max-width:260px;flex:0 0 auto">'+
+    Object.keys(SERIES_BY_DISC).map(d=>{
+      const opts=todasTurmasInit.filter(t=>t.disciplina===d);
+      if(!opts.length) return '';
+      return '<optgroup label="'+esc(d)+'">'+opts.map(t=>'<option value="'+t.id+'"'+(t.id===turmaId?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('')+'</optgroup>';
+    }).join('')+
+  '</select>';
   let h='<div class="notas-toolbar">'+
-    '<h3>📊 '+esc(turmaNome(tu))+'</h3>'+
+    '<span style="font-size:18px">📊</span>'+trocaTurmaSel+
     '<button class="btn ghost sm" onclick="abrirAddAluno()">+ Aluno</button>'+
     '<button class="btn ghost sm" onclick="abrirAddAlunoLista()">+ Lista</button>'+
     '<button class="btn ghost sm" onclick="abrirAddAtividade()">+ Atividade</button>'+
