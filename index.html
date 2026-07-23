@@ -403,6 +403,8 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
 .modal-b{padding:20px 22px}
 .modal-b .field{margin-bottom:14px}
 .modal-b label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:5px}
+.modal-b label.check{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
+.modal-b label.check input{width:auto}
 .modal-b input,.modal-b textarea,.modal-b select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px}
 .modal-b textarea.mono{min-height:90px;font-family:ui-monospace,monospace;font-size:12px;resize:vertical}
 .modal-b small{color:var(--muted);font-size:12px;display:block;margin-top:5px;line-height:1.4}
@@ -507,15 +509,14 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       </div>
       <div class="sep"></div>
       <button class="btn primary full" onclick="novoConteudo()">+ Novo conteúdo</button>
-      <button class="btn full" onclick="openPartirMatriz()">&#10022; Partir da matriz (temas + subtemas)</button>
-      <button class="btn full" onclick="openBimestre()">&#128197; Bimestre — aulas &amp; distribuição</button>
       <button class="btn full" onclick="openRelatorio()">&#128196; Gerar relatório / PDF</button>
       <button class="btn full" onclick="setView('acervo')">&#128218; Acervo — buscar em tudo</button>
       <div class="sep"></div>
-      <button class="btn full" onclick="exportBackup()">Exportar backup (JSON)</button>
-      <label class="btn ghost full" style="text-align:center;cursor:pointer">Importar backup
-        <input type="file" accept="application/json" style="display:none" onchange="importBackup(event)">
-      </label>
+      <button class="btn ghost full" onclick="toggleMaisOpcoesGestao()" id="btnMaisOpcoesGestao">&#8943; mais opções</button>
+      <div class="hidden" id="maisOpcoesGestao">
+        <button class="btn full" onclick="openPartirMatriz()">&#10022; Partir da matriz (temas + subtemas)</button>
+        <button class="btn full" onclick="openBimestre()">&#128197; Bimestre — aulas &amp; distribuição</button>
+      </div>
     </aside>
 
     <main class="themes">
@@ -551,8 +552,6 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
         <select id="edHab" onchange="aplicarHab()"></select></div>
       <div class="field"><label>Código DC-GO</label>
         <input id="edDcgo" oninput="onDcgoInput()" placeholder="ex: GO-EF09HI13-A"></div>
-      <div class="field"><label>Selos da matriz</label>
-        <div id="edSelos" class="selos"></div></div>
       <div class="field"><label>Resumo</label>
         <textarea id="edResumo" oninput="edDirty()"></textarea></div>
       <div class="field"><label>Palavras-chave</label>
@@ -2600,10 +2599,7 @@ function aplicarHab(){
     if(!document.getElementById('edResumo').value) document.getElementById('edResumo').value=it.h; }
   renderSelosEditor(); edDirty();
 }
-function renderSelosEditor(){
-  const code=document.getElementById('edDcgo').value.trim();
-  document.getElementById('edSelos').innerHTML = code ? (selosHtml(editing.disciplina,editing.serie,editing.bimestre,code)||'<span class="statusdot" style="font-size:10px">código fora da matriz embutida</span>') : '<span class="statusdot" style="font-size:10px">defina um código</span>';
-}
+function renderSelosEditor(){ /* campo "Selos da matriz" removido do editor — era só um badge informativo sem ação, achado confuso na prática */ }
 function renderNotasAssistente(){
   const bloco=document.getElementById('edNotasBlock');
   const box=document.getElementById('edNotasAssistente');
@@ -3781,6 +3777,9 @@ function imgAddSelected(){
 /* =========================================================
    TURMAS (modal)
    ========================================================= */
+function toggleMaisOpcoesGestao(){
+  document.getElementById('maisOpcoesGestao').classList.toggle('hidden');
+}
 function openTurmas(){
   const list=Object.values(turmas).sort((a,b)=>((a.unidade||'')+a.disciplina+a.serie+(a.letra||'')).localeCompare((b.unidade||'')+b.disciplina+b.serie+(b.letra||'')));
   const rows=list.length?list.map(t=>'<div class="tl"><b>'+esc(turmaNome(t))+'</b><span>'+esc(t.disciplina)+' · '+esc(t.unidade||'—')+'</span><button class="btn ghost sm danger" onclick="excluirTurma(\''+t.id+'\')">excluir</button></div>').join(''):'<div class="statusdot">Nenhuma turma cadastrada ainda.</div>';
@@ -4208,6 +4207,12 @@ function openConfig(){
         '<textarea id="cfgFb" class="mono" placeholder=\'{ "apiKey":"...", "databaseURL":"https://SEU-PROJETO.firebaseio.com", ... }\'>'+esc(cfg)+'</textarea>'+
         '<small>Cole o firebaseConfig do seu projeto novo. Vazio = funciona local. Após salvar, a página recarrega conectada.</small></div>'+
       '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:14px;margin-top:4px">'+
+        '<label>Backup</label>'+
+        '<button class="btn full" onclick="abrirExportarBackup()">&#8595; Exportar backup (JSON)</button>'+
+        '<label class="btn ghost full" style="text-align:center;cursor:pointer;margin-top:8px;display:block">Importar backup'+
+          '<input type="file" accept="application/json" style="display:none" onchange="importBackup(event)">'+
+        '</label></div>'+
+      '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:14px;margin-top:4px">'+
         '<label>Manutenção</label>'+
         '<button class="btn primary" style="width:100%" onclick="abrirPopularSeletivo()">⚡ Popular conteúdo (escolher disciplina, escola, bimestre)</button>'+
         '<small>Cria os temas que faltam a partir da matriz oficial e já aplica o conteúdo pré-pronto disponível, em todas as suas turmas de uma vez. Não gasta créditos de IA. Não altera temas que já têm conteúdo.</small>'+
@@ -4240,6 +4245,41 @@ function exportBackup(){
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='leciona-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
   toast('Backup exportado.','ok');
+}
+function abrirExportarBackup(){
+  closeModal();
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+
+    '<div class="modal-h"><h3>Exportar backup</h3></div>'+
+    '<div class="modal-b">'+
+      '<div class="field"><label>Turma</label><select id="expTurma"><option value="">Todas as turmas</option>'+turmaOptionsHtml('')+'</select></div>'+
+      '<div class="field"><label>O que incluir</label>'+
+        '<label class="check"><input type="radio" name="expFiltro" value="todas" checked> Todas as aulas</label>'+
+        '<label class="check"><input type="radio" name="expFiltro" value="dadas"> Só aulas já dadas (com registro de aplicação)</label>'+
+        '<label class="check"><input type="radio" name="expFiltro" value="pendentes"> Só aulas ainda não aplicadas</label>'+
+      '</div>'+
+    '</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="executarExportarBackup()">Exportar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+function executarExportarBackup(){
+  const turmaId=document.getElementById('expTurma').value;
+  const filtro=document.querySelector('input[name=expFiltro]:checked').value;
+  let temasSel=Object.values(temas).filter(Boolean);
+  if(turmaId) temasSel=temasSel.filter(t=>t.turmaId===turmaId);
+  if(filtro==='dadas') temasSel=temasSel.filter(t=>(registrosDoTema(t.id)||[]).length>0);
+  else if(filtro==='pendentes') temasSel=temasSel.filter(t=>!(registrosDoTema(t.id)||[]).length);
+  const temasOut={}; temasSel.forEach(t=>temasOut[t.id]=t);
+  const contIds=new Set(temasSel.map(t=>t.conteudoId).filter(Boolean));
+  const contsOut={}; contIds.forEach(cid=>{ if(conteudos[cid]) contsOut[cid]=conteudos[cid]; });
+  const turmaIds=new Set(temasSel.map(t=>t.turmaId).filter(Boolean));
+  const turmasOut={}; turmaIds.forEach(tid=>{ if(turmas[tid]) turmasOut[tid]=turmas[tid]; });
+  if(!temasSel.length){ toast('Nenhuma aula encontrada com esse filtro.','err'); return; }
+  const data=JSON.stringify({version:2,exportedAt:new Date().toISOString(),conteudos:contsOut,temas:temasOut,turmas:turmasOut},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='leciona-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  closeModal();
+  toast(temasSel.length+' aula(s) exportada(s).','ok');
 }
 function importBackup(ev){
   const f=ev.target.files[0]; if(!f) return;
