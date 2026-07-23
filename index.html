@@ -220,6 +220,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .obj-tabs button{border:0;background:transparent;padding:9px 13px;border-radius:8px 8px 0 0;color:var(--muted);font-weight:500;font-size:13px;white-space:nowrap;border-bottom:2px solid transparent;display:flex;align-items:center;gap:7px}
 .obj-tabs button.active{color:var(--ink);border-bottom-color:var(--green)}
 .obj-tabs button .badge{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.obj-tabs button.gerado .badge{background:var(--ochre)}
 .obj-tabs button.done .badge{background:var(--green)}
 .obj-content{flex:1;overflow:auto;padding:20px 24px;max-width:920px;width:100%;margin:0 auto}
 .obj-actions{display:flex;align-items:center;gap:10px;margin-bottom:14px}
@@ -544,7 +545,6 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <input class="tema-nome" id="edNome" placeholder="Nome do tema" oninput="edDirty()">
     <span id="saveStatus" style="font-size:12px;margin:0 8px;white-space:nowrap"></span>
     <button class="btn" onclick="projetarTema()">▶ Projetar</button>
-    <button class="btn primary" onclick="salvarTema()">Salvar</button>
   </div>
   <div class="editor-body">
     <div class="meta-pane">
@@ -2652,24 +2652,69 @@ function renderStatusEditor(){
   if(st && (st.estado===undefined) && Object.keys(st).length){ const first=Object.values(st)[0]||{}; st={estado:first.estado||'',data:first.data||''}; editing.status=st; }
   if(st.estado===undefined) editing.status={estado:'',data:''}, st=editing.status;
   const tu=turmas[editing.turmaId];
-  box.innerHTML='<div class="turma-row"><span class="tn">'+esc(tu?tu.nome:'(turma)')+'</span>'+
-    '<select onchange="setStatus(\'estado\',this.value)">'+
-      '<option value="" '+(st.estado===''?'selected':'')+'>—</option>'+
-      '<option value="planejado" '+(st.estado==='planejado'?'selected':'')+'>Planejado</option>'+
-      '<option value="aplicado" '+(st.estado==='aplicado'?'selected':'')+'>Aplicado</option>'+
-    '</select>'+
-    (st.estado==='aplicado'?'<input class="dt" type="date" value="'+esc(st.data||'')+'" onchange="setStatus(\'data\',this.value)">':'')+
-  '</div>';
+  const aplicado=st.estado==='aplicado';
+  box.innerHTML='<div class="turma-row"><span class="tn">'+esc(tu?tu.nome:'(turma)')+'</span></div>'+
+    (aplicado
+      ? '<button class="btn sm full" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="abrirMarcarAplicado()">&#10003; Aplicada'+(st.data?(' em '+st.data.split('-').reverse().join('/')):'')+'</button>'
+      : '<button class="btn ghost sm full" onclick="abrirMarcarAplicado()">Marcar aula como aplicada</button>');
 }
-function setStatus(field,val){
-  if(!editing.status||editing.status.estado===undefined) editing.status={estado:'',data:''};
-  editing.status[field]=val;
-  if(field==='estado'){
-    if(val==='aplicado' && !editing.status.data) editing.status.data=new Date().toISOString().slice(0,10);
-    if(val==='') editing.status.data='';
-    renderStatusEditor();
-  }
-  edDirty();
+/* Marcar/editar aplicação direto do editor de tema — substitui o antigo
+   dropdown planejado/aplicado. Um único botão, como no modo projeção:
+   marcar como aplicada já cria o registro de aplicação (o que alimenta os
+   pontinhos coloridos e a ponte automática pro controle de notas quando a
+   Avaliação estiver marcada — ver criarColunaAvaliacao()). */
+function abrirMarcarAplicado(){
+  if(!editing) return;
+  const t=editing;
+  const st=t.status||{};
+  const aplicado=st.estado==='aplicado';
+  const tu=turmas[t.turmaId]||{};
+  const jaFeitos=new Set(registrosDoTema(t.id).filter(r=>r.turmaId===t.turmaId).flatMap(r=>r.objetos||[]));
+  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjEd" value="'+o.k+'" '+((jaFeitos.has(o.k)||isFilled(t,o.k))?'checked':'')+'>'+o.label+'</label>').join('');
+  const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
+  const hoje=new Date().toISOString().slice(0,10);
+  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
+    '<div class="modal-h"><h3>&#10003; Marcar aula como aplicada</h3></div>'+
+    '<div class="modal-b">'+
+    '<div class="field"><label>Turma</label><strong>'+esc(turmaNome(tu))+'</strong></div>'+
+    '<div class="field"><label>O que foi usado</label><div class="gt-checks">'+objChecks+'</div></div>'+
+    '<div class="field"><label>Como foi entregue</label><select id="aplEntrega">'+entOpts+'</select></div>'+
+    '<div class="field"><label>Data</label><input type="date" id="aplData" value="'+(aplicado&&st.data?esc(st.data):hoje)+'"></div>'+
+    '<div class="field"><label>Nota livre (opcional)</label><input id="aplNota" placeholder="ex.: maioria participou, 3 faltaram…"></div>'+
+    '</div><div class="modal-f">'+
+    (aplicado?'<button class="btn ghost" onclick="desmarcarAplicado()">Desmarcar</button>':'')+
+    '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
+    '<button class="btn primary" onclick="salvarMarcarAplicado()">Salvar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+}
+function salvarMarcarAplicado(){
+  if(!editing) return;
+  const objs=[...document.querySelectorAll('input[name=regObjEd]:checked')].map(c=>c.value);
+  if(!objs.length){ toast('Marque ao menos o que foi usado nesta aula.','err'); return; }
+  const entrega=(document.getElementById('aplEntrega')||{}).value||'sala';
+  const data=(document.getElementById('aplData')||{}).value||new Date().toISOString().slice(0,10);
+  const nota=(document.getElementById('aplNota')||{}).value||'';
+  const r=novoRegistro(editing.id, editing.turmaId, objs, entrega, nota);
+  r.data=data;
+  persistRegistro(r);
+  editing.status={estado:'aplicado', data};
+  persistTema(editing); dirty=false;
+  closeModal();
+  renderStatusEditor(); renderObjTabs();
+  if(!DB) renderThemes();
+  toast('Aula marcada como aplicada.','ok');
+  if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+}
+function desmarcarAplicado(){
+  if(!editing) return;
+  if(!confirm('Desmarcar esta aula como aplicada nesta turma? Isso remove o(s) registro(s) de aplicação salvos aqui (as notas já lançadas no controle de notas não são apagadas).')) return;
+  registrosDoTema(editing.id).filter(r=>r.turmaId===editing.turmaId).forEach(r=>removerRegistro(r.id));
+  editing.status={estado:'',data:''};
+  persistTema(editing); dirty=false;
+  closeModal();
+  renderStatusEditor(); renderObjTabs();
+  if(!DB) renderThemes();
+  toast('Aplicação desmarcada.','ok');
 }
 /* ---- Exportar conteúdo (e temas) para outra(s) turma(s) ----
    Multi-seleção: pode marcar turmas avulsas, "todas da mesma série" (atalho)
@@ -2856,18 +2901,15 @@ function collectMeta(){
   const cid=document.getElementById('edConteudo').value;
   if(cid && cid!==editing.conteudoId){ editing.conteudoId=cid; editing.ordem=nextOrdemTema(cid); }
 }
-function salvarTema(){
-  collectMeta(); persistTema(editing); dirty=false;
-  if(!DB) renderThemes();
-  toast('Tema salvo.','ok');
-}
-
 /* ---------- Objetos (tabs + conteúdo) ---------- */
 function renderObjTabs(){
   const el=document.getElementById('objTabs'); el.innerHTML='';
+  const aplicados=editing.turmaId ? new Set(registrosDoTema(editing.id).filter(r=>r.turmaId===editing.turmaId).flatMap(r=>r.objetos||[])) : new Set();
   OBJ_DEFS.forEach(o=>{
     const b=document.createElement('button');
-    b.className=(o.k===activeObj?'active ':'')+(isFilled(editing,o.k)?'done':'');
+    const applied=aplicados.has(o.k), filled=isFilled(editing,o.k);
+    b.className=(o.k===activeObj?'active ':'')+(applied?'done':(filled?'gerado':''));
+    b.title=applied?'Aplicado nesta turma':(filled?'Gerado, ainda não aplicado nesta turma':'');
     b.innerHTML='<span class="badge"></span>'+o.label;
     b.onclick=()=>{ saveActiveObj(); activeObj=o.k; renderObjTabs(); renderObjContent(); };
     el.appendChild(b);
