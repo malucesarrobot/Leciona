@@ -1551,6 +1551,7 @@ function boot(){
   setView(viewSalva);
   // sw.js não fornecido — Service Worker desabilitado até implementação
   document.addEventListener('keydown', projKeys);
+  if(typeof prefetchPrebuiltEmSegundoPlano!=='undefined') prefetchPrebuiltEmSegundoPlano();
 }
 function refreshSeries(){
   const s=document.getElementById('selSerie'); s.innerHTML='';
@@ -2206,6 +2207,11 @@ async function popularTudoAutomaticamente(filtro){
   closeModal();
   toast('Processando '+turmasArr.length+' turma(s)… não feche a aba.','');
 
+  if(typeof ensurePrebuiltDiscLoaded!=='undefined'){
+    const discsAlvo=[...new Set(turmasArr.map(t=>t.disciplina))];
+    await Promise.all(discsAlvo.map(ensurePrebuiltDiscLoaded));
+  }
+
   let turmasProcessadas=0, temasCriados=0, temasComPrebuilt=0;
   const contsNovos=[], temasNovos=[];
   const idxTemas={};
@@ -2296,8 +2302,11 @@ function applyPrebuiltIfEmptySilent(t){
    antes do nome), veio o conteúdo de outro subtema do mesmo código.
    Corrige em lote, uma única gravação no final (mesma lição do
    Popular tudo agora — nunca gravar tema por tema num loop). */
-function corrigirPrebuiltAplicadoErrado(){
+async function corrigirPrebuiltAplicadoErrado(){
   if(typeof PREBUILT_OBJ==='undefined'){ toast('O conteúdo pré-pronto ainda está carregando. Aguarde e tente de novo.','err'); return; }
+  if(typeof ensurePrebuiltDiscLoaded!=='undefined'){
+    await Promise.all(Object.keys(PREBUILT_DISC_FILE).map(ensurePrebuiltDiscLoaded));
+  }
   const divergentes=[];
   Object.values(temas).forEach(t=>{
     if(!t||!t.nome||!t.obj) return;
@@ -2849,9 +2858,10 @@ async function genObjFor(temaObj, objKey){
   const vazio=(Array.isArray(novo)&&!novo.length)||(typeof novo==='string'&&!novo.trim());
   return vazio?null:novo;
 }
-function forcarPrebuilt(){
+async function forcarPrebuilt(){
   if(!editing){ toast('Abra um tema primeiro.','err'); return; }
   if(typeof PREBUILT_OBJ==='undefined'){ toast('prebuilt.js não carregou. Verifique se o arquivo está no GitHub.','err'); return; }
+  if(typeof ensurePrebuiltDiscLoaded!=='undefined') await ensurePrebuiltDiscLoaded(editing.disciplina);
   const pb=getPrebuilt(editing);
   if(!pb){
     const keys=Object.keys(PREBUILT_OBJ).slice(0,3).join(', ');
@@ -5485,6 +5495,7 @@ async function genAdaptOne(perfK,bases){
   const t=editing;
   const bimNum=(t.bimestre||'').charAt(0);
   const out={}; let any=false;
+  if(typeof ensurePrebuiltDiscLoaded!=='undefined') await ensurePrebuiltDiscLoaded(t.disciplina);
   // Pré-pronto: se já existe adaptação gerada pra esse tema+perfil (mesmo nome exato,
   // vindo de outra turma), reaproveita em vez de chamar a IA de novo — mesma lógica
   // do PREBUILT_OBJ pro conteúdo base, mas pra adaptação.
