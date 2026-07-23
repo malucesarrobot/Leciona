@@ -1264,13 +1264,12 @@ function initFirebase(){
       }
     });
     _escutar('leciona/chamadas', s=>{
-      if(!s.val()) return;
-      const rem=s.val(); let changed=false;
-      Object.keys(rem).forEach(id=>{ if(!chamadas[id]||chamadas[id]._ts<rem[id]._ts){ chamadas[id]=rem[id]; changed=true; } });
-      if(changed){
-        lsSet(LS_CHAMADAS, JSON.stringify(chamadas));
-        if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas();
-      }
+      // remoto é sempre autoridade aqui (nunca "ressuscita" o que sumiu de
+      // lá — mesma lição do bug real de mergeRemote() achado hoje).
+      const rem=s.val()||{};
+      chamadas=rem;
+      lsSet(LS_CHAMADAS, JSON.stringify(chamadas));
+      if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas();
     });
   }catch(e){ console.error(e); setConn(false); toast('Falha ao conectar Firebase: '+e.message,'err'); }
 }
@@ -5164,9 +5163,26 @@ function renderRanking(){
 /* Troca de turma direto na aba Notas (sem passar por Gestão). Atualiza o
    scope inteiro (disciplina/série/unidade) pra ficar consistente se ela for
    pra outra aba depois, e recarrega a tabela de notas na hora. */
+/* Mantém os 4 <select> antigos (escondidos, mas ainda lidos por
+   refreshTurmas()/onScopeChange() por baixo dos panos) alinhados com o
+   scope atual. Bug real encontrado: sem isso, o listener do Firebase em
+   "leciona/turmas" chama renderThemes()→refreshTurmas() toda vez que
+   qualquer turma muda em qualquer lugar (o que acontece o tempo todo) —
+   e refreshTurmas() RESCREVE scope.turma com base nesses 4 selects. Se eles
+   ficarem desatualizados (ex.: turma trocada só por aqui, não por Gestão),
+   a turma escolhida em Notas "volta sozinha" pra outra pouco depois. */
+function _syncSelectsOcultosComScope(){
+  const t=turmas[scope.turma]; if(!t) return;
+  const selDisc=document.getElementById('selDisc'); if(selDisc) selDisc.value=t.disciplina;
+  refreshSeries();
+  const selUnidade=document.getElementById('selUnidade'); if(selUnidade) selUnidade.value=t.unidade||scope.unidade;
+  const selSerie=document.getElementById('selSerie'); if(selSerie) selSerie.value=t.serie;
+  const selTurma=document.getElementById('selTurma'); if(selTurma) selTurma.value=scope.turma;
+}
 function trocarTurmaNotas(turmaId){
   const t=turmas[turmaId]; if(!t) return;
   scope.turma=turmaId; scope.disc=t.disciplina; scope.serie=t.serie; scope.unidade=t.unidade||scope.unidade;
+  _syncSelectsOcultosComScope();
   saveScope();
   window.__configurarHorario=false;
   renderNotas();
@@ -5217,7 +5233,7 @@ function renderChamadaBody(tu, als){
   return h;
 }
 function botaoReconfigurarHorario(tu){
-  return '<button class="btn ghost sm" style="margin-left:8px" onclick="window.__configurarHorario=true;renderNotas()" title="Mudar os dias de aula desta turma">⚙ horário</button>';
+  return '<button class="btn ghost sm" style="margin-left:8px" onclick="window.__configurarHorario=true;_refreshChamadaModalOuNotas()" title="Mudar os dias de aula desta turma">⚙ horário</button>';
 }
 function renderConfigurarHorario(tu){
   window.__configurarHorario=false;
@@ -5233,6 +5249,18 @@ function renderConfigurarHorario(tu){
     '<button class="btn primary full" style="margin-top:12px" onclick="salvarHorarioTurma(\''+tu.id+'\')">Salvar horário</button>'+
   '</div></div>';
 }
+/* renderChamadaBody() é usado dentro do modal "Todas as chamadas" — suas
+   próprias interações (trocar dia, marcar falta, salvar horário) precisam
+   re-renderizar o CONTEÚDO DO MODAL, não a tela de baixo. */
+function _refreshChamadaModalOuNotas(){
+  const modalBody=document.getElementById('todasChamadasBody');
+  if(modalBody){
+    const tu=turmas[scope.turma]; const als=alunosDaTurma(scope.turma);
+    if(tu) modalBody.innerHTML=renderChamadaBody(tu, als);
+  } else {
+    renderNotas();
+  }
+}
 function salvarHorarioTurma(turmaId){
   const tu=turmas[turmaId]; if(!tu) return;
   const grade={};
@@ -5245,17 +5273,17 @@ function salvarHorarioTurma(turmaId){
   persistTurma(tu);
   toast('Horário salvo. Agora a Chamada já cai direto no dia certo.','ok');
   window.__chamadaPresencas=null; window.__chamadaData=null;
-  renderNotas();
+  _refreshChamadaModalOuNotas();
 }
 function selecionarDataChamada(d){
   window.__chamadaData=d;
   window.__chamadaPresencas=null;
-  renderNotas();
+  _refreshChamadaModalOuNotas();
 }
 function toggleFaltaChamada(alunoId){
   const pres=window.__chamadaPresencas||(window.__chamadaPresencas={});
   pres[alunoId] = pres[alunoId]===false ? true : false;
-  renderNotas();
+  _refreshChamadaModalOuNotas();
 }
 function salvarChamada(){
   const turmaId=scope.turma, data=window.__chamadaData;
@@ -5267,6 +5295,31 @@ function salvarChamada(){
   const faltas=Object.values(c.presencas).filter(v=>v===false).length;
   toast('Chamada de '+data.split('-').reverse().join('/')+' salva — '+faltas+' falta(s).','ok');
 }
+/* Coluna de chamada embutida direto na tabela de Notas — marca presença/
+   falta de um dia sem precisar sair da tela nem clicar em "salvar" (cada
+   toque já grava na hora). window.__chamadaColData guarda o dia escolhido
+   pra essa coluna (separado do estado usado no modal "Todas as chamadas"). */
+function toggleFaltaChamadaInline(alunoId){
+  const turmaId=scope.turma, data=window.__chamadaColData;
+  if(!turmaId||!data) return;
+  const existente=chamadaDoDia(turmaId,data);
+  const c=existente || {id:uid(), turmaId, data, presencas:{}};
+  const atual=c.presencas[alunoId];
+  c.presencas[alunoId] = atual===false ? true : false;
+  persistChamada(c);
+  renderNotas();
+}
+function mudarDataColunaChamada(d){ window.__chamadaColData=d; renderNotas(); }
+function abrirTodasChamadas(){
+  const tu=turmas[scope.turma]; const als=alunosDaTurma(scope.turma);
+  if(!tu) return;
+  window.__chamadaData=null; window.__chamadaPresencas=null; // força recalcular do zero
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:640px">'+
+    '<div class="modal-h"><h3>📋 Chamada — '+esc(turmaNome(tu))+'</h3></div>'+
+    '<div class="modal-b" id="todasChamadasBody">'+renderChamadaBody(tu, als)+'</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal();renderNotas()">Fechar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
 function renderNotas(){
   const box=document.getElementById('notasBody'); if(!box) return;
   const turmaId=scope.turma;
@@ -5275,7 +5328,7 @@ function renderNotas(){
     box.innerHTML='<div class="notas-toolbar"><h3>📊 Notas</h3></div>'+
       '<div class="acervo-vazio"><p>'+(!todasTurmasInit.length?'Nenhuma turma cadastrada. Crie turmas na Gestão.':'Selecione uma turma acima para começar.')+'</p></div>';
     if(todasTurmasInit.length){
-      const sel='<div class="notas-toolbar" style="margin-top:0"><select onchange="scope.turma=this.value;scope.disc=(turmas[this.value]||{}).disciplina||scope.disc;renderNotas()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text)"><option value="">— Selecionar turma —</option>'+todasTurmasInit.map(t=>'<option value="'+t.id+'">'+esc(turmaNome(t))+'</option>').join('')+'</select></div>';
+      const sel='<div class="notas-toolbar" style="margin-top:0"><select onchange="trocarTurmaNotas(this.value)" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text)"><option value="">— Selecionar turma —</option>'+turmaOptionsHtml('')+'</select></div>';
       box.innerHTML=sel+box.innerHTML;
     }
     return;
@@ -5293,14 +5346,11 @@ function renderNotas(){
   const trocaTurmaSel='<select onchange="trocarTurmaNotas(this.value)" title="Trocar de turma sem sair de Notas" style="font-weight:700;font-size:15px;padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);min-width:220px;max-width:300px;flex:0 0 auto">'+
     turmaOptionsHtml(turmaId)+
   '</select>';
-  const modoChamada = window.__notasView==='chamada';
   let h='<div class="notas-toolbar">'+
     '<span style="font-size:18px">📊</span>'+trocaTurmaSel+
-    '<button class="btn'+(modoChamada?' ghost':' primary')+' sm" onclick="window.__notasView=\'notas\';renderNotas()">📊 Notas</button>'+
-    '<button class="btn'+(modoChamada?' primary':' ghost')+' sm" onclick="window.__notasView=\'chamada\';renderNotas()">📋 Chamada</button>'+
     '<button class="btn ghost sm" onclick="abrirAddAluno()">+ Aluno</button>'+
-    '<button class="btn ghost sm" onclick="abrirAddAlunoLista()">+ Lista</button>'+
-    (modoChamada?'':'<button class="btn ghost sm" onclick="abrirAddAtividade()">+ Atividade</button>'+
+    '<button class="btn ghost sm" onclick="abrirAddAtividade()">+ Atividade</button>'+
+    '<button class="btn ghost sm" onclick="abrirTodasChamadas()" title="Ver e editar a chamada de qualquer dia do bimestre">📋 Todas as chamadas</button>'+
     '<span style="margin-left:auto;font-size:12px;color:var(--muted)">Média: </span>'+
     '<select onchange="setMediaModo(scope.turma,this.value)" style="padding:4px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:12px">'+
       '<option value="ponderada"'+(getMediaModo(turmaId)==='ponderada'?' selected':'')+'>ponderada (usa pesos)</option>'+
@@ -5309,13 +5359,8 @@ function renderNotas(){
     '<button class="btn ghost sm" onclick="exportarNotasCSV()">↓ CSV</button>'+
     '<button class="btn ghost sm" onclick="exportarNotasTodasTurmasCSV()" title="Exporta as notas de todas as turmas de '+esc(tu.disciplina||'')+'">↓ CSV — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
     '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
-    '<button class="btn ghost sm" onclick="setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>')+
+    '<button class="btn ghost sm" onclick="setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
   '</div>';
-  if(modoChamada){
-    if(!als.length){ h+='<div class="acervo-vazio"><p>Nenhum aluno cadastrado. Clique em "+ Aluno" ou "+ Lista".</p></div>'; box.innerHTML=h; return; }
-    box.innerHTML=h+renderChamadaBody(tu, als);
-    return;
-  }
 
   // Stats boxes
   h+='<div class="notas-stats">'+
@@ -5331,9 +5376,25 @@ function renderNotas(){
 
   if(!als.length){ h+='<div class="acervo-vazio"><p>Nenhum aluno cadastrado. Clique em "+ Aluno" ou "+ Lista".</p></div>'; box.innerHTML=h; return; }
 
+  // Coluna de chamada — dia mais recente de aula por padrão (calendário ∩
+  // horário da turma), com um seletor compacto pra trocar de dia.
+  const gradeTurma=gradeDe(tu);
+  const datasChamada = Object.keys(gradeTurma).length ? datasDeAula(tu, scope.bim) : [];
+  const temHorarioChamada = datasChamada.length>0;
+  if(temHorarioChamada){
+    const colData = (window.__chamadaColData && datasChamada.includes(window.__chamadaColData)) ? window.__chamadaColData : datasChamada[datasChamada.length-1];
+    window.__chamadaColData = colData;
+  }
+  const chamadaHoje = temHorarioChamada ? chamadaDoDia(turmaId, window.__chamadaColData) : null;
+
   // Tabela
   h+='<div class="notas-table-wrap"><table class="notas-table"><thead><tr>'+
     '<th class="aluno-col">Aluno</th>'+
+    (temHorarioChamada
+      ? '<th style="min-width:110px"><select onchange="mudarDataColunaChamada(this.value)" style="font-size:11px;font-weight:600;border:0;background:transparent;color:inherit;width:100%">'+
+          datasChamada.slice(-12).reverse().map(d=>'<option value="'+d+'"'+(d===window.__chamadaColData?' selected':'')+'>'+d.split('-').reverse().join('/')+'</option>').join('')+
+        '</select></th>'
+      : '<th style="min-width:110px"><button class="btn ghost sm" style="font-size:10px;padding:2px 6px" onclick="window.__configurarHorario=true;abrirTodasChamadas()" title="Configurar dias de aula pra habilitar a chamada aqui">📋 configurar</button></th>')+
     atvs.map(av=>{
       const tp=ATIV_TIPOS[av.tipo]||{label:av.tipo,cor:'#888',bg:'#f5f5f5'};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
@@ -5353,6 +5414,12 @@ function renderNotas(){
       (al.numero?'<span style="color:var(--muted);font-size:11px;margin-right:4px">'+al.numero+'</span>':'')+
       esc(al.nome)+
     '</td>'+
+    (temHorarioChamada
+      ? (()=>{ const falta=chamadaHoje && chamadaHoje.presencas[al.id]===false;
+          return '<td style="text-align:center;cursor:pointer;background:'+(falta?'rgba(200,60,60,.1)':'rgba(60,150,90,.08)')+'" onclick="toggleFaltaChamadaInline(\''+al.id+'\')" title="Clique pra marcar '+(falta?'presença':'falta')+' em '+window.__chamadaColData.split('-').reverse().join('/')+'">'+
+            (falta?'<span style="color:var(--err)">✕ falta</span>':'<span style="color:var(--green)">✓</span>')+
+          '</td>'; })()
+      : '<td></td>')+
     atvs.map(av=>{
       const tp=ATIV_TIPOS[av.tipo]||{bg:'#fff',checklist:false};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
@@ -5378,6 +5445,7 @@ function renderNotas(){
   // Linha de médias por atividade
   h+='<tr style="background:var(--surface);font-weight:600">'+
     '<td class="aluno-nome">Média turma</td>'+
+    '<td></td>'+
     atvs.map(av=>{ const m=mediaAtividade(av.id,turmaId); return '<td style="text-align:center">'+(m!=null?m.toFixed(1):'-')+'</td>'; }).join('')+
     '<td></td><td></td></tr>';
 
@@ -5422,6 +5490,7 @@ function abrirAddAluno(){
     '<div class="modal-b">'+
       '<div class="field"><label>Nome completo</label><input id="alunoNome" autofocus placeholder="Nome do aluno"></div>'+
       '<div class="field"><label>Número (opcional)</label><input id="alunoNum" type="number" placeholder="ex.: 1"></div>'+
+      '<button class="btn ghost sm" onclick="abrirAddAlunoLista()" title="Colar a lista inteira da turma de uma vez">+ colar lista inteira da turma</button>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarAluno()">Adicionar</button></div></div></div>';
