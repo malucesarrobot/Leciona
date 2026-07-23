@@ -340,6 +340,7 @@ p.msh{font-weight:700;margin:.8em 0 .2em;font-size:1.05em}
 .pm-cod{font-size:10px;color:#8a938c;background:rgba(127,127,127,.1);border-radius:6px;padding:1px 6px;margin-left:auto}
 .pm-subs{margin:6px 0 0 24px;display:flex;flex-direction:column;gap:4px}
 .pm-sub{display:flex;align-items:flex-start;gap:8px;margin:0;font-size:12.5px;color:var(--ink-soft)}
+.pm-existe{font-size:10px;color:var(--green);background:rgba(47,107,94,.1);border-radius:6px;padding:1px 6px;white-space:nowrap}
 .bim-n{width:54px;padding:5px;border:1px solid var(--line);border-radius:7px;text-align:center}
 .bim-saldo{margin-top:10px;font-size:13px}
 /* editor de ordem do PDF */
@@ -1992,10 +1993,22 @@ function openPartirMatriz(){
 function pmModeChange(){ const v=document.querySelector('input[name=pmMode]:checked').value; document.getElementById('pmObjs').style.display = v==='gerar'?'':'none'; }
 function renderPmList(){
   const box=document.getElementById('pmList'); if(!box) return; const arr=matrizDoScope();
+  // Marca o que j\u00e1 existe como tema real nesta turma (mesmo dcgo+nome que
+  // criarPartirMatriz() usa pra decidir se reaproveita em vez de duplicar) \u2014
+  // assim d\u00e1 pra ver de cara o que falta sem abrir a turma em outra aba.
+  const cont=Object.values(conteudos).find(c=>c.turmaId===scope.turma&&c.bimestre===scope.bim&&c.nome==='Matriz \u2014 '+scope.bim);
+  const existentes=cont?temasDoConteudo(cont.id):[];
+  const jaExiste=(codigo,nome)=>existentes.some(t=>t.dcgo===codigo&&t.nome===String(nome).slice(0,80));
   box.innerHTML=arr.map((it,i)=>{
     const subs=pmSubs[i]||[];
-    const head='<label class="check pm-hab"><input type="checkbox" '+(pmSel.has('h:'+i)?'checked':'')+' onchange="pmToggle(\'h:'+i+'\')"><b>'+esc(it.t||it.h||it.c)+'</b> <span class="pm-cod">'+esc(it.c)+'</span></label>';
-    const subHtml=subs.map((sb,j)=>'<label class="check pm-sub"><input type="checkbox" '+(pmSel.has('s:'+i+':'+j)?'checked':'')+' onchange="pmToggle(\'s:'+i+':'+j+'\')">'+esc((sb&&sb.s)||sb)+((sb&&sb.a)?(' <span style="color:#8a8f98;font-size:.82em">\u00b7 '+sb.a+' aula'+(sb.a>1?'s':'')+'</span>'):'')+'</label>').join('');
+    const habNome=it.t||it.h||it.c;
+    const habBadge=jaExiste(it.c,habNome)?' <span class="pm-existe">j\u00e1 existe na turma</span>':'';
+    const head='<label class="check pm-hab"><input type="checkbox" '+(pmSel.has('h:'+i)?'checked':'')+' onchange="pmToggle(\'h:'+i+'\')"><b>'+esc(habNome)+'</b> <span class="pm-cod">'+esc(it.c)+'</span>'+habBadge+'</label>';
+    const subHtml=subs.map((sb,j)=>{
+      const nome=(sb&&sb.s)||sb;
+      const subBadge=jaExiste(it.c,nome)?' <span class="pm-existe">j\u00e1 existe na turma</span>':'';
+      return '<label class="check pm-sub"><input type="checkbox" '+(pmSel.has('s:'+i+':'+j)?'checked':'')+' onchange="pmToggle(\'s:'+i+':'+j+'\')">'+esc(nome)+((sb&&sb.a)?(' <span style="color:#8a8f98;font-size:.82em">\u00b7 '+sb.a+' aula'+(sb.a>1?'s':'')+'</span>'):'')+subBadge+'</label>';
+    }).join('');
     return '<div class="pm-group">'+head+(subHtml?('<div class="pm-subs">'+subHtml+'</div>'):'')+'</div>';
   }).join('');
 }
