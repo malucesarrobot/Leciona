@@ -1255,32 +1255,32 @@ function initFirebase(){
       if(m.pushBack.length && !_modoSeguro){ const upd={}; m.pushBack.forEach(id=>upd['leciona/temas/'+id]=temas[id]); pushBackSeguro('temas', upd); }
       migrateAndRender();
     });
-    _escutar('leciona/alunos', s=>{ if(!s.val()) return; const r=s.val(); Object.keys(r).forEach(id=>{ if(!alunos[id]||alunos[id]._ts<r[id]._ts) alunos[id]=r[id]; }); lsSet(LS_ALUNOS,JSON.stringify(alunos)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
-    _escutar('leciona/atividades_ctrl', s=>{ if(!s.val()) return; const r=s.val(); Object.keys(r).forEach(id=>{ if(!atividadesCtrl[id]||atividadesCtrl[id]._ts<r[id]._ts) atividadesCtrl[id]=r[id]; }); lsSet(LS_ATVCTRL,JSON.stringify(atividadesCtrl)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
-    _escutar('leciona/notas_ctrl', s=>{ if(!s.val()) return; const r=s.val(); Object.keys(r).forEach(id=>{ if(!notasCtrl[id]||notasCtrl[id]._ts<r[id]._ts) notasCtrl[id]=r[id]; }); lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); });
+    // remoto é sempre autoridade aqui (nunca "ressuscita" aluno removido
+    // em outro aparelho — mesma lição do bug de mergeRemote()).
+    _escutar('leciona/alunos', s=>{ alunos=s.val()||{}; lsSet(LS_ALUNOS,JSON.stringify(alunos)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
+    // remoto é sempre autoridade aqui (nunca "ressuscita" atividade/nota
+    // apagada em outro aparelho — mesma lição do bug de mergeRemote()).
+    _escutar('leciona/atividades_ctrl', s=>{ atividadesCtrl=s.val()||{}; lsSet(LS_ATVCTRL,JSON.stringify(atividadesCtrl)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
+    _escutar('leciona/notas_ctrl', s=>{ notasCtrl=s.val()||{}; lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
+    // remoto é sempre autoridade aqui (nunca "ressuscita" registro apagado
+    // em outro aparelho — ex.: "Desmarcar aplicado" — mesma lição do bug
+    // de mergeRemote()).
     _escutar('leciona/registros', s=>{
-      if(!s.val()) return;
-      const rem=s.val(); let changed=false;
-      Object.keys(rem).forEach(id=>{ if(!registros[id]||registros[id]._ts<rem[id]._ts){ registros[id]=rem[id]; changed=true; } });
-      if(changed){
-        lsSet(LS_REG, JSON.stringify(registros));
-        if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
-      }
+      registros=s.val()||{};
+      lsSet(LS_REG, JSON.stringify(registros));
+      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
     });
     _escutar('leciona/turmas', s=>{
       const m=mergeRemote(turmas, s.val()); turmas=m.merged; lsSet(LS_TURMAS, JSON.stringify(turmas));
       if(m.pushBack.length && !_modoSeguro){ const upd={}; m.pushBack.forEach(id=>upd['leciona/turmas/'+id]=turmas[id]); pushBackSeguro('turmas', upd); }
       seedTurmasIfEmpty(); renderThemes();
     });
+    // remoto é sempre autoridade aqui (mesma lição do bug de mergeRemote()).
     _escutar('leciona/ocorrencias', s=>{
-      if(!s.val()) return;
-      const rem=s.val(); let changed=false;
-      Object.keys(rem).forEach(id=>{ if(!ocorrencias[id]||ocorrencias[id]._ts<rem[id]._ts){ ocorrencias[id]=rem[id]; changed=true; } });
-      if(changed){
-        lsSet(LS_OCORR, JSON.stringify(ocorrencias));
-        if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
-        if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
-      }
+      ocorrencias=s.val()||{};
+      lsSet(LS_OCORR, JSON.stringify(ocorrencias));
+      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+      if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
     });
     _escutar('leciona/chamadas', s=>{
       // remoto é sempre autoridade aqui (nunca "ressuscita" o que sumiu de
