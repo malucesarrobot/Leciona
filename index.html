@@ -2998,8 +2998,8 @@ async function chamarIA(system, messages, opts){
   const r=await fn({system, messages, maxTokens:opts.maxTokens||2500, useWeb:!!opts.useWeb, model:getModel()});
   return (r.data&&r.data.resposta)||'';
 }
-async function callClaude(system,user){
-  return chamarIA(system,[{role:'user',content:user}]);
+async function callClaude(system,user,maxTokens){
+  return chamarIA(system,[{role:'user',content:user}],maxTokens?{maxTokens}:undefined);
 }
 async function callClaudeWeb(system,user){
   return chamarIA(system,[{role:'user',content:user}],{maxTokens:3000,useWeb:true});
@@ -5437,7 +5437,7 @@ function openAdaptar(){
   }).join('');
   const perfChecks=ADAPT_PERFIS.map(pf=>'<label class="check"><input type="checkbox" name="adPerf" value="'+pf.k+'"> '+pf.label+'</label>').join('');
   const ad=editing.adaptado||{};
-  const existentes=Object.keys(ad).filter(k=>ad[k]&&Object.keys(ad[k]).length);
+  const existentes=Object.keys(ad).filter(k=>ad[k]&&ADAPT_BASES.some(b=>ad[k][b.k]&&String(ad[k][b.k]).trim()));
   const cards=existentes.length? '<div class="field"><label>Adaptações já geradas — imprima para entregar ao aluno</label>'+existentes.map(pk=>{
     const pl=(ADAPT_PERFIS.find(pf=>pf.k===pk)||{}).label||pk;
     return '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line,#e5e7eb)"><b style="flex:1;min-width:120px">'+esc(pl)+'</b>'+
@@ -5521,7 +5521,10 @@ async function genAdaptOne(perfK,bases){
       'Adapte o material ORIGINAL de "'+label+'" abaixo para o perfil "'+pl+'". Mantenha o objetivo; adeque linguagem e estrutura ao perfil.'+
       '\n\n### '+label+' (original)\n'+txt;
     try{
-      const raw=await callClaude(sys,usr);
+      // maxTokens maior que o padrão (2500): "estudo" adaptado costuma incluir
+      // o texto inteiro reescrito + resumo, e vinha sendo cortado no meio às
+      // vezes (achado real em produção: 2 adaptações truncadas mid-sentence).
+      const raw=await callClaude(sys,usr,3500);
       const clean=(raw||'').replace(/```markdown|```/g,'').trim();
       if(clean){ out[bk]=clean; any=true; }
     }catch(e){ /* segue tentando as outras bases mesmo se uma falhar */ }
@@ -5576,6 +5579,7 @@ function adaptShell(titulo, body, tu, disc, bim){
     '.timbre img{height:54px;width:auto}'+
     '.timbre .inst{font-size:11px;line-height:1.4;color:#333}'+
     '.timbre .inst b{display:block;font-size:12.5px;color:#1a5c3a}'+
+    '.timbre .inst .unidade{display:block;font-size:15px;font-weight:700;color:#111;margin-top:2px}'+
     'h1{font-size:20px;margin:14px 0 2px}.sub{color:#555;font-size:12px;margin-bottom:14px;border-bottom:2px solid #333;padding-bottom:8px}'+
     'h4{font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:#222;margin:16px 0 6px;background:#efefef;padding:5px 9px;border-radius:5px}'+
     'p{margin:0 0 9px}ul,ol{margin:0 0 10px;padding-left:24px}li{margin-bottom:6px}'+
@@ -5587,7 +5591,7 @@ function adaptShell(titulo, body, tu, disc, bim){
     '.assinatura .linha{border-top:1px solid #333;width:260px;margin-top:34px;padding-top:4px}'+
     '@media print{body{margin:0}}'+
     '</style></head><body>'+
-    '<div class="timbre"><img src="data:image/png;base64,'+LOGO_SEDUC_B64+'" alt="SEDUC-GO"><div class="inst"><b>Secretaria de Estado da Educação de Goiás</b>'+esc(tu.unidade||'')+'</div></div>'+
+    '<div class="timbre"><img src="data:image/png;base64,'+LOGO_SEDUC_B64+'" alt="SEDUC-GO"><div class="inst"><b>Secretaria de Estado da Educação de Goiás</b><span class="unidade">'+esc(tu.unidade||'')+'</span></div></div>'+
     '<h1>'+esc(titulo)+'</h1><div class="sub">'+esc(disc)+' \u00b7 Turma '+esc(turmaNome(tu))+' \u00b7 '+esc(bim)+'</div>'+
     '<div class="aluno">Nome: ____________________________________   Data: ____ / ____ / ______</div>'+
     body+
