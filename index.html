@@ -1758,6 +1758,12 @@ function setBusca(v){
   _buscaTerm = (v||'').toLowerCase().trim();
   renderThemes();
 }
+/* Normaliza pra busca flexível: minúsculas + sem acento (ç, ã, é... viram
+   c, a, e...) — assim "revolucao russa" acha "Revolução Russa" mesmo sem
+   digitar o acento. */
+function _normBuscaTexto(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
 function _buildTemasIdx(){
   _temaIdx={};
   Object.values(temas).forEach(t=>{ if(!t||!t.conteudoId) return; (_temaIdx[t.conteudoId]||(_temaIdx[t.conteudoId]=[])).push(t); });
@@ -1796,19 +1802,25 @@ function renderThemes(){
   conts.forEach((c,ci)=>{
     const open = expanded[c.id]!==false;
     let ts=temasDoConteudo(c.id);
-    // Filtrar por busca
+    // Filtrar por busca — flexível: por palavra (qualquer ordem), sem
+    // acento, e cada palavra pode bater em nome OU código OU habilidade
+    // (não precisa ser a frase inteira igual, nem no campo certo).
     if(busca){
-      // Pontuar por relevância: nome=3, dcgo=2, habilidade=1
+      const palavras=_normBuscaTexto(busca).split(/\s+/).filter(Boolean);
       ts=ts.map(t=>{
-        let score=0;
-        const nome=(t.nome||'').toLowerCase();
-        const dcgo=(t.dcgo||'').toLowerCase();
-        const hab=(t.habilidade||'').toLowerCase();
-        if(nome.includes(busca)) score+=nome.startsWith(busca)?4:3;
-        if(dcgo.includes(busca)) score+=2;
-        if(hab.includes(busca)) score+=1;
-        return {t, score};
-      }).filter(x=>x.score>0)
+        const nome=_normBuscaTexto(t.nome||'');
+        const dcgo=_normBuscaTexto(t.dcgo||'');
+        const hab=_normBuscaTexto(t.habilidade||'');
+        let score=0, todasBateram=true;
+        palavras.forEach(p=>{
+          let bateu=false;
+          if(nome.includes(p)){ score+=nome.startsWith(p)?4:3; bateu=true; }
+          if(dcgo.includes(p)){ score+=2; bateu=true; }
+          if(hab.includes(p)){ score+=1; bateu=true; }
+          if(!bateu) todasBateram=false;
+        });
+        return {t, score, todasBateram};
+      }).filter(x=>x.todasBateram && x.score>0)
         .sort((a,b)=>b.score-a.score)
         .map(x=>x.t);
       if(!ts.length) return;
