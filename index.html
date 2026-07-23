@@ -246,6 +246,7 @@ textarea.big{width:100%;min-height:320px;padding:14px;border:1px solid var(--lin
 .mini-card label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;display:block;margin:6px 0 3px}
 
 /* Projeção */
+html.modo-projecao-popup header{display:none}
 #viewProjecao{position:fixed;inset:0;background:var(--ink);color:var(--board-fg);z-index:50;display:flex;flex-direction:column}
 #viewProjecao.theme-light{background:#faf8f2;color:#1a1a1a}
 #viewProjecao.theme-contrast{background:#000;color:#fff}
@@ -589,6 +590,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button title="Buscar imagem" onclick="projImagem()">⛰</button>
       <button id="btnProjAdapt" title="Fixar: ver o que o(a) aluno(a) em adaptação está vendo" onclick="toggleProjAdapt()">🧩 Adaptado</button>
       <button title="Registrar aplicação desta aula" onclick="abrirModalRegistro()" style="background:var(--green);color:#fff;border-color:var(--green)">✓ Registrar</button>
+      <button title="Abrir a projeção numa janela separada — arraste pra tela do projetor e continue trabalhando aqui" onclick="abrirProjecaoOutraTela()" style="background:var(--ochre);color:#fff;border-color:var(--ochre)">🖥️ Outra tela</button>
       <button title="Sair" onclick="fecharProjecao()">✕</button>
     </div>
   </div>
@@ -604,7 +606,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
 </div>
 
 <div id="viewRanking" class="hidden">
-  <div class="rk-top-bar"><h2 id="rankingTitulo">🏆 Ranking</h2><button title="Sair" onclick="fecharRanking()">✕</button></div>
+  <div class="rk-top-bar"><h2 id="rankingTitulo">🏆 Ranking</h2><button title="Abrir numa janela separada" onclick="abrirProjecaoOutraTela()" style="width:auto;padding:0 10px;font-size:13px">🖥️ Outra tela</button><button title="Sair" onclick="fecharRanking()">✕</button></div>
   <div class="rk-stage" id="rankingBody"></div>
 </div>
 
@@ -1105,6 +1107,61 @@ const _fbCfg=_resolveFirebaseCfg();
 if(_fbCfg && !firebase.apps.length) firebase.initializeApp(_fbCfg);
 const auth=_fbCfg ? firebase.auth() : null;
 let _booted=false;
+
+/* ---------- Projeção em outra janela (segunda tela / HDMI) ----------
+   Problema real: com o notebook ligado no projetor em modo "estender",
+   trocar de aba pra fazer outra coisa (ex.: marcar quem entregou atividade
+   na aba Notas) troca o que está sendo mostrado na tela do projetor também,
+   porque era a MESMA janela. Esta janela extra é só a projeção — abre nela,
+   arrasta pra tela do projetor, e a janela principal fica livre pra
+   trabalhar normal, enquanto esta continua mostrando o que estava sendo
+   projetado (via BroadcastChannel, atualiza sozinha quando o quadro muda).
+   Modo espelho (mostrar exatamente a tela principal) não precisa de nada
+   disso — é só não trocar de aba na janela principal mesmo. */
+const _modoProjecaoPopup = /[?&]modoProjecao=1\b/.test(location.search);
+const _projChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('leciona_projecao_v1') : null;
+function _broadcastProjState(){
+  if(!_projChannel || _modoProjecaoPopup) return; // só a janela principal emite
+  const rankingAberto = !document.getElementById('viewRanking').classList.contains('hidden');
+  if(rankingAberto){
+    _projChannel.postMessage({type:'ranking', turmaId:scope.turma});
+    return;
+  }
+  const projAberto = !document.getElementById('viewProjecao').classList.contains('hidden');
+  if(!projAberto || !proj.tema) return;
+  _projChannel.postMessage({type:'proj', temaId:proj.tema.id, obj:proj.obj, idx:proj.idx, flip:proj.flip,
+    imgMode:proj.imgMode, quiz:proj.quiz, avalTab:proj.avalTab, mapaTree:proj.mapaTree,
+    fs:proj.fs, sp:proj.sp, theme:proj.theme});
+}
+function abrirProjecaoOutraTela(){
+  window.open(location.pathname+'?modoProjecao=1', 'lecionaProjecao', 'width=1280,height=800');
+  toast('Aberta em outra janela — arraste pra tela do projetor. Esta janela aqui fica livre.','ok');
+}
+if(_projChannel){
+  _projChannel.onmessage=(ev)=>{
+    const msg=ev.data||{};
+    if(_modoProjecaoPopup){
+      if(msg.type==='proj'){
+        const t=temas[msg.temaId];
+        if(!t){ return; } // ainda sincronizando com o Firebase — próxima mensagem tenta de novo
+        document.getElementById('viewRanking').classList.add('hidden');
+        proj.tema=t; proj.obj=msg.obj; proj.idx=msg.idx||0; proj.flip=!!msg.flip; proj.imgMode=!!msg.imgMode;
+        proj.quiz=!!msg.quiz; proj.avalTab=msg.avalTab; proj.mapaTree=msg.mapaTree;
+        proj.fs=msg.fs||proj.fs; proj.sp=msg.sp||proj.sp; proj.theme=msg.theme||proj.theme;
+        document.getElementById('viewProjecao').classList.remove('hidden');
+        applyProjVars(); renderProjSwitch(); renderProj();
+      } else if(msg.type==='ranking'){
+        if(!turmas[msg.turmaId]){ return; }
+        scope.turma=msg.turmaId;
+        document.getElementById('viewProjecao').classList.add('hidden');
+        document.getElementById('viewRanking').classList.remove('hidden');
+        renderRanking();
+      }
+    } else if(msg.type==='request'){
+      _broadcastProjState(); // popup nova pedindo o estado atual
+    }
+  };
+}
 function loginComGoogle(){
   if(!auth) return;
   const provider=new firebase.auth.GoogleAuthProvider();
@@ -1536,6 +1593,7 @@ function saveScope(){
   const cnt=document.getElementById('buscaCount'); if(cnt) cnt.textContent='';
   _relTemasIncluidos=null; try{ localStorage.setItem('leciona_scope', JSON.stringify(scope)); }catch(e){} }
 function boot(){
+  if(_modoProjecaoPopup){ bootProjecaoPopup(); return; }
   checarSchema();
   const d=document.getElementById('selDisc');
   Object.keys(SERIES_BY_DISC).forEach(x=>d.add(new Option(x,x)));
@@ -1561,6 +1619,18 @@ function boot(){
   // sw.js não fornecido — Service Worker desabilitado até implementação
   document.addEventListener('keydown', projKeys);
   if(typeof prefetchPrebuiltEmSegundoPlano!=='undefined') prefetchPrebuiltEmSegundoPlano();
+}
+/* Boot enxuto pra janela de projeção separada: sem seletores, sem nav —
+   só carrega os dados (Firebase) e espera a janela principal transmitir o
+   que está sendo projetado agora. */
+function bootProjecaoPopup(){
+  document.documentElement.classList.add('modo-projecao-popup');
+  loadLocal();
+  initFirebase();
+  document.getElementById('viewProjecao').classList.remove('hidden');
+  document.getElementById('projStage').innerHTML='<div class="proj-canvas"><p style="opacity:.6">Aguardando a janela principal transmitir o conteúdo…</p></div>';
+  if(_projChannel) _projChannel.postMessage({type:'request'});
+  document.addEventListener('keydown', projKeys);
 }
 function refreshSeries(){
   const s=document.getElementById('selSerie'); s.innerHTML='';
@@ -3423,6 +3493,7 @@ function renderProjSwitch(){
   });
 }
 function renderProj(){
+  _broadcastProjState();
   if(proj.imgMode) return;
   const stage=document.getElementById('projStage');
   const foot=document.getElementById('projFoot');
@@ -4905,6 +4976,7 @@ function abrirRanking(){
 }
 function fecharRanking(){ document.getElementById('viewRanking').classList.add('hidden'); }
 function renderRanking(){
+  _broadcastProjState();
   const turmaId=scope.turma; const tu=turmas[turmaId]||{};
   document.getElementById('rankingTitulo').textContent='🏆 '+turmaNome(tu)+' · '+(tu.disciplina||'');
   const atvs=atividadesDaTurma(turmaId);
