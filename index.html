@@ -121,6 +121,29 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .acervo-tu.aplicado{background:var(--green);color:#fff;border-color:var(--green)}
 .dup-fix{cursor:pointer;text-decoration:underline dotted}
 .dup-fix:hover{opacity:.7}
+.agenda-wrap{max-width:900px;margin:0 auto;padding:16px}
+.agenda-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:760px){.agenda-layout{grid-template-columns:1fr}}
+.agenda-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.agenda-mes-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.agenda-mes-label{font-family:var(--serif);font-size:15px;text-transform:capitalize}
+.agenda-semana{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.agenda-semana span{text-align:center;font-size:10px;color:var(--muted);text-transform:uppercase}
+.agenda-dias{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.agenda-cel{aspect-ratio:1;border-radius:8px;border:1px solid transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:.12s}
+.agenda-cel:not(.vazia):hover{background:var(--surface)}
+.agenda-cel.hoje{border-color:var(--ochre)}
+.agenda-cel.sel{background:var(--green);border-color:var(--green)}
+.agenda-cel.sel .agenda-num{color:#fff}
+.agenda-num{font-size:12px;color:var(--text)}
+.agenda-pontos{display:flex;gap:2px;height:5px}
+.agenda-ponto{width:5px;height:5px;border-radius:50%}
+.agenda-ponto.aula{background:var(--green)}
+.agenda-ponto.cron{background:#6a8fbf}
+.agenda-ponto.comp{background:var(--ochre)}
+.agenda-cel.sel .agenda-ponto{background:#fff}
+.agenda-secao-tit{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:14px 0 6px}
+.agenda-secao-tit:first-of-type{margin-top:0}
 .acervo-acoes{display:flex;gap:6px}
 .acervo-vazio{text-align:center;color:var(--muted);padding:40px 20px}
 .acervo-preprontos-head{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ochre);margin:20px 0 10px;padding-top:14px;border-top:1px solid var(--border)}
@@ -491,6 +514,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button id="tabProjecao" onclick="abrirProjecaoAtual()">Projetar</button>
       <button id="tabPainel" class="hidden" onclick="setView('painel')">📈 Painel</button>
       <button id="tabAcervo" class="hidden" onclick="setView('acervo')">📚 Acervo</button>
+      <button id="tabAgenda" class="hidden" onclick="setView('agenda')">📅 Agenda</button>
     </nav>
     <span class="conn" id="conn" onclick="location.reload()" style="cursor:pointer" title="Toque para recarregar o app"><span class="led"></span><span id="connTxt">Local</span></span>
     <button class="icon-btn" title="Assistente (chat livre com IA)" onclick="openAssistente()">&#128172;</button>
@@ -503,6 +527,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
   <div id="viewHoje"><div class="hoje-wrap" id="hojeBody"></div></div>
   <div id="viewPainel" class="hidden"><div class="acervo-wrap" id="painelBody"></div></div>
   <div id="viewAcervo" class="hidden"><div class="acervo-wrap" id="acervoBody"></div></div>
+  <div id="viewAgenda" class="hidden"><div class="agenda-wrap" id="agendaBody"></div></div>
   <div id="viewNotas" class="hidden"><div class="notas-wrap" id="notasBody"></div></div>
   <div id="viewGestao" class="hidden">
     <aside class="scope">
@@ -524,6 +549,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button class="btn full" onclick="openRelatorio()">&#128196; Gerar relatório / PDF</button>
       <button class="btn full" onclick="setView('acervo')">&#128218; Acervo — buscar em tudo</button>
       <button class="btn full" onclick="_painelOrigin='gestao';setView('painel')">&#128200; Painel geral — progresso de todas as turmas</button>
+      <button class="btn full" onclick="_agendaOrigin='gestao';setView('agenda')">&#128197; Agenda</button>
       <div class="sep"></div>
       <button class="btn ghost full" onclick="toggleMaisOpcoesGestao()" id="btnMaisOpcoesGestao">&#8943; mais opções</button>
       <div class="hidden" id="maisOpcoesGestao">
@@ -1039,6 +1065,7 @@ let alunos = {};             // { id: aluno } — alunos por turma
 let atividadesCtrl = {};     // { id: atividade } — atividades de controle de notas
 let notasCtrl = {};          // { id: nota } — notas dos alunos
 let chamadas = {};           // { id: {turmaId,data,presencas:{alunoId:true/false},_ts} } — chamada (presença) por turma+dia
+let compromissos = {};       // { id: {titulo,data,hora,descricao,concluido,_ts} } — lembretes/compromissos avulsos da Agenda (reunião, entrega de diário...), não ligados a um tema
 let _buscaTerm = '';          // termo de busca atual (sincronizado via setBusca)
 let temas = {};
 let turmas = {};            // turmas reais (9º A, 9º B...)
@@ -1052,7 +1079,8 @@ const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_
       LS_FB='leciona_fb_cfg', LS_MODEL='leciona_model',
       LS_REG='leciona_registros', LS_ALUNOS='leciona_alunos',
       LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl',
-      LS_OCORR='leciona_ocorrencias', LS_CHAMADAS='leciona_chamadas';
+      LS_OCORR='leciona_ocorrencias', LS_CHAMADAS='leciona_chamadas',
+      LS_COMP='leciona_compromissos';
 // Versão do formato dos dados. Se uma futura versão do app mudar a estrutura,
 // este número sobe e a migração correspondente roda uma única vez, de forma
 // controlada — em vez de o app tentar ler dados antigos com código novo e
@@ -1290,6 +1318,11 @@ function initFirebase(){
       lsSet(LS_CHAMADAS, JSON.stringify(chamadas));
       if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas();
     });
+    _escutar('leciona/compromissos', s=>{
+      compromissos=s.val()||{};
+      lsSet(LS_COMP, JSON.stringify(compromissos));
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+    });
   }catch(e){ console.error(e); setConn(false); toast('Falha ao conectar Firebase: '+e.message,'err'); }
 }
 function setConn(on){
@@ -1301,6 +1334,7 @@ function loadLocal(){
   try{ registros=JSON.parse(localStorage.getItem(LS_REG)||'{}'); }catch(e){ registros={}; }
   try{ ocorrencias=JSON.parse(localStorage.getItem(LS_OCORR)||'{}'); }catch(e){ ocorrencias={}; }
   try{ chamadas=JSON.parse(localStorage.getItem(LS_CHAMADAS)||'{}'); }catch(e){ chamadas={}; }
+  try{ compromissos=JSON.parse(localStorage.getItem(LS_COMP)||'{}'); }catch(e){ compromissos={}; }
   try{ alunos=JSON.parse(localStorage.getItem(LS_ALUNOS)||'{}'); }catch(e){ alunos={}; }
   try{ atividadesCtrl=JSON.parse(localStorage.getItem(LS_ATVCTRL)||'{}'); }catch(e){ atividadesCtrl={}; }
   try{ notasCtrl=JSON.parse(localStorage.getItem(LS_NOTAS)||'{}'); }catch(e){ notasCtrl={}; }
@@ -4479,7 +4513,8 @@ function renderHoje(){
   let html='<div class="hoje-head"><h2>'+saud+(hojeOffset!==0?' — '+DIAS_LONGO[dia]:'!')+'</h2>'+
     '<div class="hoje-nav"><button class="btn ghost sm" onclick="hojeMudarDia(-1)">‹ dia anterior</button>'+
     (hojeOffset!==0?'<button class="btn ghost sm" onclick="hojeOffset=0;try{localStorage.setItem(\'leciona_hojeoffset\',\'0\')}catch(e){};renderHoje()">hoje</button>':'')+
-    '<button class="btn ghost sm" onclick="hojeMudarDia(1)">próximo dia ›</button></div>'+
+    '<button class="btn ghost sm" onclick="hojeMudarDia(1)">próximo dia ›</button>'+
+    '<button class="btn ghost sm" onclick="_agendaOrigin=\'hoje\';setView(\'agenda\')" title="Ver o mês inteiro, com aulas e compromissos">📅 Ver agenda do mês</button></div>'+
     '<div class="hoje-data">'+DIAS_LONGO[dia]+' · '+now.toLocaleDateString('pt-BR')+(uni?(' · '+uni):'')+' · '+bimAtual()+'</div></div>';
   if(planejHoje.length){
     html+='<h3 style="font-family:var(--serif);font-size:15px;margin:4px 0 8px">📅 Cronograma de hoje</h3><div class="hoje-list" style="margin-bottom:22px">'+
@@ -4516,6 +4551,159 @@ function renderHoje(){
   }).join('')+'</div>';
   box.innerHTML=html;
 }
+/* ═══════════════════════════════════════════════════════════════════════
+   AGENDA — visão de mês (grade) + dia (lista), juntando 3 fontes que já
+   existem separadas: aulas reais da semana (SCHEDULE, mesma fonte da tela
+   Hoje), cronograma de conteúdo (cont.planejamento, mesmo do editor de
+   tema) e compromissos avulsos (novo — reunião, entrega de diário, prova,
+   qualquer coisa que não seja uma aula em si).
+   ═══════════════════════════════════════════════════════════════════════ */
+function persistCompromisso(c){ c._ts=Date.now(); compromissos[c.id]=c; lsSet(LS_COMP,JSON.stringify(compromissos)); if(DB) DB.ref('leciona/compromissos/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar na agenda (mantido localmente). '+e.message,'err')); }
+function removerCompromisso(id){
+  if(!confirm('Remover este compromisso da agenda?')) return;
+  delete compromissos[id];
+  lsSet(LS_COMP,JSON.stringify(compromissos));
+  if(DB) DB.ref('leciona/compromissos/'+id).remove().catch(e=>toast('⚠ Removido localmente, mas falhou ao remover no Firebase: '+e.message,'err'));
+  renderAgenda();
+}
+function toggleCompromissoConcluido(id){
+  const c=compromissos[id]; if(!c) return;
+  c.concluido=!c.concluido;
+  persistCompromisso(c);
+  renderAgenda();
+}
+let _agendaMes=null;     // Date do 1º dia do mês em exibição
+let _agendaDiaSel=null;  // ISO do dia selecionado no painel
+let _agendaOrigin='hoje';
+function mudarMesAgenda(delta){
+  if(!_agendaMes) _agendaMes=new Date();
+  _agendaMes=new Date(_agendaMes.getFullYear(), _agendaMes.getMonth()+delta, 1);
+  renderAgenda();
+}
+/* Mesma fonte que a tela Hoje usa (SCHEDULE + unidadeDoDia), mas pra uma
+   data qualquer, não só "hoje". */
+function aulasDoDiaISO(dataISO){
+  const d=new Date(dataISO+'T00:00:00');
+  const dia=d.getDay();
+  if(FERIADOS_2026.has(dataISO)) return [];
+  return SCHEDULE.filter(x=>x.dia===dia).sort((a,b)=>a.ini.localeCompare(b.ini));
+}
+function compromissosDoDia(dataISO){
+  return Object.values(compromissos).filter(c=>c&&c.data===dataISO).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+}
+function renderAgenda(){
+  const box=document.getElementById('agendaBody'); if(!box) return;
+  if(!_agendaMes) _agendaMes=new Date();
+  if(!_agendaDiaSel) _agendaDiaSel=isoLocal(new Date());
+  const voltarLabel = _agendaOrigin==='notas'?'Notas':_agendaOrigin==='gestao'?'Gestão':'Hoje';
+  box.innerHTML =
+    '<button class="btn ghost sm" style="margin-bottom:10px" onclick="setView(\''+_agendaOrigin+'\')">← Voltar pra '+voltarLabel+'</button>'+
+    '<div class="agenda-layout">'+
+      '<div class="agenda-card"><div class="agenda-mes-nav">'+
+        '<button class="btn ghost sm" onclick="mudarMesAgenda(-1)">◀</button>'+
+        '<div class="agenda-mes-label" id="agendaMesLabel"></div>'+
+        '<button class="btn ghost sm" onclick="mudarMesAgenda(1)">▶</button>'+
+      '</div><div id="agendaGrade" class="agenda-grade"></div></div>'+
+      '<div class="agenda-card" id="agendaDiaCard"></div>'+
+    '</div>';
+  renderAgendaGrade();
+  renderAgendaDia();
+}
+function renderAgendaGrade(){
+  const grade=document.getElementById('agendaGrade'); const label=document.getElementById('agendaMesLabel');
+  if(!grade||!label) return;
+  const ano=_agendaMes.getFullYear(), mes=_agendaMes.getMonth();
+  label.textContent=_agendaMes.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const primeiroDia=new Date(ano,mes,1).getDay();
+  const totalDias=new Date(ano,mes+1,0).getDate();
+  const hojeISO=isoLocal(new Date());
+  let html='<div class="agenda-semana">'+['D','S','T','Q','Q','S','S'].map(d=>'<span>'+d+'</span>').join('')+'</div><div class="agenda-dias">';
+  for(let i=0;i<primeiroDia;i++) html+='<div class="agenda-cel vazia"></div>';
+  for(let dia=1;dia<=totalDias;dia++){
+    const d=new Date(ano,mes,dia); const iso=isoLocal(d);
+    const temAula = SCHEDULE.some(x=>x.dia===d.getDay()) && !FERIADOS_2026.has(iso);
+    const nCron = planejamentosDoDia(iso).length;
+    const nComp = compromissosDoDia(iso).length;
+    const cls=['agenda-cel']; if(iso===hojeISO) cls.push('hoje'); if(iso===_agendaDiaSel) cls.push('sel');
+    const pontos = (temAula?'<span class="agenda-ponto aula"></span>':'') + (nCron?'<span class="agenda-ponto cron"></span>':'') + (nComp?'<span class="agenda-ponto comp"></span>':'');
+    html+='<div class="'+cls.join(' ')+'" onclick="selecionarDiaAgenda(\''+iso+'\')"><span class="agenda-num">'+dia+'</span><div class="agenda-pontos">'+pontos+'</div></div>';
+  }
+  html+='</div>';
+  grade.innerHTML=html;
+}
+function selecionarDiaAgenda(iso){ _agendaDiaSel=iso; renderAgendaGrade(); renderAgendaDia(); }
+function renderAgendaDia(){
+  const box=document.getElementById('agendaDiaCard'); if(!box) return;
+  const iso=_agendaDiaSel;
+  const d=new Date(iso+'T00:00:00');
+  const aulas=aulasDoDiaISO(iso);
+  const cron=planejamentosDoDia(iso);
+  const comp=compromissosDoDia(iso);
+  let html='<h4 style="font-family:var(--serif);font-size:15px;margin:0 0 12px">'+esc(DIAS_LONGO[d.getDay()])+' · '+d.toLocaleDateString('pt-BR')+'</h4>';
+  if(aulas.length){
+    html+='<div class="agenda-secao-tit">Aulas</div>';
+    aulas.forEach(x=>{
+      const serie=SERIE_NUM[x.serie]; const u=unidadeDoDia(x.dia);
+      html+='<div class="hoje-row"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
+        '<div class="hoje-info"><b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+'</b><span>'+esc(u)+'</span></div>'+
+        (x.disc==='Estudo Orientado'?'':'<div class="hoje-acoes"><button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button></div>')+
+        '</div>';
+    });
+  }
+  if(cron.length){
+    html+='<div class="agenda-secao-tit">Cronograma de conteúdo</div>';
+    cron.forEach(({conteudo,entry,tema})=>{
+      const tu=turmas[conteudo.turmaId]||{};
+      const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
+      html+='<div class="hoje-row"><div class="hoje-info"><b>'+esc(tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span></div>'+
+        '<div class="hoje-acoes"><button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button></div></div>';
+    });
+  }
+  html+='<div class="agenda-secao-tit">Compromissos</div>';
+  if(comp.length){
+    comp.forEach(c=>{
+      html+='<div class="hoje-row'+(c.concluido?' aplicada':'')+'"><div class="hoje-info"><b style="'+(c.concluido?'text-decoration:line-through;opacity:.6':'')+'">'+esc(c.titulo)+(c.hora?(' · '+esc(c.hora)):'')+'</b>'+(c.descricao?('<span>'+esc(c.descricao)+'</span>'):'')+'</div>'+
+        '<div class="hoje-acoes">'+
+          '<button class="btn ghost sm" onclick="toggleCompromissoConcluido(\''+c.id+'\')">'+(c.concluido?'reabrir':'concluir')+'</button>'+
+          '<button class="btn ghost sm danger" onclick="removerCompromisso(\''+c.id+'\')">✕</button>'+
+        '</div></div>';
+    });
+  } else {
+    html+='<p style="color:var(--muted);font-size:13px;margin:0 0 10px">Nenhum compromisso neste dia.</p>';
+  }
+  if(!aulas.length && !cron.length && !comp.length){
+    html='<h4 style="font-family:var(--serif);font-size:15px;margin:0 0 12px">'+esc(DIAS_LONGO[d.getDay()])+' · '+d.toLocaleDateString('pt-BR')+'</h4><p style="color:var(--muted);font-size:13px">Nada neste dia.</p>';
+  }
+  html+='<div id="agendaFormCompromisso" class="hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
+      '<div class="field"><label>Título</label><input id="compTitulo" placeholder="ex.: Reunião de pais, entregar diário..."></div>'+
+      '<div class="field"><label>Hora (opcional)</label><input type="time" id="compHora"></div>'+
+      '<div class="field"><label>Descrição (opcional)</label><textarea id="compDescricao"></textarea></div>'+
+      '<button class="btn primary sm" onclick="salvarCompromisso()">💾 Salvar</button> '+
+      '<button class="btn ghost sm" onclick="fecharFormCompromisso()">Cancelar</button>'+
+    '</div>'+
+    '<button class="btn sm full" id="agendaBtnAddComp" style="margin-top:10px" onclick="abrirFormCompromisso()">➕ Compromisso neste dia</button>';
+  box.innerHTML=html;
+}
+function abrirFormCompromisso(){
+  document.getElementById('agendaFormCompromisso').classList.remove('hidden');
+  document.getElementById('agendaBtnAddComp').classList.add('hidden');
+  setTimeout(()=>document.getElementById('compTitulo')?.focus(),50);
+}
+function fecharFormCompromisso(){
+  document.getElementById('agendaFormCompromisso').classList.add('hidden');
+  document.getElementById('agendaBtnAddComp').classList.remove('hidden');
+}
+function salvarCompromisso(){
+  const titulo=(document.getElementById('compTitulo')||{}).value.trim();
+  const hora=(document.getElementById('compHora')||{}).value||'';
+  const descricao=(document.getElementById('compDescricao')||{}).value.trim();
+  if(!titulo){ toast('Digite um título.','err'); return; }
+  const c={id:uid(), titulo, data:_agendaDiaSel, hora, descricao, concluido:false};
+  persistCompromisso(c);
+  renderAgendaGrade();
+  renderAgendaDia();
+  toast('Compromisso adicionado.','ok');
+}
 function acharOuCriarTurma(disc,uni,serie,letra){
   let t=Object.values(turmas).find(x=>x.disciplina===disc&&x.unidade===uni&&x.serie===serie&&(x.letra||'')===letra);
   if(!t){ t={id:uid(),disciplina:disc,unidade:uni,serie:serie,letra:letra,updatedAt:Date.now()}; t.nome=turmaNome(t); persistTurma(t); toast('Turma '+turmaNome(t)+' criada.','ok'); }
@@ -4541,16 +4729,17 @@ function projetarAula(disc,uni,serie,letra){
 }
 function setView(v){
   fecharProjecao();
-  ['viewHoje','viewPainel','viewAcervo','viewNotas','viewGestao'].forEach(id=>{
+  ['viewHoje','viewPainel','viewAcervo','viewAgenda','viewNotas','viewGestao'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('hidden', id!=='view'+v.charAt(0).toUpperCase()+v.slice(1));
   });
-  ['tabHoje','tabPainel','tabAcervo','tabNotas','tabGestao'].forEach(id=>{
+  ['tabHoje','tabPainel','tabAcervo','tabAgenda','tabNotas','tabGestao'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('active', id==='tab'+v.charAt(0).toUpperCase()+v.slice(1));
   });
   try{ localStorage.setItem('leciona_lastview', v); }catch(e){}
   if(v==='hoje') renderHoje();
   if(v==='painel') renderPainel();
   if(v==='acervo') renderAcervo();
+  if(v==='agenda') renderAgenda();
   if(v==='notas') renderNotas();
 }
 
@@ -5576,6 +5765,7 @@ function renderNotas(){
     '<button class="btn ghost sm" onclick="exportarNotasTodasTurmasCSV()" title="Exporta as notas de todas as turmas de '+esc(tu.disciplina||'')+'">↓ CSV — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
     '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
     '<button class="btn ghost sm" onclick="_painelOrigin=\'notas\';setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
+    '<button class="btn ghost sm" onclick="_agendaOrigin=\'notas\';setView(\'agenda\')" title="Agenda — aulas, cronograma e compromissos por dia">📅 Agenda</button>'+
   '</div>';
 
   // Stats boxes
