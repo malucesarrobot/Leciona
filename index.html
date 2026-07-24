@@ -2880,7 +2880,7 @@ function renderImagensEditor(){
   const imgs=editing.imagens||[];
   box.innerHTML = imgs.length ? imgs.map((im,i)=>'<div class="it"><img src="'+esc(im.thumburl||im.url)+'"><button onclick="removerImagem('+i+')" title="remover">✕</button></div>').join('') : '<div class="statusdot">Nenhuma imagem fixada.</div>';
 }
-function removerImagem(i){ editing.imagens.splice(i,1); renderImagensEditor(); edDirty(); }
+function removerImagem(i){ editing.imagens.splice(i,1); renderImagensEditor(); edDirty(); collectMeta(); persistTema(editing); }
 
 /* ---------- Cronograma (planejamento por conteúdo) ----------
    O campo 'planejamento' vive no CONTEÚDO (não no tema/objeto): um conteúdo
