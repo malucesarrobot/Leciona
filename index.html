@@ -587,7 +587,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
   <div class="editor-top">
     <button class="btn ghost" onclick="fecharEditor()">← Voltar</button>
     <input class="tema-nome" id="edNome" placeholder="Nome do tema" oninput="edDirty()">
-    <span id="saveStatus" style="font-size:12px;margin:0 8px;white-space:nowrap"></span>
+    <span id="edStatusChip"></span>
     <button class="btn" onclick="projetarTema()">▶ Projetar</button>
   </div>
   <div id="edTurmaBadge" style="padding:0 22px 8px;font-size:12px;color:var(--muted)"></div>
@@ -595,23 +595,17 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <div class="meta-pane">
       <div class="field"><label>Conteúdo</label>
         <select id="edConteudo" onchange="edDirty();renderCronograma()"></select></div>
-      <div class="field"><label>Habilidade (DC-GO / corte)</label>
-        <select id="edHab" onchange="aplicarHab()"></select>
-        <input id="edDcgo" class="meta-cod-badge" oninput="onDcgoInput()" placeholder="código" title="Código DC-GO — normalmente vem da habilidade escolhida acima; só edite pra um código fora da matriz."></div>
+      <div class="field"><label>Código DC-GO</label>
+        <input id="edDcgo" class="meta-cod-badge" oninput="onDcgoInput()" placeholder="código" title="Código DC-GO da matriz — edite direto pra um código fora dela, se precisar."></div>
       <div id="edSubtemas"></div>
       <div class="field"><label>Título de exibição (opcional)</label>
         <input id="edTituloExibicao" oninput="edDirty()" placeholder="sobrescreve o nome do tema só na visualização (não muda o nome interno)"></div>
-      <div class="field"><label>Anotação</label>
-        <textarea id="edResumo" class="meta-anot" oninput="edDirty()" placeholder="anotação opcional sobre este tema…"></textarea></div>
-      <div class="field"><label>Palavras-chave</label>
-        <input id="edPalavras" oninput="edDirty()" placeholder="separe por vírgula"></div>
-      <div class="field"><label>Tempo estimado (aulas)</label>
-        <input id="edTempo" type="number" min="1" oninput="edDirty()"></div>
-
-      <div class="meta-block">
-        <h4>&#128205; Status nesta turma</h4>
-        <div id="edTurmas"></div>
-      </div>
+      <div class="field" style="margin-top:2px"><label style="opacity:.7">Anotação (opcional)</label>
+        <textarea id="edResumo" class="meta-anot" oninput="edDirty()" placeholder="—" style="min-height:44px;font-size:12.5px;opacity:.85"></textarea></div>
+      <div class="field" style="margin-top:2px"><label style="opacity:.7">Palavras-chave (opcional)</label>
+        <input id="edPalavras" oninput="edDirty()" placeholder="—" style="font-size:12.5px;opacity:.85"></div>
+      <div class="field"><label>Aula</label>
+        <div class="gt-checks"><label class="check"><input type="radio" name="edDupla" value="1" onchange="edDirty()" checked> Simples</label><label class="check"><input type="radio" name="edDupla" value="2" onchange="edDirty()"> Dupla</label></div></div>
 
       <div class="meta-block" id="edNotasBlock" style="display:none">
         <h4>&#128172; Notas do assistente</h4>
@@ -2812,16 +2806,12 @@ function abrirEditor(id){
   document.getElementById('edTituloExibicao').value=editing.tituloExibicao||'';
   document.getElementById('edResumo').value=editing.resumo||'';
   document.getElementById('edPalavras').value=editing.palavras||'';
-  document.getElementById('edTempo').value=editing.tempo||'';
+  const duplaSel=document.querySelector('input[name=edDupla][value="'+(editing.aulasEstim===2?2:1)+'"]');
+  if(duplaSel) duplaSel.checked=true;
   // conteúdos do mesmo escopo
   const csel=document.getElementById('edConteudo'); csel.innerHTML='';
   conteudosDoScope().forEach(c=>csel.add(new Option(c.nome,c.id)));
   csel.value=editing.conteudoId||'';
-  // habilidades da matriz
-  const hsel=document.getElementById('edHab'); hsel.innerHTML='';
-  hsel.add(new Option('— escolher habilidade da matriz —',''));
-  matrizDoScope().forEach(it=> hsel.add(new Option(it.c+' — '+it.h.slice(0,55)+(it.h.length>55?'…':''), it.c)) );
-  hsel.value=editing.dcgo||'';
   renderSelosEditor();
   renderSubtemasDoDcgo();
   renderStatusEditor();
@@ -2865,13 +2855,6 @@ function edDirty(){ dirty=true; setSaveStatus('editando'); autosave(); }
 function flushEditor(){ try{ clearTimeout(_saveT); if(editing){ saveActiveObj(); collectMeta(); persistTema(editing); setSaveStatus('salvo'); } }catch(e){} }
 window.addEventListener('beforeunload', flushEditor);
 function onDcgoInput(){ renderSelosEditor(); renderSubtemasDoDcgo(); edDirty(); }
-function aplicarHab(){
-  const c=document.getElementById('edHab').value;
-  const it=matrizItem(editing.disciplina,editing.serie,editing.bimestre,c);
-  if(it){ document.getElementById('edDcgo').value=it.c; editing.habilidade=it.h;
-    if(!document.getElementById('edResumo').value) document.getElementById('edResumo').value=it.h; }
-  renderSelosEditor(); renderSubtemasDoDcgo(); edDirty();
-}
 function renderSelosEditor(){ /* campo "Selos da matriz" removido do editor — era só um badge informativo sem ação, achado confuso na prática */ }
 function renderSubtemasDoDcgo(){
   const box=document.getElementById('edSubtemas'); if(!box || !editing) return;
@@ -2903,17 +2886,14 @@ function removerNotaAssistente(i){
   renderNotasAssistente();
 }
 function renderStatusEditor(){
-  const box=document.getElementById('edTurmas');
+  const box=document.getElementById('edStatusChip'); if(!box) return;
   // status migra de formato antigo {turmaId:{}} para {estado,data}
   let st=editing.status||{};
   if(st && (st.estado===undefined) && Object.keys(st).length){ const first=Object.values(st)[0]||{}; st={estado:first.estado||'',data:first.data||''}; editing.status=st; }
   if(st.estado===undefined) editing.status={estado:'',data:''}, st=editing.status;
-  const tu=turmas[editing.turmaId];
   const aplicado=st.estado==='aplicado';
-  box.innerHTML='<div class="turma-row"><span class="tn">'+esc(tu?tu.nome:'(turma)')+'</span></div>'+
-    (aplicado
-      ? '<button class="btn sm full" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="abrirMarcarAplicado()">&#10003; Aplicada'+(st.data?(' em '+st.data.split('-').reverse().join('/')):'')+'</button>'
-      : '<button class="btn ghost sm full" onclick="abrirMarcarAplicado()">Marcar aula como aplicada</button>');
+  const lbl = aplicado ? ('✓ Aplicada'+(st.data?(' '+st.data.split('-').reverse().join('/')):'')) : (st.estado==='planejado' ? '◔ Planejado' : '○ status');
+  box.innerHTML='<button class="stchip st-'+(st.estado||'none')+'" style="margin:0 8px" onclick="abrirMarcarAplicado()" title="Marcar aula como aplicada nesta turma">'+lbl+'</button>';
 }
 /* Marcar/editar aplicação direto do editor de tema — substitui o antigo
    dropdown planejado/aplicado. Um único botão, como no modo projeção:
@@ -3155,7 +3135,8 @@ function collectMeta(){
   editing.tituloExibicao=document.getElementById('edTituloExibicao').value.trim();
   editing.resumo=document.getElementById('edResumo').value.trim();
   editing.palavras=document.getElementById('edPalavras').value.trim();
-  editing.tempo=document.getElementById('edTempo').value;
+  const dupla=document.querySelector('input[name=edDupla]:checked');
+  if(dupla) editing.aulasEstim=parseInt(dupla.value,10)||1;
   const cid=document.getElementById('edConteudo').value;
   if(cid && cid!==editing.conteudoId){ editing.conteudoId=cid; editing.ordem=nextOrdemTema(cid); }
 }
@@ -3737,8 +3718,9 @@ function openAssistente(){
     '<div id="chatProg" class="statusdot"></div>'+
     '<div id="chatAnexoChip"></div>'+
     '<div style="display:flex;gap:6px;align-items:flex-end">'+
-      '<button class="btn ghost sm" onclick="document.getElementById(\'chatAnexoInput\').click()" title="Anexar foto ou PDF — ex.: fotografar o calendário de atividades">📎</button>'+
-      '<input type="file" id="chatAnexoInput" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" style="display:none" onchange="selecionarAnexoChat(event)">'+
+      '<label class="btn ghost sm" style="cursor:pointer" title="Anexar foto ou PDF — ex.: fotografar o calendário de atividades">📎'+
+        '<input type="file" id="chatAnexoInput" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" style="display:none" onchange="selecionarAnexoChat(event)">'+
+      '</label>'+
       '<button class="btn ghost sm" id="btnMicChat" onclick="alternarDitadoChat()" title="Ditar por voz">🎤</button>'+
       '<textarea id="chatInput" rows="2" placeholder="Pergunte qualquer coisa — pesquisa, ideias, comparações, dúvidas de conteúdo..." style="flex:1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();enviarChat();}"></textarea>'+
       '<button class="btn primary" id="chatSendBtn" onclick="enviarChat()">Enviar</button>'+
