@@ -1077,6 +1077,7 @@ let notasCtrl = {};          // { id: nota } — notas dos alunos
 let chamadas = {};           // { id: {turmaId,data,presencas:{alunoId:true/false},_ts} } — chamada (presença) por turma+dia
 let compromissos = {};       // { id: {titulo,data,hora,descricao,concluido,_ts} } — lembretes/compromissos avulsos da Agenda (reunião, entrega de diário...), não ligados a um tema
 let aulasAvulsas = {};        // { id: {turmaId,titulo,tipo,observacoes,dcgoRef,data,status:'planejada'|'executada',_ts} } — aula sem tema vinculado (explicação, atividade, correção, recomposição)
+let notasGerais = {};         // { id: {texto,autor:'professora'|'assistente',ts} } — bloco de notas solto na Agenda, não ligado a nenhum tema/aula
 let _buscaTerm = '';          // termo de busca atual (sincronizado via setBusca)
 let temas = {};
 let turmas = {};            // turmas reais (9º A, 9º B...)
@@ -1091,7 +1092,7 @@ const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_
       LS_REG='leciona_registros', LS_ALUNOS='leciona_alunos',
       LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl',
       LS_OCORR='leciona_ocorrencias', LS_CHAMADAS='leciona_chamadas',
-      LS_COMP='leciona_compromissos', LS_AULASAVULSAS='leciona_aulas_avulsas';
+      LS_COMP='leciona_compromissos', LS_AULASAVULSAS='leciona_aulas_avulsas', LS_NOTASGERAIS='leciona_notas_gerais';
 // Versão do formato dos dados. Se uma futura versão do app mudar a estrutura,
 // este número sobe e a migração correspondente roda uma única vez, de forma
 // controlada — em vez de o app tentar ler dados antigos com código novo e
@@ -1340,6 +1341,11 @@ function initFirebase(){
       if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
       if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
     });
+    _escutar('leciona/notas_gerais', s=>{
+      notasGerais=s.val()||{};
+      lsSet(LS_NOTASGERAIS, JSON.stringify(notasGerais));
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderNotasGeraisAgenda();
+    });
   }catch(e){ console.error(e); setConn(false); toast('Falha ao conectar Firebase: '+e.message,'err'); }
 }
 function setConn(on){
@@ -1353,6 +1359,7 @@ function loadLocal(){
   try{ chamadas=JSON.parse(localStorage.getItem(LS_CHAMADAS)||'{}'); }catch(e){ chamadas={}; }
   try{ compromissos=JSON.parse(localStorage.getItem(LS_COMP)||'{}'); }catch(e){ compromissos={}; }
   try{ aulasAvulsas=JSON.parse(localStorage.getItem(LS_AULASAVULSAS)||'{}'); }catch(e){ aulasAvulsas={}; }
+  try{ notasGerais=JSON.parse(localStorage.getItem(LS_NOTASGERAIS)||'{}'); }catch(e){ notasGerais={}; }
   try{ alunos=JSON.parse(localStorage.getItem(LS_ALUNOS)||'{}'); }catch(e){ alunos={}; }
   try{ atividadesCtrl=JSON.parse(localStorage.getItem(LS_ATVCTRL)||'{}'); }catch(e){ atividadesCtrl={}; }
   try{ notasCtrl=JSON.parse(localStorage.getItem(LS_NOTAS)||'{}'); }catch(e){ notasCtrl={}; }
@@ -3531,6 +3538,9 @@ const FERRAMENTAS_ASSISTENTE=[
   {name:'deixar_nota_tema', description:'Anexa uma anotação ao tema de aula atualmente aberto no editor (ou, se nenhum estiver aberto, a um tema existente pelo nome exato).', input_schema:{type:'object',properties:{
     texto:{type:'string'}, tema_nome:{type:'string', description:'Nome exato do tema, só necessário se nenhum tema estiver aberto no editor'}
   }, required:['texto']}},
+  {name:'deixar_nota_geral', description:'Escreve uma anotação no bloco de notas solto da Agenda — não ligado a nenhum tema/aula específica. Use pra ideias, lembretes ou observações gerais que não pertencem a um tema em particular.', input_schema:{type:'object',properties:{
+    texto:{type:'string'}
+  }, required:['texto']}},
 ];
 function rotuloFerramentaAssistente(nome, input){
   input=input||{};
@@ -3539,6 +3549,7 @@ function rotuloFerramentaAssistente(nome, input){
     editar_compromisso:input.apagar?'apagando compromisso da agenda':'editando compromisso da agenda',
     consultar_agenda:'consultando a agenda ('+(input.data_inicio||'?')+' a '+(input.data_fim||'?')+')',
     deixar_nota_tema:'anexando anotação'+(input.tema_nome?(' a "'+input.tema_nome+'"'):' ao tema aberto'),
+    deixar_nota_geral:'anotando no bloco de notas da Agenda',
   };
   return labels[nome]||nome;
 }
@@ -3592,6 +3603,13 @@ function executarFerramentaAssistente(nome, input){
       if(editing && editing.id===t.id) renderNotasAssistente();
       return {ok:true, tema:t.nome};
     }
+    if(nome==='deixar_nota_geral'){
+      if(!input.texto) return {erro:'falta texto'};
+      const n={id:uid(), texto:String(input.texto), autor:'assistente'};
+      persistNotaGeral(n);
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderNotasGeraisAgenda();
+      return {ok:true};
+    }
     return {erro:'ferramenta desconhecida: '+nome};
   }catch(e){ return {erro:e.message}; }
 }
@@ -3639,7 +3657,7 @@ async function enviarChat(){
   const useWeb=(document.getElementById('chatWeb')||{}).checked;
   const contexto = editing ? ('O usuário está atualmente com o tema "'+editing.nome+'" ('+editing.disciplina+', '+editing.serie+') aberto no app Leciona. Se a pergunta parecer relacionada, considere esse contexto — mas responda livremente qualquer outra pergunta também.') : '';
   const hoje='Hoje é '+isoLocal(new Date())+' ('+DIAS_LONGO[new Date().getDay()]+').';
-  const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+hoje+' '+contexto+' Você pode usar ferramentas pra mexer na Agenda do Leciona (criar/editar/apagar compromissos, consultar aulas e compromissos por período) e pra anexar uma anotação a um tema de aula. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
+  const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+hoje+' '+contexto+' Você pode usar ferramentas pra mexer na Agenda do Leciona (criar/editar/apagar compromissos, consultar aulas e compromissos por período), pra anexar uma anotação a um tema de aula, e pra escrever no bloco de notas solto da Agenda (deixar_nota_geral) quando o assunto não for de um tema específico. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
   try{
     let iter=0; const MAX_ITER=6; let respostaFinal='';
     while(iter<MAX_ITER){
@@ -4889,6 +4907,41 @@ function renderHoje(){
    tema) e compromissos avulsos (novo — reunião, entrega de diário, prova,
    qualquer coisa que não seja uma aula em si).
    ═══════════════════════════════════════════════════════════════════════ */
+/* Bloco de notas solto na Agenda — não ligado a nenhum tema/aula, escrito
+   tanto pela professora (textarea) quanto pelo assistente (ferramenta
+   deixar_nota_geral). Mesma coleção pros dois lados, diferenciados só por
+   `autor`. */
+function persistNotaGeral(n){ n._ts=Date.now(); notasGerais[n.id]=n; lsSet(LS_NOTASGERAIS,JSON.stringify(notasGerais)); if(DB) DB.ref('leciona/notas_gerais/'+n.id).set(n).catch(e=>toast('⚠ Falha ao gravar a nota (mantida localmente). '+e.message,'err')); }
+function removerNotaGeral(id){
+  delete notasGerais[id];
+  lsSet(LS_NOTASGERAIS,JSON.stringify(notasGerais));
+  if(DB) DB.ref('leciona/notas_gerais/'+id).remove().catch(e=>toast('⚠ Removida localmente, mas falhou ao remover no Firebase: '+e.message,'err'));
+  renderNotasGeraisAgenda();
+}
+function adicionarNotaGeral(){
+  const inp=document.getElementById('notaGeralInput'); const texto=(inp.value||'').trim();
+  if(!texto) return;
+  const n={id:uid(), texto, autor:'professora'};
+  persistNotaGeral(n);
+  inp.value='';
+  renderNotasGeraisAgenda();
+}
+function renderNotasGeraisAgenda(){
+  const box=document.getElementById('notasGeraisCard'); if(!box) return;
+  const notas=Object.values(notasGerais).filter(Boolean).sort((a,b)=>(b._ts||0)-(a._ts||0));
+  box.innerHTML='<div style="font-weight:600;margin-bottom:8px">📝 Bloco de notas</div>'+
+    '<div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:10px">'+
+      '<textarea id="notaGeralInput" rows="2" placeholder="Anotação solta — sua ou do assistente, sem ligação com nenhuma aula específica" style="flex:1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();adicionarNotaGeral();}"></textarea>'+
+      '<button class="btn primary sm" onclick="adicionarNotaGeral()">Adicionar</button>'+
+    '</div>'+
+    (notas.length ? notas.map(n=>
+      '<div style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;white-space:pre-wrap;font-size:13px">'+
+        '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(n.autor==='assistente'?'🤖 Assistente':'📝 Você')+(n._ts?(' · '+new Date(n._ts).toLocaleDateString('pt-BR')):'')+'</div>'+
+        esc(n.texto)+
+        '<div style="margin-top:4px"><button class="btn ghost sm" onclick="removerNotaGeral(\''+n.id+'\')">excluir</button></div>'+
+      '</div>'
+    ).join('') : '<p style="color:var(--muted);font-size:13px">Nenhuma anotação ainda.</p>');
+}
 function persistCompromisso(c){ c._ts=Date.now(); compromissos[c.id]=c; lsSet(LS_COMP,JSON.stringify(compromissos)); if(DB) DB.ref('leciona/compromissos/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar na agenda (mantido localmente). '+e.message,'err')); }
 function removerCompromisso(id){
   if(!confirm('Remover este compromisso da agenda?')) return;
@@ -5007,9 +5060,11 @@ function renderAgenda(){
         '<button class="btn ghost sm" onclick="mudarMesAgenda(1)">▶</button>'+
       '</div><div id="agendaGrade" class="agenda-grade"></div></div>'+
       '<div class="agenda-card" id="agendaDiaCard"></div>'+
-    '</div>';
+    '</div>'+
+    '<div class="agenda-card" id="notasGeraisCard" style="margin-top:16px"></div>';
   renderAgendaGrade();
   renderAgendaDia();
+  renderNotasGeraisAgenda();
 }
 function renderAgendaGrade(){
   const grade=document.getElementById('agendaGrade'); const label=document.getElementById('agendaMesLabel');
