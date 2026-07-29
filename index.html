@@ -94,6 +94,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .stat-box strong{display:block;font-size:20px;font-weight:700;color:var(--green)}
 .stat-box span{font-size:11px;color:var(--muted)}
 .atv-tipo{font-size:10px;display:block;color:var(--muted);font-weight:normal}
+.atv-dup-btn{border:0;background:transparent;cursor:pointer;font-size:11px;padding:0 2px;color:var(--green);vertical-align:middle}
 .chamada-wrap{max-width:640px}
 .chamada-datas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
 .chamada-resumo{font-size:13px;color:var(--muted);margin-bottom:10px}
@@ -5148,6 +5149,37 @@ function salvarNotaCheck(input){
   if(row){ const m=row.querySelector('.nota-media'); if(m){ m.textContent=med!=null?med.toFixed(1):'-'; m.className='nota-media '+(med==null?'':(med>=6?'aprovado':'reprovado')); } }
 }
 
+/* Duplica uma atividade recorrente (ex.: quiz semanal) pra outra(s) turma(s)
+   e/ou data, sem redigitar — copia só a definição (nome/tipo/peso/modo),
+   nunca as notas já lançadas. */
+function abrirDuplicarAtividade(id){
+  const av=atividadesCtrl[id]; if(!av) return;
+  const turmasDisc=Object.values(turmas).filter(t=>t.disciplina===av.disciplina);
+  const tuChecks=turmasDisc.map(t=>'<label class="check"><input type="checkbox" value="'+t.id+'"'+((av.turmaIds||[]).includes(t.id)?' checked':'')+'>'+esc(turmaNome(t))+'</label>').join('');
+  const hoje=new Date().toISOString().slice(0,10);
+  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
+    '<div class="modal-h"><h3>Duplicar "'+esc(av.nome)+'"</h3></div>'+
+    '<div class="modal-b">'+
+      '<small>Cria uma cópia desta atividade (sem as notas já lançadas) nas turmas/data escolhidas.</small>'+
+      '<div class="field" style="margin-top:10px"><label>Nova data</label><input id="dupData" type="date" value="'+hoje+'"></div>'+
+      '<div class="field"><label>Turmas</label><div class="gt-checks" id="dupTurmasWrap">'+tuChecks+'</div></div>'+
+    '</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
+    '<button class="btn primary" onclick="confirmarDuplicarAtividade(\''+id+'\')">Duplicar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+}
+function confirmarDuplicarAtividade(id){
+  const av=atividadesCtrl[id]; if(!av) return;
+  const data=document.getElementById('dupData').value||new Date().toISOString().slice(0,10);
+  const turmaIds=[...document.querySelectorAll('#dupTurmasWrap input[type=checkbox]:checked')].map(c=>c.value);
+  if(!turmaIds.length){ toast('Selecione pelo menos uma turma.','err'); return; }
+  const bimestre=bimAtivoAgora(data)||av.bimestre;
+  const nova={id:uid(),nome:av.nome,tipo:av.tipo,data,peso:av.peso,valorMax:av.valorMax,checklist:av.checklist,turmaIds,disciplina:av.disciplina,bimestre,recorrente:true};
+  persistAtivCtrl(nova);
+  closeModal();
+  renderNotas();
+  toast('Atividade duplicada.','ok');
+}
 function removerAtividade(id){
   if(!confirm('Remover esta atividade? As notas lançadas também serão removidas.')) return;
   delete atividadesCtrl[id];
@@ -5223,6 +5255,16 @@ function renderProgressoBar(){
       '<div class="prog-titulo"><span>⚠ '+esc(turmaNome(tu))+' está atrasada — '+abertas.length+' ocorrência(s) sem resolver ('+abertas.map(o=>esc(OCORR_CATEGORIAS[o.categoria]||o.categoria)).join(', ')+')</span>'+
       '<button class="btn sm" style="border-color:#a8442f;color:#a8442f" onclick="abrirRecuperacao()">⚡ Gerar aula de recuperação</button></div>'+
     '</div>' : '';
+  // Progresso do bimestre em si (aulas dadas/previstas — calendário e
+  // chamadas reais, independe de quantos temas existem).
+  const contBim=contarAulas(tu,scope.bim);
+  const dadasBim=aulasDadas(tu,scope.bim);
+  const pctBim=contBim.total>0?Math.min(100,Math.round(dadasBim/contBim.total*100)):0;
+  const bimBarHtml = contBim.total>0 ?
+    '<div class="notas-progresso">'+
+      '<div class="prog-titulo"><span>Progresso do bimestre · Aula '+dadasBim+'/'+contBim.total+' ('+pctBim+'%)</span></div>'+
+      '<div class="prog-barra-wrap"><div class="prog-barra" style="width:'+pctBim+'%;background:#6a8fbf"></div></div>'+
+    '</div>' : '';
   const conts=conteudosDoScope();
   let totalTemas=0, temasComReg=0;
   const objContadores={};
@@ -5235,14 +5277,14 @@ function renderProgressoBar(){
       regsT.forEach(r=>(r.objetos||[]).forEach(k=>{ if(k in objContadores) objContadores[k]++; }));
     });
   });
-  if(!totalTemas){ box.innerHTML=avisoAtraso; return; }
+  if(!totalTemas){ box.innerHTML=avisoAtraso+bimBarHtml; return; }
   const pct=Math.round(temasComReg/totalTemas*100);
   const objDots=PROJ_ORDER.map(k=>{
     const label=OBJ_DEFS.find(o=>o.k===k)?.label||k;
     const n=objContadores[k];
     return '<span class="prog-obj'+(n>0?' feito':'')+'" title="'+label+(n?' — '+n+'x':'')+'">'+label+(n?' ×'+n:'')+'</span>';
   }).join('');
-  box.innerHTML=avisoAtraso+'<div class="notas-progresso">'+
+  box.innerHTML=avisoAtraso+bimBarHtml+'<div class="notas-progresso">'+
     '<div class="prog-titulo">'+
       '<span>'+esc(turmaNome(tu))+' · '+esc(scope.bim)+' · '+temasComReg+'/'+totalTemas+' temas aplicados</span>'+
       '<button class="btn ghost sm" onclick="abrirRelatorioTurma()">📈 Relatório</button>'+
@@ -5356,7 +5398,8 @@ function renderPainel(){
         });
       });
       const pct = total ? Math.round(comReg/total*100) : null;
-      return {t, total, comReg, pct, atrasada:turmaAtrasada(t.id)};
+      const nAvulsas = Object.values(aulasAvulsas).filter(a=>a&&a.turmaId===t.id&&bimAtivoAgora(a.data)===_painelBim).length;
+      return {t, total, comReg, pct, atrasada:turmaAtrasada(t.id), nAvulsas};
     })
     .sort((a,b)=>{
       if(a.atrasada!==b.atrasada) return a.atrasada?-1:1; // atrasadas primeiro
@@ -5392,6 +5435,7 @@ function renderPainel(){
       '<div class="row">'+
         '<b style="flex:1">'+esc(turmaNome(l.t))+' <span style="font-weight:400;color:var(--muted);font-size:12px">· '+esc(l.t.disciplina||'')+' · '+esc(l.t.unidade||'—')+'</span></b>'+
         (l.atrasada?'<span class="reg-badge" style="background:#a8442f">⚠ atrasada</span>':'')+
+        (l.nAvulsas?'<span class="reg-badge" style="background:#7a4b8a" title="Aulas avulsas (sem tema) neste bimestre">✎ '+l.nAvulsas+' avulsa'+(l.nAvulsas>1?'s':'')+'</span>':'')+
         '<span style="font-size:13px;font-weight:600;min-width:42px;text-align:right">'+(l.pct==null?'—':l.pct+'%')+'</span>'+
       '</div>'+
       '<div class="prog-barra-wrap" style="margin:0"><div class="prog-barra" style="width:'+(l.pct||0)+'%;background:'+cor+'"></div></div>'+
@@ -6210,6 +6254,7 @@ function renderNotas(){
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
       return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+'" data-avid="'+av.id+'">'+
         '<span class="atv-col-header">'+esc(av.nome)+'</span>'+
+        (av.recorrente?'<button class="atv-dup-btn" onclick="event.stopPropagation();abrirDuplicarAtividade(\''+av.id+'\')" title="Duplicar pra outra turma/data, sem redigitar">⧉</button>':'')+
         '<span class="atv-tipo">peso '+av.peso+(isCheck?' &middot; &check;':'')+'</span>'+
       '</th>';
     }).join('')+
@@ -6371,7 +6416,9 @@ function abrirAddAtividade(){
       '<div class="field"><label>Peso</label><input id="atvPeso" type="number" value="1" min="0.1" max="10" step="0.1"></div>'+
       '<div class="field"><label>Valor máximo</label><input id="atvMax" type="number" value="10" min="1" max="100" step="0.5"></div>'+
       '<div class="field"><label>Modo</label><div class="gt-checks"><label class="check"><input type="radio" name="atvModo" value="nota" checked> Nota 0–10</label><label class="check"><input type="radio" name="atvModo" value="check"> Checklist ✓/○</label></div></div>'+
-      '<div class="field"><label>Aplicar às turmas</label><div class="gt-checks">'+tuChecks+'</div></div>'+
+      '<div class="field"><label class="check"><input type="checkbox" id="atvRecorrente"> Atividade recorrente</label>'+
+        '<small style="color:var(--muted)">Marque se esse tipo de atividade se repete (ex.: quiz semanal) — habilita duplicar pra outras turmas/datas sem redigitar.</small></div>'+
+      '<div class="field"><label>Aplicar às turmas</label><div class="gt-checks" id="atvTurmasWrap">'+tuChecks+'</div></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarAtividade()">Adicionar</button></div></div></div>';
@@ -6385,11 +6432,12 @@ function salvarAtividade(){
   const data=document.getElementById('atvData')?.value||new Date().toISOString().slice(0,10);
   const peso=parseFloat(document.getElementById('atvPeso')?.value)||1;
   const max=parseFloat(document.getElementById('atvMax')?.value)||10;
-  const turmaIds=[...document.querySelectorAll('#modalWrap input[type=checkbox]:checked')].map(c=>c.value);
+  const turmaIds=[...document.querySelectorAll('#atvTurmasWrap input[type=checkbox]:checked')].map(c=>c.value);
   if(!nome){ toast('Digite o nome da atividade.','err'); return; }
   if(!turmaIds.length){ toast('Selecione pelo menos uma turma.','err'); return; }
   const modoEl=document.querySelector('input[name=atvModo]:checked'); const checklist=modoEl?.value==='check';
-  const av={id:uid(),nome,tipo,data,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim};
+  const recorrente=(document.getElementById('atvRecorrente')||{}).checked||false;
+  const av={id:uid(),nome,tipo,data,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente};
   persistAtivCtrl(av);
   closeModal();
   renderNotas();
