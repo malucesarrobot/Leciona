@@ -1078,6 +1078,7 @@ let chamadas = {};           // { id: {turmaId,data,presencas:{alunoId:true/fals
 let compromissos = {};       // { id: {titulo,data,hora,descricao,concluido,_ts} } — lembretes/compromissos avulsos da Agenda (reunião, entrega de diário...), não ligados a um tema
 let aulasAvulsas = {};        // { id: {turmaId,titulo,tipo,observacoes,dcgoRef,data,status:'planejada'|'executada',_ts} } — aula sem tema vinculado (explicação, atividade, correção, recomposição)
 let notasGerais = {};         // { id: {texto,autor:'professora'|'assistente',ts} } — bloco de notas solto na Agenda, não ligado a nenhum tema/aula
+let qualitativa = {};         // { id: {alunoId,turmaId,data,motivo,valor,_ts} } — descontos da nota qualitativa (começa em 10, não entra na média de atividades)
 let _buscaTerm = '';          // termo de busca atual (sincronizado via setBusca)
 let temas = {};
 let turmas = {};            // turmas reais (9º A, 9º B...)
@@ -1092,7 +1093,7 @@ const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_
       LS_REG='leciona_registros', LS_ALUNOS='leciona_alunos',
       LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl',
       LS_OCORR='leciona_ocorrencias', LS_CHAMADAS='leciona_chamadas',
-      LS_COMP='leciona_compromissos', LS_AULASAVULSAS='leciona_aulas_avulsas', LS_NOTASGERAIS='leciona_notas_gerais';
+      LS_COMP='leciona_compromissos', LS_AULASAVULSAS='leciona_aulas_avulsas', LS_NOTASGERAIS='leciona_notas_gerais', LS_QUALITATIVA='leciona_qualitativa';
 // Versão do formato dos dados. Se uma futura versão do app mudar a estrutura,
 // este número sobe e a migração correspondente roda uma única vez, de forma
 // controlada — em vez de o app tentar ler dados antigos com código novo e
@@ -1346,6 +1347,11 @@ function initFirebase(){
       lsSet(LS_NOTASGERAIS, JSON.stringify(notasGerais));
       if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderNotasGeraisAgenda();
     });
+    _escutar('leciona/qualitativa', s=>{
+      qualitativa=s.val()||{};
+      lsSet(LS_QUALITATIVA, JSON.stringify(qualitativa));
+      if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas();
+    });
   }catch(e){ console.error(e); setConn(false); toast('Falha ao conectar Firebase: '+e.message,'err'); }
 }
 function setConn(on){
@@ -1360,6 +1366,7 @@ function loadLocal(){
   try{ compromissos=JSON.parse(localStorage.getItem(LS_COMP)||'{}'); }catch(e){ compromissos={}; }
   try{ aulasAvulsas=JSON.parse(localStorage.getItem(LS_AULASAVULSAS)||'{}'); }catch(e){ aulasAvulsas={}; }
   try{ notasGerais=JSON.parse(localStorage.getItem(LS_NOTASGERAIS)||'{}'); }catch(e){ notasGerais={}; }
+  try{ qualitativa=JSON.parse(localStorage.getItem(LS_QUALITATIVA)||'{}'); }catch(e){ qualitativa={}; }
   try{ alunos=JSON.parse(localStorage.getItem(LS_ALUNOS)||'{}'); }catch(e){ alunos={}; }
   try{ atividadesCtrl=JSON.parse(localStorage.getItem(LS_ATVCTRL)||'{}'); }catch(e){ atividadesCtrl={}; }
   try{ notasCtrl=JSON.parse(localStorage.getItem(LS_NOTAS)||'{}'); }catch(e){ notasCtrl={}; }
@@ -6102,6 +6109,89 @@ function renderFaixaAplicados(turmaId){
   }).join('');
   return '<details class="apl-faixa"><summary>📌 Conteúdo aplicado nesta turma ('+Object.keys(porTema).length+' tema(s))</summary>'+linhas+'</details>';
 }
+/* ---------- Nota qualitativa (comportamento) ----------
+   Começa em 10 por turma/disciplina e é desabonada em décimos por
+   ocorrência (celular, atraso de atividade, comportamento, recusa,
+   dormindo em sala etc.) — cada desconto fica registrado com motivo e
+   data, nunca só um número solto. NÃO entra em mediaAluno()/mediaAtividade()
+   de propósito — é uma nota à parte, só pra lançar no SIAP quando ela
+   mandar (aqui: gerar o CSV pronto pra digitar lá, já que o SIAP não tem
+   API — não existe um jeito de preencher ele automaticamente). */
+const QUALITATIVA_MOTIVOS=[
+  {k:'celular', label:'Uso de celular', valor:-0.1},
+  {k:'atraso', label:'Atividade atrasada', valor:-0.1},
+  {k:'comportamento', label:'Comportamento inadequado', valor:-0.1},
+  {k:'recusa', label:'Recusa em realizar atividade', valor:-0.1},
+  {k:'dormindo', label:'Dormindo em sala', valor:-0.1},
+  {k:'outro', label:'Outro', valor:-0.1},
+];
+function persistQualitativa(q){ q._ts=Date.now(); qualitativa[q.id]=q; lsSet(LS_QUALITATIVA,JSON.stringify(qualitativa)); if(DB) DB.ref('leciona/qualitativa/'+q.id).set(q).catch(e=>toast('⚠ Falha ao gravar (mantido localmente). '+e.message,'err')); }
+function removerQualitativa(id){
+  delete qualitativa[id];
+  lsSet(LS_QUALITATIVA,JSON.stringify(qualitativa));
+  if(DB) DB.ref('leciona/qualitativa/'+id).remove().catch(e=>toast('⚠ Removido localmente, mas falhou ao remover no Firebase: '+e.message,'err'));
+}
+function qualitativaDoAluno(alunoId, turmaId){ return Object.values(qualitativa).filter(q=>q&&q.alunoId===alunoId&&q.turmaId===turmaId).sort((a,b)=>(b._ts||0)-(a._ts||0)); }
+function notaQualitativa(alunoId, turmaId){
+  const total=10+qualitativaDoAluno(alunoId,turmaId).reduce((s,q)=>s+(q.valor||0),0);
+  return Math.max(0, Math.min(10, total));
+}
+function abrirQualitativaAluno(alunoId){
+  const al=alunos[alunoId]; const turmaId=scope.turma; const tu=turmas[turmaId]; if(!al||!tu) return;
+  const eventos=qualitativaDoAluno(alunoId,turmaId);
+  const nota=notaQualitativa(alunoId,turmaId);
+  const motivoOpts=QUALITATIVA_MOTIVOS.map(m=>'<option value="'+m.k+'" data-valor="'+m.valor+'">'+esc(m.label)+'</option>').join('');
+  const historico=eventos.length? eventos.map(q=>{
+    const motivoLabel=(QUALITATIVA_MOTIVOS.find(m=>m.k===q.motivoKey)||{}).label||q.motivo||'';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line,#e5e7eb);font-size:13px">'+
+      '<span>'+(q.data?esc(q.data.split('-').reverse().join('/'))+' — ':'')+esc(q.motivo||motivoLabel)+'</span>'+
+      '<span style="display:flex;align-items:center;gap:8px"><b style="color:#a8442f">'+(q.valor>0?'+':'')+q.valor.toFixed(1)+'</b>'+
+      '<button class="btn ghost sm" onclick="removerQualitativa(\''+q.id+'\');abrirQualitativaAluno(\''+alunoId+'\')">✕</button></span></div>';
+  }).join('') : '<p style="color:var(--muted);font-size:13px">Nenhum desconto lançado — nota cheia.</p>';
+  const hoje=isoLocal(new Date());
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
+    '<div class="modal-h"><h3>Qualitativa — '+esc(al.nome)+'</h3></div>'+
+    '<div class="modal-b">'+
+    '<div style="text-align:center;margin-bottom:12px"><span style="font-size:32px;font-weight:700;color:'+(nota>=7?'#2f6b5e':nota>=5?'#a06a2e':'#a8442f')+'">'+nota.toFixed(1)+'</span><span style="color:var(--muted);font-size:13px"> / 10 — '+esc(turmaNome(tu))+'</span></div>'+
+    '<div class="field"><label>Novo desconto</label><div style="display:flex;gap:6px">'+
+      '<select id="qualMotivo" style="flex:1" onchange="document.getElementById(\'qualValor\').value=this.selectedOptions[0].dataset.valor">'+motivoOpts+'</select>'+
+      '<input id="qualValor" type="number" step="0.1" value="-0.1" style="width:70px">'+
+    '</div></div>'+
+    '<div class="field"><label>Observação (opcional)</label><input id="qualObs" placeholder="detalhe, se quiser"></div>'+
+    '<div class="field"><label>Data</label><input id="qualData" type="date" value="'+hoje+'"></div>'+
+    '<button class="btn primary full" onclick="confirmarQualitativa(\''+alunoId+'\')">Lançar desconto</button>'+
+    '<div class="field" style="border-top:1px solid var(--line,#e5e7eb);padding-top:10px;margin-top:14px"><label>Histórico</label>'+historico+'</div>'+
+    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+function confirmarQualitativa(alunoId){
+  const motivoKey=document.getElementById('qualMotivo').value;
+  const motivoLabel=(QUALITATIVA_MOTIVOS.find(m=>m.k===motivoKey)||{}).label||motivoKey;
+  const obs=(document.getElementById('qualObs').value||'').trim();
+  const valor=parseFloat(document.getElementById('qualValor').value)||0;
+  const data=document.getElementById('qualData').value||isoLocal(new Date());
+  const q={id:uid(), alunoId, turmaId:scope.turma, data, motivoKey, motivo:obs?motivoLabel+' — '+obs:motivoLabel, valor};
+  persistQualitativa(q);
+  toast('Desconto lançado.','ok');
+  renderNotas();
+  abrirQualitativaAluno(alunoId);
+}
+/* CSV pronta pra digitar no SIAP (sem API — o SIAP não integra automaticamente) */
+function exportarQualitativaCSV(){
+  const turmaId=scope.turma; if(!turmaId){ toast('Selecione uma turma.','err'); return; }
+  const tu=turmas[turmaId]||{}; const als=alunosDaTurma(turmaId);
+  if(!als.length){ toast('Nenhum aluno nesta turma.','err'); return; }
+  let csv='Matrícula;Nome;Nota Qualitativa;Descontos\n';
+  als.forEach(al=>{
+    const eventos=qualitativaDoAluno(al.id,turmaId);
+    const resumo=eventos.map(q=>q.motivo+' ('+q.valor.toFixed(1)+')').join(' | ');
+    csv+=[al.matricula||'', al.nome, notaQualitativa(al.id,turmaId).toFixed(1), resumo].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')+'\n';
+  });
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='Qualitativa_'+esc(turmaNome(tu))+'_'+isoLocal(new Date())+'.csv'; a.click();
+  toast('CSV pronta — confira e digite no SIAP.','ok');
+}
 let mediaModo = {}; // { turmaId: 'ponderada'|'aritmetica' }
 function getMediaModo(turmaId){ return mediaModo[turmaId]||'ponderada'; }
 function setMediaModo(turmaId,modo){
@@ -6421,6 +6511,7 @@ function renderNotas(){
     '</select>'+
     '<button class="btn ghost sm" onclick="exportarNotasCSV()">↓ CSV</button>'+
     '<button class="btn ghost sm" onclick="exportarNotasTodasTurmasCSV()" title="Exporta as notas de todas as turmas de '+esc(tu.disciplina||'')+'">↓ CSV — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
+    '<button class="btn ghost sm" onclick="exportarQualitativaCSV()" title="Nota qualitativa de cada aluno, pronta pra digitar no SIAP">↓ CSV — Qualitativa</button>'+
     '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
     '<button class="btn ghost sm" onclick="_painelOrigin=\'notas\';setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
     '<button class="btn ghost sm" onclick="_agendaOrigin=\'notas\';setView(\'agenda\')" title="Agenda — aulas, cronograma e compromissos por dia">📅 Agenda</button>'+
@@ -6468,6 +6559,7 @@ function renderNotas(){
           datasChamada.slice(-12).reverse().map(d=>'<option value="'+d+'"'+(d===window.__chamadaColData?' selected':'')+'>'+d.split('-').reverse().join('/')+'</option>').join('')+
         '</select></th>'
       : '<th style="width:90px"><button class="btn ghost sm" style="font-size:10px;padding:2px 6px" onclick="window.__configurarHorario=true;abrirTodasChamadas()" title="Configurar dias de aula pra habilitar a chamada aqui">📋 configurar</button></th>')+
+    '<th style="width:70px" title="Nota qualitativa (comportamento) — começa em 10, não entra na média das atividades">Qualitativa</th>'+
     atvs.map(av=>{
       const tp=ATIV_TIPOS[av.tipo]||{label:av.tipo,cor:'#888',bg:'#f5f5f5'};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
@@ -6494,6 +6586,8 @@ function renderNotas(){
             (falta?'<span style="color:var(--err)">✕ falta</span>':'<span style="color:var(--green)">✓</span>')+
           '</td>'; })()
       : '<td></td>')+
+    (()=>{ const nq=notaQualitativa(al.id,turmaId);
+      return '<td style="text-align:center;cursor:pointer;color:'+(nq>=7?'#2f6b5e':nq>=5?'#a06a2e':'#a8442f')+';font-weight:600" onclick="abrirQualitativaAluno(\''+al.id+'\')" title="Nota qualitativa — clique pra ver histórico e lançar desconto">'+nq.toFixed(1)+'</td>'; })()+
     atvs.map(av=>{
       const tp=ATIV_TIPOS[av.tipo]||{bg:'#fff',checklist:false};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
@@ -6519,7 +6613,7 @@ function renderNotas(){
   // Linha de médias por atividade
   h+='<tr style="background:var(--surface);font-weight:600">'+
     '<td class="aluno-nome">Média turma</td>'+
-    '<td></td>'+
+    '<td></td><td></td>'+
     atvs.map(av=>{ const m=mediaAtividade(av.id,turmaId); return '<td style="text-align:center">'+(m!=null?m.toFixed(1):'-')+'</td>'; }).join('')+
     '<td></td><td></td></tr>';
 
