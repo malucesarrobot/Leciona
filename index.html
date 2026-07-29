@@ -4836,6 +4836,7 @@ function renderHoje(){
         return '<div class="hoje-row">'+
           '<div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
           '<div class="hoje-acoes">'+
+            '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+conteudo.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
             '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
             '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
             '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula hoje — pode repetir o mesmo tema quantas vezes quiser, cada vez com seus próprios objetos/data">✓ Registrar</button>'+
@@ -4871,7 +4872,8 @@ function renderHoje(){
     const badgeAtraso=(tuHoje&&turmaAtrasada(tuHoje.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
     const acoes = x.disc==='Estudo Orientado'
       ? '<span class="statusdot">sem planejamento</span>'
-      : '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
+      : '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+        '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
         '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
         (tuHoje?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuHoje.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'');
     return '<div class="hoje-row'+(regHoje.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
@@ -5136,6 +5138,14 @@ function irParaAula(disc,uni,serie,letra){
   saveScope(); return t;
 }
 function abrirAula(disc,uni,serie,letra){ irParaAula(disc,uni,serie,letra); setView('gestao'); renderThemes(); }
+/* Atalho pedido pra reduzir cliques ao entrar na sala: abre a chamada
+   direto do card da tela Hoje, sem precisar passar por Notas antes. */
+function abrirChamadaAula(disc,uni,serie,letra){ irParaAula(disc,uni,serie,letra); abrirTodasChamadas(); }
+function abrirChamadaTurma(turmaId){
+  const tu=turmas[turmaId]; if(!tu) return;
+  irParaAula(tu.disciplina, tu.unidade, tu.serie, tu.letra||'');
+  abrirTodasChamadas();
+}
 function projetarAula(disc,uni,serie,letra){
   irParaAula(disc,uni,serie,letra); renderThemes();
   const cs=conteudosDoScope(); let primeiro=null;
