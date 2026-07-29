@@ -190,10 +190,13 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .btn.danger:hover{background:rgba(168,68,47,.08)}
 
 .themes{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
-.themes-head{padding:14px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--surface)}
-.themes-head h2{font-family:var(--serif);font-size:18px}
+.themes-head{padding:8px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--surface)}
+.themes-head h2{font-family:var(--serif);font-size:16px}
 .themes-head .crumb{font-size:12px;color:var(--muted)}
-.themes-body{flex:1;overflow:auto;padding:18px 22px}
+.themes-body{flex:1;overflow:auto;padding:12px 22px}
+#progressoBar{padding:0 22px}
+#progressoBar .notas-progresso{padding:8px 14px;margin-bottom:6px}
+#progressoBar:empty{display:none}
 
 /* Conteúdo > Tema */
 .conteudo{border:1px solid var(--line);background:#fff;border-radius:var(--radius);margin-bottom:14px}
@@ -274,7 +277,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .reg-table td:nth-child(3){max-width:120px;word-break:break-word}
 .reg-table td:nth-child(5){max-width:140px;word-break:break-word;font-size:12px;color:var(--muted)}
 .reg-table .btn{padding:2px 6px;font-size:11px}
-.busca-bar{padding:8px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;background:var(--surface);position:sticky;top:0;z-index:5}
+.busca-bar{padding:6px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;background:var(--surface);position:sticky;top:0;z-index:5}
 #buscaTemas{flex:1;padding:7px 14px;border:1.5px solid var(--border);border-radius:20px;background:var(--card);color:var(--text);font-size:14px;outline:none;transition:.15s;min-width:0}
 #buscaTemas:focus{border-color:var(--green)}
 .busca-count{font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0}
@@ -3538,8 +3541,9 @@ const FERRAMENTAS_ASSISTENTE=[
   {name:'deixar_nota_tema', description:'Anexa uma anotação ao tema de aula atualmente aberto no editor (ou, se nenhum estiver aberto, a um tema existente pelo nome exato).', input_schema:{type:'object',properties:{
     texto:{type:'string'}, tema_nome:{type:'string', description:'Nome exato do tema, só necessário se nenhum tema estiver aberto no editor'}
   }, required:['texto']}},
-  {name:'deixar_nota_geral', description:'Escreve uma anotação no bloco de notas solto da Agenda — não ligado a nenhum tema/aula específica. Use pra ideias, lembretes ou observações gerais que não pertencem a um tema em particular.', input_schema:{type:'object',properties:{
-    texto:{type:'string'}
+  {name:'deixar_nota_geral', description:'Escreve uma anotação no bloco de notas solto da Agenda — não ligado a nenhum tema/aula específica. Use pra ideias, lembretes, observações gerais, ou pra resumir/fixar algo desta conversa a uma ou mais turmas quando pedido (ex.: "anote isso pra 1ªA e 1ªB").', input_schema:{type:'object',properties:{
+    texto:{type:'string'},
+    turmas:{type:'array', items:{type:'string'}, description:'Nomes das turmas a fixar a nota (opcional) — ex.: ["1ªA Filosofia","1ªB Filosofia"]. Deixe vazio pra nota sem turma associada.'}
   }, required:['texto']}},
   {name:'listar_progresso_bimestre', description:'Mostra quanto do bimestre já foi dado numa turma: aulas previstas x aulas realmente dadas (por chamada), e quantos temas já foram aplicados de quantos existem. Use pra responder "quanto falta", "como estou indo".', input_schema:{type:'object',properties:{
     turma:{type:'string', description:'Nome da turma (ex.: "1ªA Filosofia"). Se vazio, usa a turma selecionada agora no app'},
@@ -3552,6 +3556,9 @@ const FERRAMENTAS_ASSISTENTE=[
   {name:'criar_tema', description:'Cria um tema de aula a partir de um conteúdo pré-pronto — use com os dados exatos (nome, dcgo, habilidade) retornados por sugerir_conteudos_pendentes. Não serve pra criar um tema em branco do zero.', input_schema:{type:'object',properties:{
     turma:{type:'string'}, nome:{type:'string'}, dcgo:{type:'string'}, habilidade:{type:'string'}, bimestre:{type:'string'}
   }, required:['turma','nome','dcgo','bimestre']}},
+  {name:'criar_tema_livre', description:'Cria um tema de aula original, do zero — não vem da matriz oficial nem tem material pré-pronto. Use pra projetos, atividades especiais ou qualquer aula que a professora descrever que não está em sugerir_conteudos_pendentes.', input_schema:{type:'object',properties:{
+    turma:{type:'string'}, nome:{type:'string'}, resumo:{type:'string', description:'anotação/descrição do tema, opcional'}, bimestre:{type:'string'}
+  }, required:['turma','nome','bimestre']}},
   {name:'criar_aula_avulsa', description:'Cria uma aula avulsa (sem tema vinculado — explicação, atividade, correção ou recomposição de aprendizagem) numa turma, com status "planejada".', input_schema:{type:'object',properties:{
     turma:{type:'string'}, titulo:{type:'string'}, tipo:{type:'string', description:'explicacao|atividade|correcao|recomposicao'}, data:{type:'string', description:'YYYY-MM-DD'}, observacoes:{type:'string'}
   }, required:['turma','titulo','tipo','data']}},
@@ -3587,6 +3594,7 @@ function rotuloFerramentaAssistente(nome, input){
     listar_progresso_bimestre:'conferindo progresso do bimestre'+(input.turma?(' — '+input.turma):''),
     sugerir_conteudos_pendentes:'buscando conteúdos pendentes'+(input.turma?(' — '+input.turma):''),
     criar_tema:'criando o tema "'+(input.nome||'')+'"',
+    criar_tema_livre:'criando o tema original "'+(input.nome||'')+'"',
     criar_aula_avulsa:'criando aula avulsa "'+(input.titulo||'')+'"',
     atualizar_aula_avulsa:input.apagar?'apagando aula avulsa':(input.marcar_executada?'marcando aula avulsa como executada':'atualizando aula avulsa'),
   };
@@ -3672,6 +3680,22 @@ function executarFerramentaAssistente(nome, input){
       if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
       return {ok:true, tema_id:tema.id, tema_nome:tema.nome};
     }
+    if(nome==='criar_tema_livre'){
+      const tu=acharTurmaPorNome(input.turma); if(!tu) return {erro:'turma não encontrada'};
+      if(!input.nome||!input.bimestre) return {erro:'faltam nome/bimestre'};
+      const bim=input.bimestre;
+      let cont=Object.values(conteudos).find(co=>co.turmaId===tu.id&&co.bimestre===bim&&co.nome==='Matriz — '+bim);
+      if(!cont){
+        const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===tu.id&&co.bimestre===bim);
+        const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
+        cont={id:uid(),disciplina:tu.disciplina,serie:tu.serie,turmaId:tu.id,bimestre:bim,nome:'Matriz — '+bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
+        persistConteudo(cont);
+      }
+      const tema=blankTema(cont.id,{turmaId:tu.id,disciplina:tu.disciplina,serie:tu.serie,bimestre:bim,nome:String(input.nome).slice(0,80),resumo:input.resumo||'',ordem:nextOrdemTema(cont.id)});
+      persistTema(tema);
+      if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
+      return {ok:true, tema_id:tema.id, tema_nome:tema.nome};
+    }
     if(nome==='criar_aula_avulsa'){
       const tu=acharTurmaPorNome(input.turma); if(!tu) return {erro:'turma não encontrada'};
       if(!input.titulo||!input.data) return {erro:'faltam titulo/data'};
@@ -3701,9 +3725,14 @@ function executarFerramentaAssistente(nome, input){
     if(nome==='deixar_nota_geral'){
       if(!input.texto) return {erro:'falta texto'};
       const n={id:uid(), texto:String(input.texto), autor:'assistente'};
+      if(Array.isArray(input.turmas)&&input.turmas.length){
+        const turmaIds=input.turmas.map(nomeQ=>acharTurmaPorNome(nomeQ)).filter(Boolean).map(t=>t.id);
+        if(turmaIds.length) n.turmaIds=turmaIds;
+      }
       persistNotaGeral(n);
       if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderNotasGeraisAgenda();
-      return {ok:true};
+      if(!document.getElementById('viewGestao').classList.contains('hidden')) renderProgressoBar();
+      return {ok:true, turmas_fixadas:(n.turmaIds||[]).map(id=>turmaNome(turmas[id]||{}))};
     }
     return {erro:'ferramenta desconhecida: '+nome};
   }catch(e){ return {erro:e.message}; }
@@ -3847,7 +3876,7 @@ function renderAnexoChipChat(){
    escrita (criar/editar/apagar compromisso) — pedido explícito: nunca
    sobrescrever nada sem perguntar antes. Ferramentas de leitura e de
    anotação (só aditivas, fáceis de apagar depois) continuam automáticas. */
-const FERRAMENTAS_ESCRITA=new Set(['criar_compromisso','editar_compromisso','criar_tema','criar_aula_avulsa','atualizar_aula_avulsa']);
+const FERRAMENTAS_ESCRITA=new Set(['criar_compromisso','editar_compromisso','criar_tema','criar_tema_livre','criar_aula_avulsa','atualizar_aula_avulsa']);
 let _chatConfirmResolve=null;
 function aguardarConfirmacaoLote(chamadas){
   return new Promise(resolve=>{
@@ -5250,7 +5279,9 @@ function removerNotaGeral(id){
 function adicionarNotaGeral(){
   const inp=document.getElementById('notaGeralInput'); const texto=(inp.value||'').trim();
   if(!texto) return;
+  const turmaIds=[...document.querySelectorAll('#notaGeralTurmasWrap input:checked')].map(c=>c.value);
   const n={id:uid(), texto, autor:'professora'};
+  if(turmaIds.length) n.turmaIds=turmaIds;
   persistNotaGeral(n);
   inp.value='';
   renderNotasGeraisAgenda();
@@ -5258,14 +5289,21 @@ function adicionarNotaGeral(){
 function renderNotasGeraisAgenda(){
   const box=document.getElementById('notasGeraisCard'); if(!box) return;
   const notas=Object.values(notasGerais).filter(Boolean).sort((a,b)=>(b._ts||0)-(a._ts||0));
+  const turmaChecks=Object.values(turmas).filter(Boolean).sort((a,b)=>turmaNomeCompleto(a).localeCompare(turmaNomeCompleto(b)))
+    .map(t=>'<label class="check"><input type="checkbox" value="'+t.id+'">'+esc(turmaNomeCompleto(t))+'</label>').join('');
   box.innerHTML='<div style="font-weight:600;margin-bottom:8px">📝 Bloco de notas</div>'+
-    '<div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:10px">'+
+    '<div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:6px">'+
       '<textarea id="notaGeralInput" rows="2" placeholder="Anotação solta — sua ou do assistente, sem ligação com nenhuma aula específica" style="flex:1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();adicionarNotaGeral();}"></textarea>'+
       '<button class="btn primary sm" onclick="adicionarNotaGeral()">Adicionar</button>'+
     '</div>'+
+    '<details style="margin-bottom:10px"><summary style="cursor:pointer;font-size:12px;color:var(--muted)">📌 Fixar a turma(s) (opcional)</summary>'+
+      '<div class="gt-checks" id="notaGeralTurmasWrap" style="margin-top:6px">'+turmaChecks+'</div>'+
+    '</details>'+
     (notas.length ? notas.map(n=>
       '<div style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;white-space:pre-wrap;font-size:13px;display:flex;gap:8px">'+
-        '<div style="flex:1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(n.autor==='assistente'?'🤖 Assistente':'📝 Você')+(n._ts?(' · '+new Date(n._ts).toLocaleDateString('pt-BR')):'')+'</div>'+esc(n.texto)+'</div>'+
+        '<div style="flex:1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(n.autor==='assistente'?'🤖 Assistente':'📝 Você')+(n._ts?(' · '+new Date(n._ts).toLocaleDateString('pt-BR')):'')+'</div>'+esc(n.texto)+
+          (Array.isArray(n.turmaIds)&&n.turmaIds.length?'<div style="font-size:11px;color:#6a8fbf;margin-top:3px">📌 '+n.turmaIds.map(id=>esc(turmaNome(turmas[id]||{}))).join(', ')+'</div>':'')+
+        '</div>'+
         '<button onclick="removerNotaGeral(\''+n.id+'\')" title="Excluir" style="background:none;border:0;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;padding:2px 4px;align-self:flex-start">✕</button>'+
       '</div>'
     ).join('') : '<p style="color:var(--muted);font-size:13px">Nenhuma anotação ainda.</p>');
@@ -5692,6 +5730,13 @@ function renderProgressoBar(){
       '<div class="prog-titulo"><span>Progresso do bimestre · Aula '+dadasBim+'/'+contBim.total+' ('+pctBim+'%)</span></div>'+
       '<div class="prog-barra-wrap"><div class="prog-barra" style="width:'+pctBim+'%;background:#6a8fbf"></div></div>'+
     '</div>' : '';
+  const notasFixadas=Object.values(notasGerais).filter(n=>n&&Array.isArray(n.turmaIds)&&n.turmaIds.includes(scope.turma)).sort((a,b)=>(b._ts||0)-(a._ts||0));
+  const notasFixadasHtml = notasFixadas.length ?
+    '<div class="notas-progresso">'+
+      '<div class="prog-titulo"><span>📌 '+notasFixadas.length+' nota(s) fixada(s) nesta turma</span>'+
+        '<button class="btn ghost sm" onclick="_agendaOrigin=\'gestao\';setView(\'agenda\')">Ver na Agenda</button></div>'+
+      notasFixadas.slice(0,3).map(n=>'<div style="font-size:12px;color:var(--muted);white-space:pre-wrap;margin-bottom:4px">'+esc(n.texto.length>140?n.texto.slice(0,140)+'…':n.texto)+'</div>').join('')+
+    '</div>' : '';
   const conts=conteudosDoScope();
   let totalTemas=0, temasComReg=0;
   const objContadores={};
@@ -5704,14 +5749,14 @@ function renderProgressoBar(){
       regsT.forEach(r=>(r.objetos||[]).forEach(k=>{ if(k in objContadores) objContadores[k]++; }));
     });
   });
-  if(!totalTemas){ box.innerHTML=avisoAtraso+bimBarHtml; return; }
+  if(!totalTemas){ box.innerHTML=avisoAtraso+bimBarHtml+notasFixadasHtml; return; }
   const pct=Math.round(temasComReg/totalTemas*100);
   const objDots=PROJ_ORDER.map(k=>{
     const label=OBJ_DEFS.find(o=>o.k===k)?.label||k;
     const n=objContadores[k];
     return '<span class="prog-obj'+(n>0?' feito':'')+'" title="'+label+(n?' — '+n+'x':'')+'">'+label+(n?' ×'+n:'')+'</span>';
   }).join('');
-  box.innerHTML=avisoAtraso+bimBarHtml+'<div class="notas-progresso">'+
+  box.innerHTML=avisoAtraso+bimBarHtml+notasFixadasHtml+'<div class="notas-progresso">'+
     '<div class="prog-titulo">'+
       '<span>'+esc(turmaNome(tu))+' · '+esc(scope.bim)+' · '+temasComReg+'/'+totalTemas+' temas aplicados</span>'+
       '<button class="btn ghost sm" onclick="abrirRelatorioTurma()">📈 Relatório</button>'+
@@ -6935,8 +6980,13 @@ function abrirAddAtividade(){
       '<div class="field"><label>Peso</label><input id="atvPeso" type="number" value="1" min="0.1" max="10" step="0.1"></div>'+
       '<div class="field"><label>Valor máximo</label><input id="atvMax" type="number" value="10" min="1" max="100" step="0.5"></div>'+
       '<div class="field"><label>Modo</label><div class="gt-checks"><label class="check"><input type="radio" name="atvModo" value="nota" checked> Nota 0–10</label><label class="check"><input type="radio" name="atvModo" value="check"> Checklist ✓/○</label></div></div>'+
-      '<div class="field"><label class="check"><input type="checkbox" id="atvRecorrente"> Atividade recorrente</label>'+
+      '<div class="field"><label class="check"><input type="checkbox" id="atvRecorrente" onchange="document.getElementById(\'atvPeriodicidadeWrap\').style.display=this.checked?\'\':\'none\'"> Atividade recorrente</label>'+
         '<small style="color:var(--muted)">Marque se esse tipo de atividade se repete (ex.: quiz semanal) — habilita duplicar pra outras turmas/datas sem redigitar.</small></div>'+
+      '<div class="field" id="atvPeriodicidadeWrap" style="display:none"><label>Repetir automaticamente</label><select id="atvPeriodicidade">'+
+        '<option value="">Não — só esta data (duplico manualmente depois)</option>'+
+        '<option value="7">Semanal — até o fim do bimestre</option>'+
+        '<option value="14">Quinzenal — até o fim do bimestre</option>'+
+      '</select></div>'+
       '<div class="field"><label>Aplicar às turmas</label><div class="gt-checks" id="atvTurmasWrap">'+tuChecks+'</div></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
@@ -6956,11 +7006,26 @@ function salvarAtividade(){
   if(!turmaIds.length){ toast('Selecione pelo menos uma turma.','err'); return; }
   const modoEl=document.querySelector('input[name=atvModo]:checked'); const checklist=modoEl?.value==='check';
   const recorrente=(document.getElementById('atvRecorrente')||{}).checked||false;
+  const passoDias=parseInt((document.getElementById('atvPeriodicidade')||{}).value,10)||0;
   const av={id:uid(),nome,tipo,data,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente};
   persistAtivCtrl(av);
+  let geradas=0;
+  if(recorrente&&passoDias){
+    const r=BIM_RANGES[scope.bim];
+    const fimBim=r?r[1]:data;
+    let cur=new Date(data+'T00:00:00');
+    for(;;){
+      cur.setDate(cur.getDate()+passoDias);
+      const iso=isoLocal(cur);
+      if(iso>fimBim) break;
+      if(FERIADOS_2026.has(iso)) continue;
+      persistAtivCtrl({id:uid(),nome,tipo,data:iso,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente:true});
+      geradas++;
+    }
+  }
   closeModal();
   renderNotas();
-  toast('Atividade "'+nome+'" adicionada.','ok');
+  toast('Atividade "'+nome+'" adicionada'+(geradas?' + '+geradas+' repetição(ões) até o fim do bimestre':'')+'.','ok');
 }
 
 // ── CSV Export ────────────────────────────────────────────────────────────
