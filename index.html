@@ -3718,7 +3718,7 @@ function openAssistente(){
     '<div id="chatProg" class="statusdot"></div>'+
     '<div id="chatAnexoChip"></div>'+
     '<div style="display:flex;gap:6px;align-items:flex-end">'+
-      '<label class="btn ghost sm" style="cursor:pointer" title="Anexar foto ou PDF — ex.: fotografar o calendário de atividades">📎'+
+      '<label class="btn ghost sm" style="cursor:pointer" onclick="event.preventDefault();abrirAnexoChat()" title="Anexar foto ou PDF — ex.: fotografar o calendário de atividades">📎'+
         '<input type="file" id="chatAnexoInput" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" style="display:none" onchange="selecionarAnexoChat(event)">'+
       '</label>'+
       '<button class="btn ghost sm" id="btnMicChat" onclick="alternarDitadoChat()" title="Ditar por voz">🎤</button>'+
@@ -3809,6 +3809,19 @@ function alternarDitadoChat(){
    arquivo nunca é salvo em lugar nenhum, só analisado nessa mensagem. */
 let _chatAnexoPendente=null; // {mediaType, base64, nome, isImage}
 const CHAT_ANEXO_MAX=15*1024*1024;
+/* Abre o seletor de arquivo. showPicker() é a API mais nova, feita
+   especificamente pra isso — mais confiável que o clique sintético (.click())
+   em alguns navegadores/versões. Cai pra .click() se showPicker não existir
+   ou falhar por qualquer motivo. O <label> cancela seu próprio comportamento
+   nativo (preventDefault) pra sempre passar por aqui, evitando abrir dois
+   diálogos em navegadores onde o label já funcionaria sozinho. */
+function abrirAnexoChat(){
+  const inp=document.getElementById('chatAnexoInput'); if(!inp) return;
+  try{
+    if(inp.showPicker){ inp.showPicker(); return; }
+  }catch(e){ console.warn('showPicker falhou, tentando .click():', e); }
+  inp.click();
+}
 function selecionarAnexoChat(e){
   const f=e.target.files && e.target.files[0]; e.target.value='';
   if(!f) return;
