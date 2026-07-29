@@ -4832,11 +4832,13 @@ function renderHoje(){
       planejHoje.map(({conteudo,entry,tema})=>{
         const tu=turmas[conteudo.turmaId]||{};
         const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
+        const nRegs=registrosDoTema(tema.id).filter(r=>r.turmaId===tu.id).length;
         return '<div class="hoje-row">'+
-          '<div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span></div>'+
+          '<div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
           '<div class="hoje-acoes">'+
             '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
             '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
+            '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula hoje — pode repetir o mesmo tema quantas vezes quiser, cada vez com seus próprios objetos/data">✓ Registrar</button>'+
           '</div></div>';
       }).join('')+
     '</div>';
@@ -4851,6 +4853,7 @@ function renderHoje(){
           '<div class="hoje-info"><b style="color:'+cor+'">Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+'</b><span>'+esc(turmaNome(tu))+' · '+esc(a.titulo)+' · '+(a.status==='executada'?'executada':'planejada')+(a.observacoes?(' · '+esc(a.observacoes)):'')+'</span></div>'+
           '<div class="hoje-acoes">'+
             (a.status!=='executada'?'<button class="btn ghost sm" onclick="marcarAulaAvulsaExecutada(\''+a.id+'\')">marcar executada</button>':'')+
+            '<button class="btn ghost sm" onclick="editarAulaAvulsa(\''+a.id+'\')">editar</button>'+
             '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">remover</button>'+
           '</div></div>';
       }).join('')+
@@ -4920,7 +4923,9 @@ function marcarAulaAvulsaExecutada(id,dataReal){
   persistAulaAvulsa(a);
   renderHoje(); renderAgenda();
 }
+let _editandoAulaAvulsaId=null;
 function abrirNovaAulaAvulsa(dataISO){
+  _editandoAulaAvulsaId=null;
   const turmasOpts=Object.values(turmas).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b))).map(t=>'<option value="'+t.id+'">'+esc(turmaNome(t))+'</option>').join('');
   const tipoOpts=Object.entries(AULA_AVULSA_TIPOS).map(([k,v])=>'<option value="'+k+'">'+esc(v)+'</option>').join('');
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
@@ -4933,6 +4938,21 @@ function abrirNovaAulaAvulsa(dataISO){
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarNovaAulaAvulsa()">Salvar como planejada</button></div></div></div>';
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
+function editarAulaAvulsa(id){
+  const a=aulasAvulsas[id]; if(!a) return;
+  _editandoAulaAvulsaId=id;
+  const turmasOpts=Object.values(turmas).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b))).map(t=>'<option value="'+t.id+'"'+(t.id===a.turmaId?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('');
+  const tipoOpts=Object.entries(AULA_AVULSA_TIPOS).map(([k,v])=>'<option value="'+k+'"'+(k===a.tipo?' selected':'')+'>'+esc(v)+'</option>').join('');
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
+    '<div class="modal-h"><h3>Editar aula avulsa</h3></div><div class="modal-b">'+
+    '<div class="field"><label>Turma</label><select id="alTurma">'+turmasOpts+'</select></div>'+
+    '<div class="field"><label>Título</label><input id="alTitulo" value="'+esc(a.titulo||'')+'" placeholder="Ex.: Correção da atividade 3"></div>'+
+    '<div class="field"><label>Tipo</label><select id="alTipo">'+tipoOpts+'</select></div>'+
+    '<div class="field"><label>Data</label><input id="alData" type="date" value="'+esc(a.data||isoLocal(new Date()))+'"></div>'+
+    '<div class="field"><label>Observações (opcional)</label><textarea id="alObs" rows="2">'+esc(a.observacoes||'')+'</textarea></div>'+
+    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarNovaAulaAvulsa()">Salvar edição</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
 function confirmarNovaAulaAvulsa(){
   const turmaId=document.getElementById('alTurma').value;
   const titulo=document.getElementById('alTitulo').value.trim();
@@ -4940,10 +4960,15 @@ function confirmarNovaAulaAvulsa(){
   const data=document.getElementById('alData').value;
   const observacoes=document.getElementById('alObs').value.trim();
   if(!turmaId||!titulo||!data){ toast('Preencha turma, título e data.','err'); return; }
-  const a={id:uid(),turmaId,titulo,tipo,observacoes,data,status:'planejada'};
+  const editId=_editandoAulaAvulsaId;
+  const existente=editId?aulasAvulsas[editId]:null;
+  const a=existente
+    ? Object.assign({}, existente, {turmaId,titulo,tipo,observacoes,data})
+    : {id:uid(),turmaId,titulo,tipo,observacoes,data,status:'planejada'};
   persistAulaAvulsa(a);
   closeModal();
-  toast('Aula avulsa salva.','ok');
+  _editandoAulaAvulsaId=null;
+  toast(existente?'Aula avulsa atualizada.':'Aula avulsa salva.','ok');
   renderHoje(); renderAgenda();
 }
 let _agendaMes=null;     // Date do 1º dia do mês em exibição
@@ -5044,6 +5069,7 @@ function renderAgendaDia(){
       html+='<div class="hoje-row"><div class="hoje-info"><b style="color:'+cor+'">Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+'</b><span>'+esc(turmaNome(tu))+' · '+esc(a.titulo)+' · '+(a.status==='executada'?'executada':'planejada')+(a.observacoes?(' · '+esc(a.observacoes)):'')+'</span></div>'+
         '<div class="hoje-acoes">'+
           (a.status!=='executada'?'<button class="btn ghost sm" onclick="marcarAulaAvulsaExecutada(\''+a.id+'\')">marcar executada</button>':'')+
+          '<button class="btn ghost sm" onclick="editarAulaAvulsa(\''+a.id+'\')">editar</button>'+
           '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">✕</button>'+
         '</div></div>';
     });
