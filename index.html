@@ -590,6 +590,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <span id="saveStatus" style="font-size:12px;margin:0 8px;white-space:nowrap"></span>
     <button class="btn" onclick="projetarTema()">▶ Projetar</button>
   </div>
+  <div id="edTurmaBadge" style="padding:0 22px 8px;font-size:12px;color:var(--muted)"></div>
   <div class="editor-body">
     <div class="meta-pane">
       <div class="field"><label>Conteúdo</label>
@@ -2804,6 +2805,8 @@ function abrirEditor(id){
   if(!editing.adaptado) editing.adaptado={};
   if(!editing.status) editing.status={};
   dirty=false;
+  const tuEd=turmas[editing.turmaId];
+  document.getElementById('edTurmaBadge').textContent=tuEd?turmaNomeCompleto(tuEd):'';
   document.getElementById('edNome').value=editing.nome||'';
   document.getElementById('edDcgo').value=editing.dcgo||'';
   document.getElementById('edTituloExibicao').value=editing.tituloExibicao||'';
@@ -6550,7 +6553,14 @@ function renderChamadaBody(tu, als){
   const grade=gradeDe(tu);
   if(!Object.keys(grade).length || window.__configurarHorario) return renderConfigurarHorario(tu);
   const datas=datasDeAula(tu, scope.bim);
-  if(!datas.length){ return '<div class="acervo-vazio"><p>Nenhum dia de aula ainda neste bimestre pra essa turma (segundo o horário configurado).</p>'+botaoReconfigurarHorario(tu)+'</div>'; }
+  if(!datas.length){
+    const r=BIM_RANGES[scope.bim];
+    const aindaNaoComecou = r && isoLocal(new Date())<r[0];
+    const msg = aindaNaoComecou
+      ? 'O '+esc(scope.bim)+' ainda não começou (começa em '+r[0].split('-').reverse().join('/')+') — a chamada aparece aqui assim que a primeira aula acontecer. O horário está configurado certo.'
+      : 'Nenhum dia de aula ainda neste bimestre pra essa turma (segundo o horário configurado).';
+    return '<div class="acervo-vazio"><p>'+msg+'</p>'+botaoReconfigurarHorario(tu)+'</div>';
+  }
   const dataFoco = window.__chamadaData && datas.includes(window.__chamadaData) ? window.__chamadaData : datas[datas.length-1];
   window.__chamadaData = dataFoco;
   const existente = chamadaDoDia(tu.id, dataFoco);
