@@ -141,6 +141,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .agenda-ponto.aula{background:var(--green)}
 .agenda-ponto.cron{background:#6a8fbf}
 .agenda-ponto.comp{background:var(--ochre)}
+.agenda-ponto.avulsa{background:#7a4b8a}
 .agenda-cel.sel .agenda-ponto{background:#fff}
 .agenda-secao-tit{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:14px 0 6px}
 .agenda-secao-tit:first-of-type{margin-top:0}
@@ -194,8 +195,8 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .themes-body{flex:1;overflow:auto;padding:18px 22px}
 
 /* Conteúdo > Tema */
-.conteudo{border:1px solid var(--line);background:#fff;border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
-.conteudo-head{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(47,107,94,.05);border-bottom:1px solid var(--line)}
+.conteudo{border:1px solid var(--line);background:#fff;border-radius:var(--radius);margin-bottom:14px}
+.conteudo-head{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--line);border-radius:var(--radius) var(--radius) 0 0;position:sticky;top:0;z-index:4}
 .conteudo-head .cname{font-family:var(--serif);font-size:16px;font-weight:600;flex:1;cursor:pointer}
 .conteudo-head .ordbtns{display:flex;flex-direction:column;gap:1px}
 .ordbtns button{border:1px solid var(--line);background:#fff;width:22px;height:17px;line-height:1;border-radius:4px;font-size:10px;color:var(--muted);padding:0}
@@ -206,6 +207,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .selo.revisa{background:#e7efe9;color:#2f6b5e}
 .selo.ser{background:#efe6db;color:#a06a2e}
 .selo.goiastec{background:#e6e9ef;color:#3a4a8a}
+.selo.adapt{background:#e7efe9;color:#2f6b5e}
 
 .tlist{display:grid;gap:9px}
 .tcard{border:1px solid var(--line);background:#fff;border-radius:9px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.12s}
@@ -594,6 +596,9 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <div class="field"><label>Habilidade (DC-GO / corte)</label>
         <select id="edHab" onchange="aplicarHab()"></select>
         <input id="edDcgo" class="meta-cod-badge" oninput="onDcgoInput()" placeholder="código" title="Código DC-GO — normalmente vem da habilidade escolhida acima; só edite pra um código fora da matriz."></div>
+      <div id="edSubtemas"></div>
+      <div class="field"><label>Título de exibição (opcional)</label>
+        <input id="edTituloExibicao" oninput="edDirty()" placeholder="sobrescreve o nome do tema só na visualização (não muda o nome interno)"></div>
       <div class="field"><label>Anotação</label>
         <textarea id="edResumo" class="meta-anot" oninput="edDirty()" placeholder="anotação opcional sobre este tema…"></textarea></div>
       <div class="field"><label>Palavras-chave</label>
@@ -1070,6 +1075,7 @@ let atividadesCtrl = {};     // { id: atividade } — atividades de controle de 
 let notasCtrl = {};          // { id: nota } — notas dos alunos
 let chamadas = {};           // { id: {turmaId,data,presencas:{alunoId:true/false},_ts} } — chamada (presença) por turma+dia
 let compromissos = {};       // { id: {titulo,data,hora,descricao,concluido,_ts} } — lembretes/compromissos avulsos da Agenda (reunião, entrega de diário...), não ligados a um tema
+let aulasAvulsas = {};        // { id: {turmaId,titulo,tipo,observacoes,dcgoRef,data,status:'planejada'|'executada',_ts} } — aula sem tema vinculado (explicação, atividade, correção, recomposição)
 let _buscaTerm = '';          // termo de busca atual (sincronizado via setBusca)
 let temas = {};
 let turmas = {};            // turmas reais (9º A, 9º B...)
@@ -1084,7 +1090,7 @@ const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_
       LS_REG='leciona_registros', LS_ALUNOS='leciona_alunos',
       LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl',
       LS_OCORR='leciona_ocorrencias', LS_CHAMADAS='leciona_chamadas',
-      LS_COMP='leciona_compromissos';
+      LS_COMP='leciona_compromissos', LS_AULASAVULSAS='leciona_aulas_avulsas';
 // Versão do formato dos dados. Se uma futura versão do app mudar a estrutura,
 // este número sobe e a migração correspondente roda uma única vez, de forma
 // controlada — em vez de o app tentar ler dados antigos com código novo e
@@ -1327,6 +1333,12 @@ function initFirebase(){
       lsSet(LS_COMP, JSON.stringify(compromissos));
       if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
     });
+    _escutar('leciona/aulas_avulsas', s=>{
+      aulasAvulsas=s.val()||{};
+      lsSet(LS_AULASAVULSAS, JSON.stringify(aulasAvulsas));
+      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+    });
   }catch(e){ console.error(e); setConn(false); toast('Falha ao conectar Firebase: '+e.message,'err'); }
 }
 function setConn(on){
@@ -1339,6 +1351,7 @@ function loadLocal(){
   try{ ocorrencias=JSON.parse(localStorage.getItem(LS_OCORR)||'{}'); }catch(e){ ocorrencias={}; }
   try{ chamadas=JSON.parse(localStorage.getItem(LS_CHAMADAS)||'{}'); }catch(e){ chamadas={}; }
   try{ compromissos=JSON.parse(localStorage.getItem(LS_COMP)||'{}'); }catch(e){ compromissos={}; }
+  try{ aulasAvulsas=JSON.parse(localStorage.getItem(LS_AULASAVULSAS)||'{}'); }catch(e){ aulasAvulsas={}; }
   try{ alunos=JSON.parse(localStorage.getItem(LS_ALUNOS)||'{}'); }catch(e){ alunos={}; }
   try{ atividadesCtrl=JSON.parse(localStorage.getItem(LS_ATVCTRL)||'{}'); }catch(e){ atividadesCtrl={}; }
   try{ notasCtrl=JSON.parse(localStorage.getItem(LS_NOTAS)||'{}'); }catch(e){ notasCtrl={}; }
@@ -1849,7 +1862,9 @@ function renderThemes(){
   refreshTurmas();
   const tNome = turmas[scope.turma] ? turmaNome(turmas[scope.turma]) : '—';
   document.getElementById('scopeTitle').textContent = scope.disc+' · '+tNome;
-  document.getElementById('scopeCrumb').textContent = (scope.unidade||'')+' · '+scope.serie+' · '+scope.bim;
+  const turmaScope=turmas[scope.turma];
+  const aulaXY = turmaScope ? (' · Aula '+aulasDadas(turmaScope,scope.bim)+'/'+contarAulas(turmaScope,scope.bim).total) : '';
+  document.getElementById('scopeCrumb').textContent = (scope.unidade||'')+' · '+scope.serie+' · '+scope.bim+aulaXY;
   const body=document.getElementById('themesBody');
   if(!scope.turma){
     body.innerHTML='<div class="empty"><p>Nenhuma turma selecionada.</p><p>Clique em <strong>+ turmas</strong> na lateral para cadastrar sua turma (ex.: 9A, 9C). Cada turma tem o seu próprio planejamento.</p></div>';
@@ -1913,7 +1928,7 @@ function renderThemes(){
               '<button title="Descer" onclick="moverTema(\''+t.id+'\',1)">▼</button>'+
             '</div>'+
             '<div class="tmeta">'+
-              '<div><span class="tcode">'+esc(t.dcgo||'')+'</span><span class="tname">'+esc(t.nome)+'</span></div>'+
+              '<div><span class="tcode">'+esc(t.dcgo||'')+'</span><span class="tname">'+esc(t.tituloExibicao||t.nome)+'</span></div>'+
               '<div class="tsub">'+selosHtml(t.disciplina,t.serie,t.bimestre,t.dcgo)+statusResumo(t)+'</div>'+
             '</div>'+
             objStatusHtml(t.id, scope.turma)+
@@ -1933,11 +1948,51 @@ function renderThemes(){
     }
     html+='</div>';
   });
-  body.innerHTML=html;
+  body.innerHTML=html+'<div id="preprontosScope"></div>';
   renderProgressoBar();
+  renderPreProntosDoScope();
   // Atualiza contador de busca
   const cnt=document.getElementById('buscaCount');
   if(cnt) cnt.textContent=busca?'('+totalFiltrado+' tema'+(totalFiltrado!==1?'s':'')+')':'';
+}
+let _gestaoPreProntoAtual=[];
+/* Pré-prontos da matriz que ainda não viraram tema nesta turma/bimestre —
+   sempre visíveis na Gestão, sem precisar de "Puxar temas da matriz"
+   manualmente a cada turma/aula. Mesmo padrão assíncrono do Acervo
+   (candidatosPreProntoDoRecorte / ensurePrebuiltDiscLoaded), mas escopado
+   à turma atual em vez de todas as disciplinas. */
+async function renderPreProntosDoScope(){
+  const box=document.getElementById('preprontosScope'); if(!box) return;
+  if(!scope.turma || !scope.disc || !scope.serie || !scope.bim) return;
+  await ensurePrebuiltDiscLoaded(scope.disc);
+  const existentesKeys=new Set();
+  conteudosDoScope().forEach(c=>temasDoConteudo(c.id).forEach(t=>existentesKeys.add((t.dcgo||'')+'::'+(t.nome||''))));
+  let candidatos=candidatosPreProntoDoRecorte(scope.disc, scope.serie, scope.bim).filter(c=>!existentesKeys.has(c.dcgo+'::'+c.nome));
+  const vistos=new Set();
+  candidatos=candidatos.filter(c=>{ const k=c.dcgo+'::'+c.nome; if(vistos.has(k)) return false; vistos.add(k); return true; });
+  _gestaoPreProntoAtual=candidatos;
+  const boxAtual=document.getElementById('preprontosScope'); if(!boxAtual) return;
+  if(!candidatos.length){ boxAtual.innerHTML=''; return; }
+  boxAtual.innerHTML='<div class="conteudo"><div class="conteudo-head"><div class="cname">📦 Pré-prontos disponíveis para esta turma/bimestre ('+candidatos.length+')</div></div>'+
+    '<div class="conteudo-body"><div class="tlist">'+
+    candidatos.map((c,i)=>{
+      const adapts=(typeof PREBUILT_ADAPT!=='undefined' && PREBUILT_ADAPT[c.nome]) ? ADAPT_PERFIS.filter(pf=>PREBUILT_ADAPT[c.nome][pf.k]) : [];
+      const adaptsHtml=adapts.length ? '<div class="selos">'+adapts.map(pf=>'<span class="selo adapt" title="Adaptação pronta: '+esc(pf.label)+'">'+esc(pf.label)+'</span>').join('')+'</div>' : '';
+      return '<div class="tcard">'+
+        '<div class="tmeta">'+
+          '<div><span class="tcode">'+esc(c.dcgo||'')+'</span><span class="tname">'+esc(c.nome)+'</span></div>'+
+          '<div class="tsub">pré-pronto, ainda não criado nesta turma'+adaptsHtml+'</div>'+
+        '</div>'+
+        '<button class="btn sm" onclick="usarPreProntoGestao('+i+')">criar tema</button>'+
+      '</div>';
+    }).join('')+
+    '</div></div></div>';
+}
+function usarPreProntoGestao(i){
+  const c=_gestaoPreProntoAtual[i]; if(!c || !scope.turma) return;
+  criarTemaAPartirDePrePronto(c, scope.turma);
+  toast('"'+c.nome+'" adicionado.','ok');
+  renderThemes();
 }
 function statusResumo(t){
   const st=t.status||{}; const e=st.estado||'';
@@ -2425,6 +2480,93 @@ function excluirTodosDados(){
     setTimeout(()=>location.reload(),1200);
   }
 }
+/* ---------- Limpeza de dados de teste do 3º bimestre ----------
+   3º bimestre ainda não começou (2026-08-03) — tudo datado dele até agora
+   foi lançamento de teste. 1º/2º bimestre (dado real) NUNCA são tocados.
+   auditarDados3Bim() é só leitura; apagarDados3Bim() exige revisão do
+   relatório + dupla confirmação, mesmo padrão de excluirTodosDados(). */
+let _auditoria3BimAtual=null;
+function auditarDados3Bim(){
+  const corte=BIM_RANGES['3º Bimestre'][0];
+  const registrosAlvo=Object.values(registros).filter(r=>r&&r.data>=corte);
+  const chamadasAlvo=Object.values(chamadas).filter(c=>c&&c.data>=corte);
+  const ocorrenciasAlvo=Object.values(ocorrencias).filter(o=>o&&o.data>=corte);
+  const atividadesAlvo=Object.values(atividadesCtrl).filter(a=>a&&a.data>=corte);
+  const idsAtividadesAlvo=new Set(atividadesAlvo.map(a=>a.id));
+  const notasAlvo=Object.values(notasCtrl).filter(n=>n&&idsAtividadesAlvo.has(n.atividadeId));
+  const temasAplicadosAlvo=Object.values(temas).filter(t=>t&&t.status&&t.status.estado==='aplicado'&&t.status.data>=corte);
+  const planejamentosAlvo=[];
+  Object.values(conteudos).forEach(c=>{ (c.planejamento||[]).forEach(p=>{ if(p&&p.data>=corte) planejamentosAlvo.push({conteudoId:c.id,entry:p}); }); });
+  const compromissosAlvo=Object.values(compromissos).filter(c=>c&&c.data>=corte);
+  const r={corte,registrosAlvo,chamadasAlvo,ocorrenciasAlvo,atividadesAlvo,notasAlvo,temasAplicadosAlvo,planejamentosAlvo,compromissosAlvo};
+  _auditoria3BimAtual=r;
+  abrirRelatorio3Bim(r);
+  return r;
+}
+function abrirRelatorio3Bim(r){
+  const cortaLista=(txts)=>txts.slice(0,5).join('<br>')+(txts.length>5?'<br>… e mais '+(txts.length-5):'');
+  const linha=(label,arr,txts)=>'<div class="field"><label>'+label+' ('+arr.length+')</label>'+(arr.length?('<small>'+cortaLista(txts)+'</small>'):'<small style="color:var(--muted)">nenhum</small>')+'</div>';
+  const txtRegistros=r.registrosAlvo.map(x=>{ const t=temas[x.temaId]||{}, tu=turmas[x.turmaId]||{}; return esc((t.nome||'?')+' · '+turmaNome(tu)+' · '+x.data); });
+  const txtChamadas=r.chamadasAlvo.map(x=>{ const tu=turmas[x.turmaId]||{}; return esc(turmaNome(tu)+' · '+x.data); });
+  const txtOcorr=r.ocorrenciasAlvo.map(x=>{ const tu=turmas[x.turmaId]||{}; return esc(turmaNome(tu)+' · '+x.data+' · '+(x.categoria||'')); });
+  const txtAtiv=r.atividadesAlvo.map(x=>{ const tus=(x.turmaIds||[]).map(id=>turmaNome(turmas[id]||{})).join(', '); return esc((x.nome||'?')+' · '+tus+' · '+x.data); });
+  const txtTemas=r.temasAplicadosAlvo.map(x=>esc((x.nome||'?')+' · '+(x.status.data||'')));
+  const txtPlan=r.planejamentosAlvo.map(({conteudoId,entry})=>{ const c=conteudos[conteudoId]||{}; return esc((c.nome||'?')+' · '+entry.data); });
+  const txtComp=r.compromissosAlvo.map(x=>esc((x.titulo||'?')+' · '+x.data));
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:560px">'+
+    '<div class="modal-h"><h3>🧹 Dados no 3º bimestre (a partir de '+r.corte.split('-').reverse().join('/')+')</h3></div>'+
+    '<div class="modal-b">'+
+    '<small>1º e 2º bimestre não são tocados — o 3º bimestre ainda não começou, então tudo datado dele até agora foi lançamento de teste. Revise antes de apagar.</small>'+
+    linha('Registros de aplicação',r.registrosAlvo,txtRegistros)+
+    linha('Chamadas',r.chamadasAlvo,txtChamadas)+
+    linha('Ocorrências',r.ocorrenciasAlvo,txtOcorr)+
+    linha('Atividades de controle de notas (+ '+r.notasAlvo.length+' nota(s) em cascata)',r.atividadesAlvo,txtAtiv)+
+    linha('Temas marcados "aplicado" (status será resetado — o tema em si NÃO é apagado)',r.temasAplicadosAlvo,txtTemas)+
+    linha('Entradas de cronograma (só a entrada é removida — o conteúdo fica)',r.planejamentosAlvo,txtPlan)+
+    '<div class="field" style="border-top:1px solid var(--line);padding-top:10px"><label style="color:#a06a2e">⚠ Compromissos no período — NÃO incluídos no botão abaixo, podem ser reunião/prazo real. Remova manualmente na Agenda se forem teste.</label>'+(r.compromissosAlvo.length?('<small>'+cortaLista(txtComp)+'</small>'):'<small style="color:var(--muted)">nenhum</small>')+'</div>'+
+    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" style="background:#c0392b;border-color:#c0392b;color:#fff" onclick="apagarDados3Bim()">Apagar itens acima</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+function apagarDados3Bim(){
+  const r=_auditoria3BimAtual; if(!r) return;
+  const total=r.registrosAlvo.length+r.chamadasAlvo.length+r.ocorrenciasAlvo.length+r.atividadesAlvo.length+r.notasAlvo.length+r.temasAplicadosAlvo.length+r.planejamentosAlvo.length;
+  if(!total){ toast('Nada para apagar.',''); closeModal(); return; }
+  if(!confirm('Isso vai apagar '+total+' item(ns) de teste do 3º bimestre (registros, chamadas, ocorrências, atividades/notas, status de temas aplicados, entradas de cronograma) — local e no Firebase. 1º e 2º bimestre NÃO são afetados. Compromissos NÃO são apagados por aqui. NÃO PODE SER DESFEITO. Continuar?')) return;
+  const confirmacao=prompt('Para confirmar, digite APAGAR 3 BIM (em maiúsculas):');
+  if(confirmacao!=='APAGAR 3 BIM'){ toast('Cancelado — o texto de confirmação não bateu. Nada foi apagado.',''); return; }
+  closeModal();
+
+  const upd={};
+  r.registrosAlvo.forEach(x=>{ delete registros[x.id]; upd['leciona/registros/'+x.id]=null; });
+  r.chamadasAlvo.forEach(x=>{ delete chamadas[x.id]; upd['leciona/chamadas/'+x.id]=null; });
+  r.ocorrenciasAlvo.forEach(x=>{ delete ocorrencias[x.id]; upd['leciona/ocorrencias/'+x.id]=null; });
+  r.atividadesAlvo.forEach(x=>{ delete atividadesCtrl[x.id]; upd['leciona/atividades_ctrl/'+x.id]=null; });
+  r.notasAlvo.forEach(x=>{ delete notasCtrl[x.id]; upd['leciona/notas_ctrl/'+x.id]=null; });
+  r.temasAplicadosAlvo.forEach(t=>{ t.status={}; upd['leciona/temas/'+t.id+'/status']=null; });
+  r.planejamentosAlvo.forEach(({conteudoId,entry})=>{
+    const c=conteudos[conteudoId]; if(!c||!c.planejamento) return;
+    c.planejamento=c.planejamento.filter(p=>p!==entry);
+    upd['leciona/conteudos/'+conteudoId+'/planejamento']=c.planejamento;
+  });
+
+  lsSet(LS_REG,JSON.stringify(registros));
+  lsSet(LS_CHAMADAS,JSON.stringify(chamadas));
+  lsSet(LS_OCORR,JSON.stringify(ocorrencias));
+  lsSet(LS_ATVCTRL,JSON.stringify(atividadesCtrl));
+  lsSet(LS_NOTAS,JSON.stringify(notasCtrl));
+  lsSet(LS_TEMAS,JSON.stringify(temas));
+  lsSet(LS_CONT,JSON.stringify(conteudos));
+
+  if(DB){
+    DB.ref().update(upd)
+      .then(()=>toast('Dados de teste do 3º bimestre apagados (local e Firebase).','ok'))
+      .catch(e=>toast('⚠ Apagado localmente, mas falhou ao apagar do Firebase: '+e.message,'err'));
+  } else {
+    toast('Dados de teste do 3º bimestre apagados localmente.','ok');
+  }
+  _auditoria3BimAtual=null;
+  renderThemes(); renderHoje();
+}
 function abrirPopularSeletivo(){
   if(typeof PREBUILT_OBJ==='undefined'){ toast('O conteúdo pré-pronto ainda está carregando. Aguarde e tente de novo.','err'); return; }
   const turmasArr=Object.values(turmas).filter(t=>t&&!t._auto);
@@ -2640,6 +2782,7 @@ function abrirEditor(id){
   dirty=false;
   document.getElementById('edNome').value=editing.nome||'';
   document.getElementById('edDcgo').value=editing.dcgo||'';
+  document.getElementById('edTituloExibicao').value=editing.tituloExibicao||'';
   document.getElementById('edResumo').value=editing.resumo||'';
   document.getElementById('edPalavras').value=editing.palavras||'';
   document.getElementById('edTempo').value=editing.tempo||'';
@@ -2653,6 +2796,7 @@ function abrirEditor(id){
   matrizDoScope().forEach(it=> hsel.add(new Option(it.c+' — '+it.h.slice(0,55)+(it.h.length>55?'…':''), it.c)) );
   hsel.value=editing.dcgo||'';
   renderSelosEditor();
+  renderSubtemasDoDcgo();
   renderStatusEditor();
   renderNotasAssistente();
   renderImagensEditor();
@@ -2693,15 +2837,25 @@ function autosave(){
 function edDirty(){ dirty=true; setSaveStatus('editando'); autosave(); }
 function flushEditor(){ try{ clearTimeout(_saveT); if(editing){ saveActiveObj(); collectMeta(); persistTema(editing); setSaveStatus('salvo'); } }catch(e){} }
 window.addEventListener('beforeunload', flushEditor);
-function onDcgoInput(){ renderSelosEditor(); edDirty(); }
+function onDcgoInput(){ renderSelosEditor(); renderSubtemasDoDcgo(); edDirty(); }
 function aplicarHab(){
   const c=document.getElementById('edHab').value;
   const it=matrizItem(editing.disciplina,editing.serie,editing.bimestre,c);
   if(it){ document.getElementById('edDcgo').value=it.c; editing.habilidade=it.h;
     if(!document.getElementById('edResumo').value) document.getElementById('edResumo').value=it.h; }
-  renderSelosEditor(); edDirty();
+  renderSelosEditor(); renderSubtemasDoDcgo(); edDirty();
 }
 function renderSelosEditor(){ /* campo "Selos da matriz" removido do editor — era só um badge informativo sem ação, achado confuso na prática */ }
+function renderSubtemasDoDcgo(){
+  const box=document.getElementById('edSubtemas'); if(!box || !editing) return;
+  const dcgo=(document.getElementById('edDcgo').value||'').trim();
+  const subs = dcgo && typeof catalogoSubtemas!=='undefined' ? catalogoSubtemas({c:dcgo}, editing.disciplina) : null;
+  if(!subs || !subs.length){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="field"><label>Subtemas sugeridos (catálogo DC-GO)</label>'+
+    '<div class="subtemas-list" style="display:flex;flex-direction:column;gap:4px">'+
+    subs.map(s=>'<span class="statusdot">• '+esc(s.s)+(s.a?(' ('+s.a+' aula'+(s.a>1?'s':'')+')'):'')+'</span>').join('')+
+    '</div></div>';
+}
 function renderNotasAssistente(){
   const bloco=document.getElementById('edNotasBlock');
   const box=document.getElementById('edNotasAssistente');
@@ -2971,6 +3125,7 @@ function abrirTemaDoDia(temaId){
 function collectMeta(){
   editing.nome=document.getElementById('edNome').value.trim()||'Sem título';
   editing.dcgo=document.getElementById('edDcgo').value.trim();
+  editing.tituloExibicao=document.getElementById('edTituloExibicao').value.trim();
   editing.resumo=document.getElementById('edResumo').value.trim();
   editing.palavras=document.getElementById('edPalavras').value.trim();
   editing.tempo=document.getElementById('edTempo').value;
@@ -3819,7 +3974,7 @@ function projTheme(){ proj.theme = proj.theme==='dark'?'light':proj.theme==='lig
 
 function renderProjSwitch(){
   const el=document.getElementById('projSwitch'); el.innerHTML='';
-  document.getElementById('projTitle').textContent=proj.tema.nome+(proj.tema.dcgo?(' · '+proj.tema.dcgo):'');
+  document.getElementById('projTitle').textContent=(proj.tema.tituloExibicao||proj.tema.nome)+(proj.tema.dcgo?(' · '+proj.tema.dcgo):'');
   const order=PROJ_ORDER.slice();
   if((proj.tema.imagens||[]).length) order.push('imagens');
   order.forEach(k=>{
@@ -4148,6 +4303,7 @@ const FERIADOS_2026 = new Set(['2026-01-01','2026-02-17','2026-04-03','2026-04-0
 const WD_NOMES = {1:'Segunda',2:'Terça',3:'Quarta',4:'Quinta',5:'Sexta'};
 // grades conhecidas do horário do CEPI Marajó (getDay: 2=Ter,3=Qua)
 const KNOWN_GRADES = { 'História|9º ano|A|CEPI Marajó':{2:1,3:2}, 'História|9º ano|C|CEPI Marajó':{2:2,3:1} };
+function bimAtivoAgora(dataISO){ const iso=dataISO||isoLocal(new Date()); for(const b in BIM_RANGES){ const r=BIM_RANGES[b]; if(iso>=r[0]&&iso<=r[1]) return b; } return null; }
 function turmaKey(t){ return [t.disciplina,t.serie,t.letra||'',t.unidade||''].join('|'); }
 function gradeDe(t){ return (t&&t.grade) || KNOWN_GRADES[turmaKey(t)] || {}; }
 function isoLocal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -4180,6 +4336,20 @@ function datasDeAula(t, bim){
 function hojeTemAula(t){
   const grade=gradeDe(t); const wd=new Date().getDay();
   return !!(grade[wd] && !FERIADOS_2026.has(isoLocal(new Date())));
+}
+/* Aulas já dadas (fonte de verdade: chamadas lançadas), não previsão de
+   calendário — usada no contador "Aula X/Y" junto de contarAulas() (Y). */
+function aulasDadas(t, bim){
+  const r=BIM_RANGES[bim]; if(!t || !r) return 0;
+  const grade=gradeDe(t);
+  const hoje=isoLocal(new Date());
+  const fim = r[1]<hoje ? r[1] : hoje;
+  let total=0;
+  Object.values(chamadas).filter(c=>c&&c.turmaId===t.id&&c.data>=r[0]&&c.data<=fim).forEach(c=>{
+    const wd=new Date(c.data+'T00:00:00').getDay();
+    total+=grade[wd]||1;
+  });
+  return total;
 }
 function persistChamada(c){ c._ts=Date.now(); chamadas[c.id]=c; lsSet(LS_CHAMADAS,JSON.stringify(chamadas)); if(DB) DB.ref('leciona/chamadas/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar chamada no Firebase (mantida localmente). '+e.message,'err')); }
 function chamadaDoDia(turmaId,data){ return Object.values(chamadas).find(c=>c&&c.turmaId===turmaId&&c.data===data)||null; }
@@ -4222,7 +4392,7 @@ function renderBimBody(){
   box.innerHTML =
     '<small>Turma <b>'+esc(turmaNome(tu))+'</b> · '+esc(scope.bim)+'. As aulas são contadas pelo período oficial menos os feriados do calendário. Ajuste os dias/aulas por semana da turma:</small>'+
     gradeHtml+
-    '<div class="bim-tot">Aulas disponíveis no bimestre: <b>'+cont.total+'</b></div>'+
+    '<div class="bim-tot">Aulas disponíveis no bimestre: <b>'+cont.total+'</b> · Aula '+aulasDadas(tu,scope.bim)+'/'+cont.total+' já dadas (por chamada lançada)</div>'+
     (Object.keys(grade).length? '' : '<div class="statusdot" style="color:#b4451f">Defina os dias/aulas acima para esta turma (não tenho a grade dela).</div>')+
     '<div class="field" style="margin-top:12px"><label>Distribuição dos temas (ordem cronológica)</label>'+
       '<button class="btn ghost sm" onclick="estimarAulasIA()" id="estBtn">✦ estimar aulas por tema (IA)</button>'+
@@ -4405,7 +4575,7 @@ function gerarRelatorio(){
 const SLIDE_PALETTE=['#2f6b5e','#a8562e','#3a5f8a','#7a4b8a','#8a6d1f','#2e7a73'];
 function temaRelatorioHtml(t,incs,opt){
   opt=opt||{};
-  let h='<div class="tema"><h3>'+esc(t.nome)+'</h3>';
+  let h='<div class="tema"><h3>'+esc(t.tituloExibicao||t.nome)+'</h3>';
   let meta=[]; if(t.dcgo)meta.push(t.dcgo);
   const it=matrizItem(t.disciplina,t.serie,t.bimestre,t.dcgo);
   if(it){ const sel=[]; if(it.r===1)sel.push('REVISA'); if(it.s===1)sel.push('SER'); if(it.g===1)sel.push('GoiásTec'); if(sel.length)meta.push('Material: '+sel.join(', ')); }
@@ -4505,6 +4675,8 @@ function openConfig(){
         '<small>Cria os temas que faltam a partir da matriz oficial e já aplica o conteúdo pré-pronto disponível, em todas as suas turmas de uma vez. Não gasta créditos de IA. Não altera temas que já têm conteúdo.</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="manutencaoCompleta()">🧹 Verificar e corrigir tudo</button>'+
         '<small>Um único botão pra tudo: realinha referências desatualizadas, unifica turmas e conteúdos duplicados, remove temas repetidos e corrige conteúdo trocado por engano — na ordem certa, automaticamente. Não pode ser desfeito. Use quando notar algo estranho (temas repetidos, aula sumida etc.) — na dúvida, não faz mal rodar de novo.</small>'+
+        '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
+        '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
         '<small>Apaga TODOS os conteúdos, temas, turmas, registros, alunos e notas — local e no Firebase (se conectado). Suas configurações (modelo, credenciais) não são afetadas. <strong>Não pode ser desfeito.</strong></small></div>'+
     '</div>'+
@@ -4641,23 +4813,44 @@ function renderHoje(){
   const uni=unidadeDoDia(dia);
   const aulas=SCHEDULE.filter(x=>x.dia===dia).sort((a,b)=>a.ini.localeCompare(b.ini));
   const dataHojeISO=now.toISOString().slice(0,10);
+  const bimHoje=bimAtivoAgora(dataHojeISO);
   const planejHoje=planejamentosDoDia(dataHojeISO);
   let html='<div class="hoje-head"><h2>'+saud+(hojeOffset!==0?' — '+DIAS_LONGO[dia]:'!')+'</h2>'+
     '<div class="hoje-nav"><button class="btn ghost sm" onclick="hojeMudarDia(-1)">‹ dia anterior</button>'+
     (hojeOffset!==0?'<button class="btn ghost sm" onclick="hojeOffset=0;try{localStorage.setItem(\'leciona_hojeoffset\',\'0\')}catch(e){};renderHoje()">hoje</button>':'')+
     '<button class="btn ghost sm" onclick="hojeMudarDia(1)">próximo dia ›</button>'+
-    '<button class="btn ghost sm" onclick="_agendaOrigin=\'hoje\';setView(\'agenda\')" title="Ver o mês inteiro, com aulas e compromissos">📅 Ver agenda do mês</button></div>'+
-    '<div class="hoje-data">'+DIAS_LONGO[dia]+' · '+now.toLocaleDateString('pt-BR')+(uni?(' · '+uni):'')+' · '+bimAtual()+'</div></div>';
+    '<button class="btn ghost sm" onclick="_agendaOrigin=\'hoje\';setView(\'agenda\')" title="Ver o mês inteiro, com aulas e compromissos">📅 Ver agenda do mês</button>'+
+    '<button class="btn ghost sm" onclick="abrirNovaAulaAvulsa(\''+dataHojeISO+'\')">+ Aula avulsa</button></div>'+
+    '<div class="hoje-data">'+DIAS_LONGO[dia]+' · '+now.toLocaleDateString('pt-BR')+(uni?(' · '+uni):'')+' · '+(bimHoje||'Recesso / sem bimestre ativo')+'</div></div>';
+  if(!bimHoje){
+    html+='<div class="empty"><p>Sem bimestre letivo ativo nesta data — período de recesso. 🎉</p></div>';
+    box.innerHTML=html; return;
+  }
   if(planejHoje.length){
     html+='<h3 style="font-family:var(--serif);font-size:15px;margin:4px 0 8px">📅 Cronograma de hoje</h3><div class="hoje-list" style="margin-bottom:22px">'+
       planejHoje.map(({conteudo,entry,tema})=>{
         const tu=turmas[conteudo.turmaId]||{};
         const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
         return '<div class="hoje-row">'+
-          '<div class="hoje-info"><b>'+esc(tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span></div>'+
+          '<div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span></div>'+
           '<div class="hoje-acoes">'+
             '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
             '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
+          '</div></div>';
+      }).join('')+
+    '</div>';
+  }
+  const aulasAvulsasHoje=aulasAvulsasDoDiaGlobal(dataHojeISO);
+  if(aulasAvulsasHoje.length){
+    html+='<h3 style="font-family:var(--serif);font-size:15px;margin:4px 0 8px">✎ Aulas avulsas</h3><div class="hoje-list" style="margin-bottom:22px">'+
+      aulasAvulsasHoje.map(a=>{
+        const tu=turmas[a.turmaId]||{};
+        const cor=a.status==='executada'?'#2f6b5e':'#a06a2e';
+        return '<div class="hoje-row">'+
+          '<div class="hoje-info"><b style="color:'+cor+'">Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+'</b><span>'+esc(turmaNome(tu))+' · '+esc(a.titulo)+' · '+(a.status==='executada'?'executada':'planejada')+(a.observacoes?(' · '+esc(a.observacoes)):'')+'</span></div>'+
+          '<div class="hoje-acoes">'+
+            (a.status!=='executada'?'<button class="btn ghost sm" onclick="marcarAulaAvulsaExecutada(\''+a.id+'\')">marcar executada</button>':'')+
+            '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">remover</button>'+
           '</div></div>';
       }).join('')+
     '</div>';
@@ -4670,7 +4863,7 @@ function renderHoje(){
     const tuHoje=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
     const dataHoje=now.toISOString().slice(0,10);
     const regHoje=tuHoje?Object.values(registros).filter(r=>r.turmaId===tuHoje.id&&r.data===dataHoje):[];
-    const badgeReg=regHoje.length?'<span class="reg-badge" title="'+regHoje.map(r=>r.objetos.join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
+    const badgeReg=regHoje.length?'<span class="reg-badge" title="'+regHoje.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
     const badgeAtraso=(tuHoje&&turmaAtrasada(tuHoje.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
     const acoes = x.disc==='Estudo Orientado'
       ? '<span class="statusdot">sem planejamento</span>'
@@ -4704,6 +4897,54 @@ function toggleCompromissoConcluido(id){
   persistCompromisso(c);
   renderAgenda();
 }
+/* ---------- Aula avulsa: aula sem tema pré-definido (explicação, atividade,
+   correção, recomposição de aprendizagem), com ciclo planejamento→execução
+   igual ao padrão do SIAP. Coleção própria, separada de `registros` (que
+   exige temaId) — ver justificativa no plano de manutenção. ---------- */
+const AULA_AVULSA_TIPOS={explicacao:'Explicação',atividade:'Atividade',correcao:'Correção',recomposicao:'Recomposição de aprendizagem'};
+function persistAulaAvulsa(a){ a._ts=Date.now(); aulasAvulsas[a.id]=a; lsSet(LS_AULASAVULSAS,JSON.stringify(aulasAvulsas)); if(DB) DB.ref('leciona/aulas_avulsas/'+a.id).set(a).catch(e=>toast('⚠ Falha ao gravar aula avulsa (mantida localmente). '+e.message,'err')); }
+function removerAulaAvulsa(id){
+  if(!confirm('Remover esta aula avulsa?')) return;
+  delete aulasAvulsas[id];
+  lsSet(LS_AULASAVULSAS,JSON.stringify(aulasAvulsas));
+  if(DB) DB.ref('leciona/aulas_avulsas/'+id).remove().catch(e=>toast('⚠ Removida localmente, mas falhou ao remover no Firebase: '+e.message,'err'));
+  renderHoje(); renderAgenda();
+}
+function aulasAvulsasDoDia(turmaId,dataISO){ return Object.values(aulasAvulsas).filter(a=>a&&a.turmaId===turmaId&&a.data===dataISO); }
+function aulasAvulsasDoDiaGlobal(dataISO){ return Object.values(aulasAvulsas).filter(a=>a&&a.data===dataISO); }
+function marcarAulaAvulsaExecutada(id,dataReal){
+  const a=aulasAvulsas[id]; if(!a) return;
+  a.status='executada';
+  if(dataReal) a.data=dataReal;
+  persistAulaAvulsa(a);
+  renderHoje(); renderAgenda();
+}
+function abrirNovaAulaAvulsa(dataISO){
+  const turmasOpts=Object.values(turmas).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b))).map(t=>'<option value="'+t.id+'">'+esc(turmaNome(t))+'</option>').join('');
+  const tipoOpts=Object.entries(AULA_AVULSA_TIPOS).map(([k,v])=>'<option value="'+k+'">'+esc(v)+'</option>').join('');
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
+    '<div class="modal-h"><h3>Aula avulsa</h3></div><div class="modal-b">'+
+    '<div class="field"><label>Turma</label><select id="alTurma">'+turmasOpts+'</select></div>'+
+    '<div class="field"><label>Título</label><input id="alTitulo" placeholder="Ex.: Correção da atividade 3"></div>'+
+    '<div class="field"><label>Tipo</label><select id="alTipo">'+tipoOpts+'</select></div>'+
+    '<div class="field"><label>Data</label><input id="alData" type="date" value="'+esc(dataISO||isoLocal(new Date()))+'"></div>'+
+    '<div class="field"><label>Observações (opcional)</label><textarea id="alObs" rows="2"></textarea></div>'+
+    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarNovaAulaAvulsa()">Salvar como planejada</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+function confirmarNovaAulaAvulsa(){
+  const turmaId=document.getElementById('alTurma').value;
+  const titulo=document.getElementById('alTitulo').value.trim();
+  const tipo=document.getElementById('alTipo').value;
+  const data=document.getElementById('alData').value;
+  const observacoes=document.getElementById('alObs').value.trim();
+  if(!turmaId||!titulo||!data){ toast('Preencha turma, título e data.','err'); return; }
+  const a={id:uid(),turmaId,titulo,tipo,observacoes,data,status:'planejada'};
+  persistAulaAvulsa(a);
+  closeModal();
+  toast('Aula avulsa salva.','ok');
+  renderHoje(); renderAgenda();
+}
 let _agendaMes=null;     // Date do 1º dia do mês em exibição
 let _agendaDiaSel=null;  // ISO do dia selecionado no painel
 let _agendaOrigin='hoje';
@@ -4718,6 +4959,7 @@ function aulasDoDiaISO(dataISO){
   const d=new Date(dataISO+'T00:00:00');
   const dia=d.getDay();
   if(FERIADOS_2026.has(dataISO)) return [];
+  if(!bimAtivoAgora(dataISO)) return [];
   return SCHEDULE.filter(x=>x.dia===dia).sort((a,b)=>a.ini.localeCompare(b.ini));
 }
 function compromissosDoDia(dataISO){
@@ -4756,8 +4998,9 @@ function renderAgendaGrade(){
     const temAula = SCHEDULE.some(x=>x.dia===d.getDay()) && !FERIADOS_2026.has(iso);
     const nCron = planejamentosDoDia(iso).length;
     const nComp = compromissosDoDia(iso).length;
+    const nAvulsa = aulasAvulsasDoDiaGlobal(iso).length;
     const cls=['agenda-cel']; if(iso===hojeISO) cls.push('hoje'); if(iso===_agendaDiaSel) cls.push('sel');
-    const pontos = (temAula?'<span class="agenda-ponto aula"></span>':'') + (nCron?'<span class="agenda-ponto cron"></span>':'') + (nComp?'<span class="agenda-ponto comp"></span>':'');
+    const pontos = (temAula?'<span class="agenda-ponto aula"></span>':'') + (nCron?'<span class="agenda-ponto cron"></span>':'') + (nComp?'<span class="agenda-ponto comp"></span>':'') + (nAvulsa?'<span class="agenda-ponto avulsa"></span>':'');
     html+='<div class="'+cls.join(' ')+'" onclick="selecionarDiaAgenda(\''+iso+'\')"><span class="agenda-num">'+dia+'</span><div class="agenda-pontos">'+pontos+'</div></div>';
   }
   html+='</div>';
@@ -4771,6 +5014,7 @@ function renderAgendaDia(){
   const aulas=aulasDoDiaISO(iso);
   const cron=planejamentosDoDia(iso);
   const comp=compromissosDoDia(iso);
+  const avulsas=aulasAvulsasDoDiaGlobal(iso);
   let html='<h4 style="font-family:var(--serif);font-size:15px;margin:0 0 12px">'+esc(DIAS_LONGO[d.getDay()])+' · '+d.toLocaleDateString('pt-BR')+'</h4>';
   if(aulas.length){
     html+='<div class="agenda-secao-tit">Aulas</div>';
@@ -4787,8 +5031,20 @@ function renderAgendaDia(){
     cron.forEach(({conteudo,entry,tema})=>{
       const tu=turmas[conteudo.turmaId]||{};
       const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
-      html+='<div class="hoje-row"><div class="hoje-info"><b>'+esc(tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span></div>'+
+      html+='<div class="hoje-row"><div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span></div>'+
         '<div class="hoje-acoes"><button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button></div></div>';
+    });
+  }
+  if(avulsas.length){
+    html+='<div class="agenda-secao-tit">Aulas avulsas</div>';
+    avulsas.forEach(a=>{
+      const tu=turmas[a.turmaId]||{};
+      const cor=a.status==='executada'?'#2f6b5e':'#a06a2e';
+      html+='<div class="hoje-row"><div class="hoje-info"><b style="color:'+cor+'">Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+'</b><span>'+esc(turmaNome(tu))+' · '+esc(a.titulo)+' · '+(a.status==='executada'?'executada':'planejada')+(a.observacoes?(' · '+esc(a.observacoes)):'')+'</span></div>'+
+        '<div class="hoje-acoes">'+
+          (a.status!=='executada'?'<button class="btn ghost sm" onclick="marcarAulaAvulsaExecutada(\''+a.id+'\')">marcar executada</button>':'')+
+          '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">✕</button>'+
+        '</div></div>';
     });
   }
   html+='<div class="agenda-secao-tit">Compromissos</div>';
@@ -4803,9 +5059,10 @@ function renderAgendaDia(){
   } else {
     html+='<p style="color:var(--muted);font-size:13px;margin:0 0 10px">Nenhum compromisso neste dia.</p>';
   }
-  if(!aulas.length && !cron.length && !comp.length){
+  if(!aulas.length && !cron.length && !comp.length && !avulsas.length){
     html='<h4 style="font-family:var(--serif);font-size:15px;margin:0 0 12px">'+esc(DIAS_LONGO[d.getDay()])+' · '+d.toLocaleDateString('pt-BR')+'</h4><p style="color:var(--muted);font-size:13px">Nada neste dia.</p>';
   }
+  html+='<button class="btn ghost sm full" style="margin-top:8px" onclick="abrirNovaAulaAvulsa(\''+iso+'\')">+ Aula avulsa neste dia</button>';
   html+='<div id="agendaFormCompromisso" class="hidden" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">'+
       '<div class="field"><label>Título</label><input id="compTitulo" placeholder="ex.: Reunião de pais, entregar diário..."></div>'+
       '<div class="field"><label>Hora (opcional)</label><input type="time" id="compHora"></div>'+
@@ -4920,8 +5177,8 @@ function abrirLancarNotas(objetoKey){
   ).join('');
   const hoje=new Date().toISOString().slice(0,10);
   const nomeDefault=esc(editing.nome||'')+(objLabel?' — '+objLabel:'');
-  const modoOpts='<label class="check"><input type="radio" name="modoNota" value="nota" checked> Nota (0–10)</label>'+
-    '<label class="check"><input type="radio" name="modoNota" value="check"> Checklist (✓/○)</label>';
+  const modoOpts='<label class="check"><input type="radio" name="modoNota" value="nota"> Nota (0–10)</label>'+
+    '<label class="check"><input type="radio" name="modoNota" value="check" checked> Checklist (✓/○)</label>';
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()">'+
     '<div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>↳ Lançar no controle de notas</h3></div>'+
@@ -5416,9 +5673,11 @@ function abrirUsarPrePronto(i){
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarUsarPrePronto('+i+')">Adicionar</button></div></div></div>';
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
-function confirmarUsarPrePronto(i){
-  const c=_acervoPreProntoAtual[i]; if(!c) return;
-  const turmaId=(document.getElementById('upTurma')||{}).value; if(!turmaId) return;
+/* Cria (ou reaproveita, se já existir) um tema a partir de um candidato
+   pré-pronto da matriz, numa turma. Compartilhado entre o Acervo e a
+   Gestão — mesmo critério de dedup do criarPartirMatriz(): nunca duplica
+   se já existe um tema com mesmo dcgo+nome neste conteúdo. */
+function criarTemaAPartirDePrePronto(c, turmaId){
   let cont=Object.values(conteudos).find(co=>co.turmaId===turmaId&&co.bimestre===c.bim&&co.nome==='Matriz — '+c.bim);
   if(!cont){
     const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===turmaId&&co.bimestre===c.bim);
@@ -5426,12 +5685,16 @@ function confirmarUsarPrePronto(i){
     cont={id:uid(),disciplina:c.disc,serie:c.serie,turmaId,bimestre:c.bim,nome:'Matriz — '+c.bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
     persistConteudo(cont);
   }
-  // mesmo critério de dedup do criarPartirMatriz(): nunca duplica se já existe
-  // um tema com mesmo dcgo+nome neste conteúdo.
   const jaExiste=temasDoConteudo(cont.id).find(t=>t.dcgo===c.dcgo&&t.nome===String(c.nome).slice(0,80));
   const tema=jaExiste||blankTema(cont.id,{turmaId,disciplina:c.disc,serie:c.serie,bimestre:c.bim,nome:String(c.nome).slice(0,80),dcgo:c.dcgo,habilidade:c.habilidade,resumo:c.habilidade,ordem:nextOrdemTema(cont.id)});
   applyPrebuiltIfEmpty(tema);
   if(!jaExiste) persistTema(tema);
+  return tema;
+}
+function confirmarUsarPrePronto(i){
+  const c=_acervoPreProntoAtual[i]; if(!c) return;
+  const turmaId=(document.getElementById('upTurma')||{}).value; if(!turmaId) return;
+  criarTemaAPartirDePrePronto(c, turmaId);
   closeModal();
   toast('"'+c.nome+'" adicionado à turma.','ok');
   renderAcervoLista();
