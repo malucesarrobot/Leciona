@@ -3548,7 +3548,32 @@ const FERRAMENTAS_ASSISTENTE=[
   {name:'deixar_nota_geral', description:'Escreve uma anotação no bloco de notas solto da Agenda — não ligado a nenhum tema/aula específica. Use pra ideias, lembretes ou observações gerais que não pertencem a um tema em particular.', input_schema:{type:'object',properties:{
     texto:{type:'string'}
   }, required:['texto']}},
+  {name:'listar_progresso_bimestre', description:'Mostra quanto do bimestre já foi dado numa turma: aulas previstas x aulas realmente dadas (por chamada), e quantos temas já foram aplicados de quantos existem. Use pra responder "quanto falta", "como estou indo".', input_schema:{type:'object',properties:{
+    turma:{type:'string', description:'Nome da turma (ex.: "1ªA Filosofia"). Se vazio, usa a turma selecionada agora no app'},
+    bimestre:{type:'string', description:'Ex.: "3º Bimestre". Se vazio, usa o bimestre selecionado agora'}
+  }}},
+  {name:'sugerir_conteudos_pendentes', description:'Lista conteúdos da matriz oficial que já têm material pré-pronto disponível mas ainda não viraram tema nesta turma/bimestre — pra sugerir o que dar a seguir.', input_schema:{type:'object',properties:{
+    turma:{type:'string', description:'Nome da turma. Se vazio, usa a selecionada agora'},
+    bimestre:{type:'string', description:'Se vazio, usa o selecionado agora'}
+  }}},
+  {name:'criar_tema', description:'Cria um tema de aula a partir de um conteúdo pré-pronto — use com os dados exatos (nome, dcgo, habilidade) retornados por sugerir_conteudos_pendentes. Não serve pra criar um tema em branco do zero.', input_schema:{type:'object',properties:{
+    turma:{type:'string'}, nome:{type:'string'}, dcgo:{type:'string'}, habilidade:{type:'string'}, bimestre:{type:'string'}
+  }, required:['turma','nome','dcgo','bimestre']}},
+  {name:'criar_aula_avulsa', description:'Cria uma aula avulsa (sem tema vinculado — explicação, atividade, correção ou recomposição de aprendizagem) numa turma, com status "planejada".', input_schema:{type:'object',properties:{
+    turma:{type:'string'}, titulo:{type:'string'}, tipo:{type:'string', description:'explicacao|atividade|correcao|recomposicao'}, data:{type:'string', description:'YYYY-MM-DD'}, observacoes:{type:'string'}
+  }, required:['turma','titulo','tipo','data']}},
+  {name:'atualizar_aula_avulsa', description:'Move a data, muda campos, marca como executada, ou apaga (apagar:true) uma aula avulsa existente, pelo id. Use consultar_agenda antes se não souber o id.', input_schema:{type:'object',properties:{
+    id:{type:'string'}, titulo:{type:'string'}, tipo:{type:'string'}, data:{type:'string'}, observacoes:{type:'string'},
+    marcar_executada:{type:'boolean'}, apagar:{type:'boolean'}
+  }, required:['id']}},
 ];
+/* Turma citada em texto livre pelo usuário/IA — não tem id, então casa por
+   nome parcial; se vazio, assume a turma selecionada no momento no app. */
+function acharTurmaPorNome(query){
+  if(!query) return turmas[scope.turma]||null;
+  const q=String(query).toLowerCase();
+  return Object.values(turmas).find(t=>t && turmaNome(t).toLowerCase().includes(q)) || null;
+}
 function rotuloFerramentaAssistente(nome, input){
   input=input||{};
   const labels={
@@ -3557,6 +3582,11 @@ function rotuloFerramentaAssistente(nome, input){
     consultar_agenda:'consultando a agenda ('+(input.data_inicio||'?')+' a '+(input.data_fim||'?')+')',
     deixar_nota_tema:'anexando anotação'+(input.tema_nome?(' a "'+input.tema_nome+'"'):' ao tema aberto'),
     deixar_nota_geral:'anotando no bloco de notas da Agenda',
+    listar_progresso_bimestre:'conferindo progresso do bimestre'+(input.turma?(' — '+input.turma):''),
+    sugerir_conteudos_pendentes:'buscando conteúdos pendentes'+(input.turma?(' — '+input.turma):''),
+    criar_tema:'criando o tema "'+(input.nome||'')+'"',
+    criar_aula_avulsa:'criando aula avulsa "'+(input.titulo||'')+'"',
+    atualizar_aula_avulsa:input.apagar?'apagando aula avulsa':(input.marcar_executada?'marcando aula avulsa como executada':'atualizando aula avulsa'),
   };
   return labels[nome]||nome;
 }
@@ -3595,6 +3625,7 @@ function executarFerramentaAssistente(nome, input){
         aulasDoDiaISO(iso).forEach(x=>out.push({tipo:'aula', data:iso, hora:x.ini, titulo:x.disc+' · '+serieCurta(SERIE_NUM[x.serie])+x.letra}));
         planejamentosDoDia(iso).forEach(({tema})=>out.push({tipo:'cronograma', data:iso, titulo:tema.nome||''}));
         compromissosDoDia(iso).forEach(c=>out.push({tipo:'compromisso', id:c.id, data:iso, hora:c.hora||'', titulo:c.titulo, concluido:!!c.concluido}));
+        aulasAvulsasDoDiaGlobal(iso).forEach(a=>{ const tu=turmas[a.turmaId]||{}; out.push({tipo:'aula_avulsa', id:a.id, data:iso, titulo:a.titulo, turma:turmaNome(tu), tipo_aula:a.tipo, status:a.status}); });
         cur.setDate(cur.getDate()+1); dias++;
       }
       return {itens: out};
@@ -3609,6 +3640,61 @@ function executarFerramentaAssistente(nome, input){
       persistTema(t);
       if(editing && editing.id===t.id) renderNotasAssistente();
       return {ok:true, tema:t.nome};
+    }
+    if(nome==='listar_progresso_bimestre'){
+      const tu=acharTurmaPorNome(input.turma); if(!tu) return {erro:'turma não encontrada'};
+      const bim=input.bimestre||scope.bim;
+      const cont=contarAulas(tu,bim), dadas=aulasDadas(tu,bim);
+      let totalTemas=0, aplicados=0;
+      Object.values(conteudos).filter(c=>c&&c.turmaId===tu.id&&c.bimestre===bim).forEach(c=>{
+        temasDoConteudo(c.id).forEach(t=>{ totalTemas++; if(registrosDoTema(t.id).some(r=>r.turmaId===tu.id)) aplicados++; });
+      });
+      return {turma:turmaNome(tu), bimestre:bim, aulas_previstas:cont.total, aulas_dadas:dadas, temas_totais:totalTemas, temas_aplicados:aplicados};
+    }
+    if(nome==='sugerir_conteudos_pendentes'){
+      const tu=acharTurmaPorNome(input.turma); if(!tu) return {erro:'turma não encontrada'};
+      if(typeof candidatosPreProntoDoRecorte==='undefined') return {erro:'catálogo de pré-prontos indisponível'};
+      const bim=input.bimestre||scope.bim;
+      const existentesKeys=new Set();
+      Object.values(conteudos).filter(c=>c&&c.turmaId===tu.id&&c.bimestre===bim).forEach(c=>temasDoConteudo(c.id).forEach(t=>existentesKeys.add((t.dcgo||'')+'::'+(t.nome||''))));
+      let candidatos=candidatosPreProntoDoRecorte(tu.disciplina,tu.serie,bim).filter(c=>!existentesKeys.has(c.dcgo+'::'+c.nome));
+      const vistos=new Set();
+      candidatos=candidatos.filter(c=>{ const k=c.dcgo+'::'+c.nome; if(vistos.has(k)) return false; vistos.add(k); return true; }).slice(0,15);
+      return {turma:turmaNome(tu), bimestre:bim, candidatos:candidatos.map(c=>({nome:c.nome,dcgo:c.dcgo,habilidade:c.habilidade}))};
+    }
+    if(nome==='criar_tema'){
+      const tu=acharTurmaPorNome(input.turma); if(!tu) return {erro:'turma não encontrada'};
+      if(!input.nome||!input.dcgo||!input.bimestre) return {erro:'faltam nome/dcgo/bimestre'};
+      const candidato={nome:input.nome, dcgo:input.dcgo, habilidade:input.habilidade||'', disc:tu.disciplina, serie:tu.serie, bim:input.bimestre};
+      const tema=criarTemaAPartirDePrePronto(candidato, tu.id);
+      if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
+      return {ok:true, tema_id:tema.id, tema_nome:tema.nome};
+    }
+    if(nome==='criar_aula_avulsa'){
+      const tu=acharTurmaPorNome(input.turma); if(!tu) return {erro:'turma não encontrada'};
+      if(!input.titulo||!input.data) return {erro:'faltam titulo/data'};
+      const a={id:uid(), turmaId:tu.id, titulo:String(input.titulo).slice(0,120), tipo:input.tipo||'explicacao', observacoes:input.observacoes||'', data:input.data, status:'planejada'};
+      persistAulaAvulsa(a);
+      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+      return {ok:true, id:a.id};
+    }
+    if(nome==='atualizar_aula_avulsa'){
+      const a=aulasAvulsas[input.id]; if(!a) return {erro:'aula avulsa não encontrada — use consultar_agenda pra achar o id'};
+      if(input.apagar){
+        delete aulasAvulsas[input.id];
+        lsSet(LS_AULASAVULSAS, JSON.stringify(aulasAvulsas));
+        if(DB) DB.ref('leciona/aulas_avulsas/'+input.id).remove().catch(()=>{});
+        if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+        if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+        return {ok:true, apagado:true};
+      }
+      ['titulo','tipo','data','observacoes'].forEach(k=>{ if(input[k]!=null) a[k]=input[k]; });
+      if(input.marcar_executada) a.status='executada';
+      persistAulaAvulsa(a);
+      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+      return {ok:true};
     }
     if(nome==='deixar_nota_geral'){
       if(!input.texto) return {erro:'falta texto'};
@@ -3745,7 +3831,7 @@ function renderAnexoChipChat(){
    escrita (criar/editar/apagar compromisso) — pedido explícito: nunca
    sobrescrever nada sem perguntar antes. Ferramentas de leitura e de
    anotação (só aditivas, fáceis de apagar depois) continuam automáticas. */
-const FERRAMENTAS_ESCRITA=new Set(['criar_compromisso','editar_compromisso']);
+const FERRAMENTAS_ESCRITA=new Set(['criar_compromisso','editar_compromisso','criar_tema','criar_aula_avulsa','atualizar_aula_avulsa']);
 let _chatConfirmResolve=null;
 function aguardarConfirmacaoLote(chamadas){
   return new Promise(resolve=>{
@@ -3780,7 +3866,7 @@ async function enviarChat(){
   const useWeb=(document.getElementById('chatWeb')||{}).checked;
   const contexto = editing ? ('O usuário está atualmente com o tema "'+editing.nome+'" ('+editing.disciplina+', '+editing.serie+') aberto no app Leciona. Se a pergunta parecer relacionada, considere esse contexto — mas responda livremente qualquer outra pergunta também.') : '';
   const hoje='Hoje é '+isoLocal(new Date())+' ('+DIAS_LONGO[new Date().getDay()]+').';
-  const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+hoje+' '+contexto+' Você pode usar ferramentas pra mexer na Agenda do Leciona (criar/editar/apagar compromissos, consultar aulas e compromissos por período), pra anexar uma anotação a um tema de aula, e pra escrever no bloco de notas solto da Agenda (deixar_nota_geral) quando o assunto não for de um tema específico. Quando a usuária anexar uma foto ou PDF (ex.: calendário de atividades da escola, foto de aviso, planilha impressa), leia com atenção e, se houver datas/eventos claros, liste o que você identificou e use criar_compromisso pra cada um — a interface já pede confirmação da usuária antes de qualquer ferramenta de agenda executar de verdade, então pode propor com confiança. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
+  const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+hoje+' '+contexto+' Você pode usar ferramentas pra: mexer na Agenda do Leciona (criar/editar/apagar compromissos, criar/mover/apagar/marcar-executada aula avulsa, consultar tudo isso por período — inclui aulas avulsas agora); anexar uma anotação a um tema de aula ou ao bloco de notas geral da Agenda; consultar o progresso do bimestre de uma turma (aulas previstas x dadas, temas aplicados) via listar_progresso_bimestre; sugerir o que dar a seguir via sugerir_conteudos_pendentes (conteúdos da matriz com material pronto que ainda não viraram tema); e criar um tema a partir de um desses conteúdos sugeridos via criar_tema (só funciona com nome/dcgo exatos vindos de sugerir_conteudos_pendentes — nunca invente um tema do zero). Quando a usuária anexar uma foto ou PDF (ex.: calendário de atividades da escola, foto de aviso, planilha impressa), leia com atenção e, se houver datas/eventos claros, liste o que você identificou e use a ferramenta certa pra cada um (compromisso, aula avulsa etc.) — a interface já pede confirmação da usuária antes de qualquer ferramenta de escrita executar de verdade, então pode propor com confiança. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
   try{
     let iter=0; const MAX_ITER=6; let respostaFinal='';
     while(iter<MAX_ITER){
