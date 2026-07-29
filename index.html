@@ -5023,7 +5023,7 @@ function renderAgendaGrade(){
   for(let i=0;i<primeiroDia;i++) html+='<div class="agenda-cel vazia"></div>';
   for(let dia=1;dia<=totalDias;dia++){
     const d=new Date(ano,mes,dia); const iso=isoLocal(d);
-    const temAula = SCHEDULE.some(x=>x.dia===d.getDay()) && !FERIADOS_2026.has(iso);
+    const temAula = SCHEDULE.some(x=>x.dia===d.getDay()) && !FERIADOS_2026.has(iso) && !!bimAtivoAgora(iso);
     const nCron = planejamentosDoDia(iso).length;
     const nComp = compromissosDoDia(iso).length;
     const nAvulsa = aulasAvulsasDoDiaGlobal(iso).length;
