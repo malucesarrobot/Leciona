@@ -31,7 +31,15 @@ if [ -f index.html ]; then
   echo "  ✓ index.html (script inline)"
 fi
 
-echo "→ Sintaxe OK. Commitando…"
+echo "→ Sintaxe OK."
+
+if [ -f sw.js ]; then
+  novo_cache="leciona-$(date +%Y%m%d%H%M%S)"
+  sed -i '' "s/const CACHE = '[^']*'/const CACHE = '$novo_cache'/" sw.js
+  echo "  ✓ sw.js — cache renomeado pra $novo_cache (força os navegadores a buscar a versão nova em vez de servir a antiga)"
+fi
+
+echo "→ Commitando…"
 git add -A
 git commit -m "$msg"
 
