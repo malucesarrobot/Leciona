@@ -1413,7 +1413,7 @@ function criarColunaAvaliacao(temaId, turmaId){
     if(!daMesmaOrigem.turmaIds.includes(turmaId)){ daMesmaOrigem.turmaIds.push(turmaId); persistAtivCtrl(daMesmaOrigem); }
     return;
   }
-  const nomeCurto=(tema.nome||'Avaliação').slice(0,28);
+  const nomeCurto=(tema.tituloExibicao||tema.nome||'Avaliação').slice(0,28);
   const av={
     id:uid(),
     nome:'Aval. — '+nomeCurto,
@@ -4623,10 +4623,16 @@ function aulasDadas(t, bim){
   const hoje=isoLocal(new Date());
   const fim = r[1]<hoje ? r[1] : hoje;
   let total=0;
-  Object.values(chamadas).filter(c=>c&&c.turmaId===t.id&&c.data>=r[0]&&c.data<=fim).forEach(c=>{
-    const wd=new Date(c.data+'T00:00:00').getDay();
+  const datasContadas=new Set();
+  const somaData=(data)=>{
+    if(datasContadas.has(data)) return; // não conta o mesmo dia 2x se tiver chamada E aula avulsa nele
+    datasContadas.add(data);
+    const wd=new Date(data+'T00:00:00').getDay();
     total+=grade[wd]||1;
-  });
+  };
+  Object.values(chamadas).filter(c=>c&&c.turmaId===t.id&&c.data>=r[0]&&c.data<=fim).forEach(c=>somaData(c.data));
+  // aula avulsa executada (explicação, atividade, correção, recomposição) conta como aula dada também
+  Object.values(aulasAvulsas).filter(a=>a&&a.turmaId===t.id&&a.status==='executada'&&a.data>=r[0]&&a.data<=fim).forEach(a=>somaData(a.data));
   return total;
 }
 function persistChamada(c){ c._ts=Date.now(); chamadas[c.id]=c; lsSet(LS_CHAMADAS,JSON.stringify(chamadas)); if(DB) DB.ref('leciona/chamadas/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar chamada no Firebase (mantida localmente). '+e.message,'err')); }
@@ -5258,10 +5264,9 @@ function renderNotasGeraisAgenda(){
       '<button class="btn primary sm" onclick="adicionarNotaGeral()">Adicionar</button>'+
     '</div>'+
     (notas.length ? notas.map(n=>
-      '<div style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;white-space:pre-wrap;font-size:13px">'+
-        '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(n.autor==='assistente'?'🤖 Assistente':'📝 Você')+(n._ts?(' · '+new Date(n._ts).toLocaleDateString('pt-BR')):'')+'</div>'+
-        esc(n.texto)+
-        '<div style="margin-top:4px"><button class="btn ghost sm" onclick="removerNotaGeral(\''+n.id+'\')">excluir</button></div>'+
+      '<div style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;white-space:pre-wrap;font-size:13px;display:flex;gap:8px">'+
+        '<div style="flex:1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(n.autor==='assistente'?'🤖 Assistente':'📝 Você')+(n._ts?(' · '+new Date(n._ts).toLocaleDateString('pt-BR')):'')+'</div>'+esc(n.texto)+'</div>'+
+        '<button onclick="removerNotaGeral(\''+n.id+'\')" title="Excluir" style="background:none;border:0;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;padding:2px 4px;align-self:flex-start">✕</button>'+
       '</div>'
     ).join('') : '<p style="color:var(--muted);font-size:13px">Nenhuma anotação ainda.</p>');
 }
@@ -6712,9 +6717,7 @@ function renderNotas(){
       '<option value="ponderada"'+(getMediaModo(turmaId)==='ponderada'?' selected':'')+'>ponderada (usa pesos)</option>'+
       '<option value="aritmetica"'+(getMediaModo(turmaId)==='aritmetica'?' selected':'')+'>aritmética (todos iguais)</option>'+
     '</select>'+
-    '<button class="btn ghost sm" onclick="exportarNotasCSV()">↓ CSV</button>'+
-    '<button class="btn ghost sm" onclick="exportarNotasTodasTurmasCSV()" title="Exporta as notas de todas as turmas de '+esc(tu.disciplina||'')+'">↓ CSV — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
-    '<button class="btn ghost sm" onclick="exportarQualitativaCSV()" title="Nota qualitativa de cada aluno, pronta pra digitar no SIAP">↓ CSV — Qualitativa</button>'+
+    '<button class="btn ghost sm" onclick="abrirExportarCSV()">↓ CSV</button>'+
     '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
     '<button class="btn ghost sm" onclick="_painelOrigin=\'notas\';setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
     '<button class="btn ghost sm" onclick="_agendaOrigin=\'notas\';setView(\'agenda\')" title="Agenda — aulas, cronograma e compromissos por dia">📅 Agenda</button>'+
@@ -6766,7 +6769,7 @@ function renderNotas(){
     atvs.map(av=>{
       const tp=ATIV_TIPOS[av.tipo]||{label:av.tipo,cor:'#888',bg:'#f5f5f5'};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
-      return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+'" data-avid="'+av.id+'">'+
+      return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+' — '+esc(tp.label||av.tipo)+(isCheck?' (checklist)':' (nota)')+'" data-avid="'+av.id+'">'+
         '<span class="atv-col-header">'+esc(av.nome)+'</span>'+
         (av.recorrente?'<button class="atv-dup-btn" onclick="event.stopPropagation();abrirDuplicarAtividade(\''+av.id+'\')" title="Duplicar pra outra turma/data, sem redigitar">⧉</button>':'')+
         '<span class="atv-tipo">peso '+av.peso+(isCheck?' &middot; &check;':'')+'</span>'+
@@ -6961,6 +6964,17 @@ function salvarAtividade(){
 }
 
 // ── CSV Export ────────────────────────────────────────────────────────────
+function abrirExportarCSV(){
+  const tu=turmas[scope.turma]||{};
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
+    '<div class="modal-h"><h3>↓ Exportar CSV</h3></div>'+
+    '<div class="modal-b">'+
+      '<button class="btn full" style="margin-bottom:8px" onclick="closeModal();exportarNotasCSV()">Notas — '+esc(turmaNome(tu))+'</button>'+
+      '<button class="btn ghost full" style="margin-bottom:8px" onclick="closeModal();exportarNotasTodasTurmasCSV()">Notas — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
+      '<button class="btn ghost full" onclick="closeModal();exportarQualitativaCSV()">Qualitativa — '+esc(turmaNome(tu))+' <small style="opacity:.7">(pronta pro SIAP)</small></button>'+
+    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
 function exportarNotasCSV(){
   const turmaId=scope.turma;
   if(!turmaId){ toast('Selecione uma turma.','err'); return; }
