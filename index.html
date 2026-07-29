@@ -1371,7 +1371,7 @@ function novoRegistro(temaId, turmaId, objetos, entrega, nota){
   return {
     id: uid(),
     temaId, turmaId,
-    data: new Date().toISOString().slice(0,10),
+    data: isoLocal(new Date()),
     objetos: objetos||[],     // ['slides','estudo'] — o que foi usado
     entrega: entrega||'sala', // sala | grupo | híbrido | assíncrono
     nota: nota||'',           // campo livre; futuramente: link com avaliação
@@ -1405,7 +1405,7 @@ function criarColunaAvaliacao(temaId, turmaId){
     id:uid(),
     nome:'Aval. — '+nomeCurto,
     tipo:'atividade',          // herda cor rosa de ATIV_TIPOS.atividade
-    data:new Date().toISOString().slice(0,10),
+    data:isoLocal(new Date()),
     peso:1,
     valorMax:10,
     checklist:false,
@@ -1445,7 +1445,7 @@ function persistOcorrencia(o){
   if(DB) DB.ref('leciona/ocorrencias/'+o.id).set(o).catch(e=>toast('⚠ Salvo localmente, mas falhou ao sincronizar com o Firebase: '+e.message,'err'));
 }
 function registrarOcorrencia(turmaId, categoria, observacao){
-  const o={id:uid(), turmaId, data:new Date().toISOString().slice(0,10), categoria, observacao:observacao||'', resolvida:false};
+  const o={id:uid(), turmaId, data:isoLocal(new Date()), categoria, observacao:observacao||'', resolvida:false};
   persistOcorrencia(o);
   return o;
 }
@@ -1547,7 +1547,7 @@ function exportarRegistrosCSV(){
   const csv=registrosTodosCSV();
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='Leciona_Registros_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download='Leciona_Registros_'+isoLocal(new Date())+'.csv';
   a.click();
   toast('CSV exportado.','ok');
 }
@@ -2004,7 +2004,7 @@ function cycleStatus(tid){
   const t=temas[tid]; if(!t) return;
   const cur=(t.status&&t.status.estado)||'';
   const nxt = cur==='' ? 'planejado' : cur==='planejado' ? 'aplicado' : '';
-  t.status={estado:nxt, data: nxt==='aplicado'? new Date().toISOString().slice(0,10) : ''};
+  t.status={estado:nxt, data: nxt==='aplicado'? isoLocal(new Date()) : ''};
   persistTema(t);
   if(!DB) renderThemes();
   toast(nxt? ('Marcado como '+nxt+'.') : 'Status removido.','ok');
@@ -2903,7 +2903,7 @@ function abrirMarcarAplicado(){
   const jaFeitos=new Set(registrosDoTema(t.id).filter(r=>r.turmaId===t.turmaId).flatMap(r=>r.objetos||[]));
   const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjEd" value="'+o.k+'" '+((jaFeitos.has(o.k)||isFilled(t,o.k))?'checked':'')+'>'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
-  const hoje=new Date().toISOString().slice(0,10);
+  const hoje=isoLocal(new Date());
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>&#10003; Marcar aula como aplicada</h3></div>'+
     '<div class="modal-b">'+
@@ -2923,7 +2923,7 @@ function salvarMarcarAplicado(){
   const objs=[...document.querySelectorAll('input[name=regObjEd]:checked')].map(c=>c.value);
   if(!objs.length){ toast('Marque ao menos o que foi usado nesta aula.','err'); return; }
   const entrega=(document.getElementById('aplEntrega')||{}).value||'sala';
-  const data=(document.getElementById('aplData')||{}).value||new Date().toISOString().slice(0,10);
+  const data=(document.getElementById('aplData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('aplNota')||{}).value||'';
   const r=novoRegistro(editing.id, editing.turmaId, objs, entrega, nota);
   r.data=data;
@@ -3842,7 +3842,7 @@ function abrirModalRegistro(){
   const objLabels={quadro:'Quadro',estudo:'Estudo',slides:'Slides',mapaMental:'Mapa mental',avaliacao:'Avaliação'};
   const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObj" value="'+o.k+'" '+(o.k===objAtual?'checked':'')+'>'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
-  const hoje=new Date().toISOString().slice(0,10);
+  const hoje=isoLocal(new Date());
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>✓ Registrar aplicação</h3></div>'+
     '<div class="modal-b">'+
@@ -3861,7 +3861,7 @@ function salvarRegistro(){
   if(!proj.tema){ closeModal(); return; }
   const objs=[...document.querySelectorAll('input[name=regObj]:checked')].map(c=>c.value);
   const entrega=(document.getElementById('regEntrega')||{}).value||'sala';
-  const data=(document.getElementById('regData')||{}).value||new Date().toISOString().slice(0,10);
+  const data=(document.getElementById('regData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('regNota')||{}).value||'';
   const r=novoRegistro(proj.tema.id, proj.tema.turmaId, objs, entrega, nota);
   r.data=data;
@@ -3894,7 +3894,7 @@ function abrirModalRegistroEditor(){
   const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjE" value="'+o.k+'">'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const tuOpts=Object.values(turmas).filter(t=>t.disciplina===editing.disciplina).map(t=>'<option value="'+t.id+'"'+(t.id===editing.turmaId?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('');
-  const hoje=new Date().toISOString().slice(0,10);
+  const hoje=isoLocal(new Date());
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>＋ Novo registro</h3></div>'+
     '<div class="modal-b">'+
@@ -3911,7 +3911,7 @@ function salvarRegistroEditor(){
   const turmaId=(document.getElementById('regETurma')||{}).value||editing.turmaId;
   const objs=[...document.querySelectorAll('input[name=regObjE]:checked')].map(c=>c.value);
   const entrega=(document.getElementById('regEEntrega')||{}).value||'sala';
-  const data=(document.getElementById('regEData')||{}).value||new Date().toISOString().slice(0,10);
+  const data=(document.getElementById('regEData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('regENota')||{}).value||'';
   const r=novoRegistro(editing.id, turmaId, objs, entrega, nota);
   r.data=data;
@@ -3929,7 +3929,7 @@ function abrirModalRegistroCard(temaId){
   const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'" '+(isFilled(t,o.k)?'checked':'')+'>'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const tu=turmas[t.turmaId]||{};
-  const hoje=new Date().toISOString().slice(0,10);
+  const hoje=isoLocal(new Date());
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>✓ Registrar aplicação — '+esc((t.nome||'').slice(0,40))+'</h3></div>'+
     '<div class="modal-b">'+
@@ -3947,7 +3947,7 @@ function salvarRegistroCard(){
   const objs=[...document.querySelectorAll('input[name=regObjC]:checked')].map(c=>c.value);
   if(!objs.length){ toast('Marque ao menos um objeto usado.','err'); return; }
   const entrega=(document.getElementById('regCEntrega')||{}).value||'sala';
-  const data=(document.getElementById('regCData')||{}).value||new Date().toISOString().slice(0,10);
+  const data=(document.getElementById('regCData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('regCNota')||{}).value||'';
   const r=novoRegistro(t.id, t.turmaId, objs, entrega, nota);
   r.data=data;
@@ -4703,7 +4703,7 @@ function exportBackup(){
   const data=JSON.stringify({version:2,exportedAt:new Date().toISOString(),conteudos,temas,turmas},null,2);
   const blob=new Blob([data],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='leciona-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  a.download='leciona-backup-'+isoLocal(new Date())+'.json'; a.click();
   toast('Backup exportado.','ok');
 }
 function abrirExportarBackup(){
@@ -4737,7 +4737,7 @@ function executarExportarBackup(){
   const data=JSON.stringify({version:2,exportedAt:new Date().toISOString(),conteudos:contsOut,temas:temasOut,turmas:turmasOut},null,2);
   const blob=new Blob([data],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='leciona-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  a.download='leciona-backup-'+isoLocal(new Date())+'.json'; a.click();
   closeModal();
   toast(temasSel.length+' aula(s) exportada(s).','ok');
 }
@@ -4813,7 +4813,7 @@ function renderHoje(){
   const saud=hojeOffset<0?'Você está vendo':hojeOffset>0?'Você está vendo':(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite');
   const uni=unidadeDoDia(dia);
   const aulas=SCHEDULE.filter(x=>x.dia===dia).sort((a,b)=>a.ini.localeCompare(b.ini));
-  const dataHojeISO=now.toISOString().slice(0,10);
+  const dataHojeISO=isoLocal(now);
   const bimHoje=bimAtivoAgora(dataHojeISO);
   const planejHoje=planejamentosDoDia(dataHojeISO);
   let html='<div class="hoje-head"><h2>'+saud+(hojeOffset!==0?' — '+DIAS_LONGO[dia]:'!')+'</h2>'+
@@ -4866,7 +4866,7 @@ function renderHoje(){
     const titulo=x.disc+' · '+serieCurta(serie)+x.letra;
     // Verifica se há registro de aplicação para esta turma hoje
     const tuHoje=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
-    const dataHoje=now.toISOString().slice(0,10);
+    const dataHoje=isoLocal(now);
     const regHoje=tuHoje?Object.values(registros).filter(r=>r.turmaId===tuHoje.id&&r.data===dataHoje):[];
     const badgeReg=regHoje.length?'<span class="reg-badge" title="'+regHoje.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
     const badgeAtraso=(tuHoje&&turmaAtrasada(tuHoje.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
@@ -5192,7 +5192,7 @@ function abrirDuplicarAtividade(id){
   const av=atividadesCtrl[id]; if(!av) return;
   const turmasDisc=Object.values(turmas).filter(t=>t.disciplina===av.disciplina);
   const tuChecks=turmasDisc.map(t=>'<label class="check"><input type="checkbox" value="'+t.id+'"'+((av.turmaIds||[]).includes(t.id)?' checked':'')+'>'+esc(turmaNome(t))+'</label>').join('');
-  const hoje=new Date().toISOString().slice(0,10);
+  const hoje=isoLocal(new Date());
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>Duplicar "'+esc(av.nome)+'"</h3></div>'+
     '<div class="modal-b">'+
@@ -5206,7 +5206,7 @@ function abrirDuplicarAtividade(id){
 }
 function confirmarDuplicarAtividade(id){
   const av=atividadesCtrl[id]; if(!av) return;
-  const data=document.getElementById('dupData').value||new Date().toISOString().slice(0,10);
+  const data=document.getElementById('dupData').value||isoLocal(new Date());
   const turmaIds=[...document.querySelectorAll('#dupTurmasWrap input[type=checkbox]:checked')].map(c=>c.value);
   if(!turmaIds.length){ toast('Selecione pelo menos uma turma.','err'); return; }
   const bimestre=bimAtivoAgora(data)||av.bimestre;
@@ -5243,7 +5243,7 @@ function abrirLancarNotas(objetoKey){
     '<input type="checkbox" value="'+t.id+'"'+(t.id===scope.turma?' checked':'')+'>'+
     esc(turmaNome(t))+'</label>'
   ).join('');
-  const hoje=new Date().toISOString().slice(0,10);
+  const hoje=isoLocal(new Date());
   const nomeDefault=esc(editing.nome||'')+(objLabel?' — '+objLabel:'');
   const modoOpts='<label class="check"><input type="radio" name="modoNota" value="nota"> Nota (0–10)</label>'+
     '<label class="check"><input type="radio" name="modoNota" value="check" checked> Checklist (✓/○)</label>';
@@ -5269,7 +5269,7 @@ function executarLancarNotas(){
   const nome=(document.getElementById('lnNome')?.value||'').trim();
   const tipo=document.getElementById('lnTipo')?.value||'atividade';
   const peso=parseFloat(document.getElementById('lnPeso')?.value)||1;
-  const data=document.getElementById('lnData')?.value||new Date().toISOString().slice(0,10);
+  const data=document.getElementById('lnData')?.value||isoLocal(new Date());
   const modoEl=document.querySelector('input[name=modoNota]:checked');
   const checklist=modoEl?.value==='check';
   const turmaIds=[...document.querySelectorAll('#modalWrap input[type=checkbox]:checked')].map(c=>c.value);
@@ -5403,7 +5403,7 @@ function exportarRelatorioCSV(){
   });
   const csv=header+'\n'+rows.join('\n');
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='Relatorio_'+esc(disc)+'_'+esc(serie)+'_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  a.download='Relatorio_'+esc(disc)+'_'+esc(serie)+'_'+isoLocal(new Date())+'.csv'; a.click();
   toast('CSV exportado.','ok');
 }
 
@@ -6439,7 +6439,7 @@ function importarListaAlunos(){
 
 function abrirAddAtividade(){
   const tipoOpts=Object.entries(ATIV_TIPOS).map(([k,v])=>'<option value="'+k+'" style="background:'+v.bg+'">'+v.label+'</option>').join('');
-  const hoje=new Date().toISOString().slice(0,10);
+  const hoje=isoLocal(new Date());
   // Turmas da mesma disciplina
   const disc=scope.disc; const turmasDisc=Object.values(turmas).filter(t=>t.disciplina===disc);
   const tuChecks=turmasDisc.map(t=>'<label class="check"><input type="checkbox" value="'+t.id+'"'+(t.id===scope.turma?' checked':'')+'>'+esc(turmaNome(t))+'</label>').join('');
@@ -6465,7 +6465,7 @@ function abrirAddAtividade(){
 function salvarAtividade(){
   const nome=(document.getElementById('atvNome')?.value||'').trim();
   const tipo=document.getElementById('atvTipo')?.value||'atividade';
-  const data=document.getElementById('atvData')?.value||new Date().toISOString().slice(0,10);
+  const data=document.getElementById('atvData')?.value||isoLocal(new Date());
   const peso=parseFloat(document.getElementById('atvPeso')?.value)||1;
   const max=parseFloat(document.getElementById('atvMax')?.value)||10;
   const turmaIds=[...document.querySelectorAll('#atvTurmasWrap input[type=checkbox]:checked')].map(c=>c.value);
@@ -6496,7 +6496,7 @@ function exportarNotasCSV(){
   const csv=header+'\n'+rows.join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='Notas_'+esc(turmaNome(tu))+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download='Notas_'+esc(turmaNome(tu))+'_'+isoLocal(new Date())+'.csv';
   a.click();
   toast('CSV exportado.','ok');
 }
@@ -6526,7 +6526,7 @@ function exportarNotasTodasTurmasCSV(){
   const csv=blocos.join('\n\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='Notas_'+esc(disc)+'_todas_turmas_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download='Notas_'+esc(disc)+'_todas_turmas_'+isoLocal(new Date())+'.csv';
   a.click();
   toast('CSV de '+blocos.length+' turma(s) exportado ('+totalAlunos+' aluno(s) no total).','ok');
 }
