@@ -708,6 +708,10 @@ function turmaNome(t){
    de CEPI Marajó, duas turmas diferentes com o mesmo nome curto. Sempre
    mostra a escola junto pra não ter ambiguidade nos seletores. */
 function turmaNomeEscola(t){ return turmaNome(t)+' — '+(t.unidade||'?'); }
+/* turmaNome() dá só "1ªA" — em listas com várias disciplinas/escolas juntas
+   (ex.: seletor de turma na aula avulsa) isso aparece repetido e ambíguo.
+   Esta versão junta disciplina + turma + escola pra nunca confundir. */
+function turmaNomeCompleto(t){ return (t.disciplina||'')+' · '+turmaNome(t)+' — '+(t.unidade||'?'); }
 /* Nome curto pra tabela de Notas apertada (muitas colunas de atividade):
    últimos 2 sobrenomes em vez do nome completo. O nome completo continua
    no title do texto pra conferir na dúvida. */
@@ -1422,7 +1426,7 @@ function criarColunaAvaliacao(temaId, turmaId){
     data:isoLocal(new Date()),
     peso:1,
     valorMax:10,
-    checklist:false,
+    checklist:true,
     turmaIds:[turmaId],
     disciplina:tema.disciplina||scope.disc,
     bimestre:tema.bimestre||scope.bim,
@@ -1468,6 +1472,11 @@ function ocorrenciasAbertas(turmaId){
 }
 function turmaAtrasada(turmaId){
   return ocorrenciasAbertas(turmaId).length>0;
+}
+function removerOcorrencia(id){
+  delete ocorrencias[id];
+  lsSet(LS_OCORR, JSON.stringify(ocorrencias));
+  if(DB) DB.ref('leciona/ocorrencias/'+id).remove().catch(e=>toast('⚠ Removida localmente, mas falhou ao remover no Firebase: '+e.message,'err'));
 }
 function resolverOcorrencia(id){
   const o=ocorrencias[id]; if(!o) return;
@@ -3875,7 +3884,7 @@ async function enviarChat(){
   const useWeb=(document.getElementById('chatWeb')||{}).checked;
   const contexto = editing ? ('O usuário está atualmente com o tema "'+editing.nome+'" ('+editing.disciplina+', '+editing.serie+') aberto no app Leciona. Se a pergunta parecer relacionada, considere esse contexto — mas responda livremente qualquer outra pergunta também.') : '';
   const hoje='Hoje é '+isoLocal(new Date())+' ('+DIAS_LONGO[new Date().getDay()]+').';
-  const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+hoje+' '+contexto+' Você pode usar ferramentas pra: mexer na Agenda do Leciona (criar/editar/apagar compromissos, criar/mover/apagar/marcar-executada aula avulsa, consultar tudo isso por período — inclui aulas avulsas agora); anexar uma anotação a um tema de aula ou ao bloco de notas geral da Agenda; consultar o progresso do bimestre de uma turma (aulas previstas x dadas, temas aplicados) via listar_progresso_bimestre; sugerir o que dar a seguir via sugerir_conteudos_pendentes (conteúdos da matriz com material pronto que ainda não viraram tema); e criar um tema a partir de um desses conteúdos sugeridos via criar_tema (só funciona com nome/dcgo exatos vindos de sugerir_conteudos_pendentes — nunca invente um tema do zero). Quando a usuária anexar uma foto ou PDF (ex.: calendário de atividades da escola, foto de aviso, planilha impressa), leia com atenção e, se houver datas/eventos claros, liste o que você identificou e use a ferramenta certa pra cada um (compromisso, aula avulsa etc.) — a interface já pede confirmação da usuária antes de qualquer ferramenta de escrita executar de verdade, então pode propor com confiança. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
+  const sys='Você é o assistente pessoal de uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista — isso descreve quem ela é, não um limite do que você pode responder. Ajude com QUALQUER pergunta que ela fizer, mesmo sem relação óbvia com essas disciplinas ou com o Leciona (dúvida pessoal, outra matéria, assunto administrativo da escola, o que for) — nunca recuse ou diga que algo "foge do escopo"; se não tiver certeza, ajude com o que souber e seja honesta sobre a incerteza, ou busque na web se a busca estiver disponível. '+hoje+' '+contexto+' Você pode usar ferramentas pra: mexer na Agenda do Leciona (criar/editar/apagar compromissos, criar/mover/apagar/marcar-executada aula avulsa, consultar tudo isso por período — inclui aulas avulsas agora); anexar uma anotação a um tema de aula ou ao bloco de notas geral da Agenda; consultar o progresso do bimestre de uma turma (aulas previstas x dadas, temas aplicados) via listar_progresso_bimestre; sugerir o que dar a seguir via sugerir_conteudos_pendentes (conteúdos da matriz com material pronto que ainda não viraram tema); e criar um tema a partir de um desses conteúdos sugeridos via criar_tema (só funciona com nome/dcgo exatos vindos de sugerir_conteudos_pendentes — nunca invente um tema do zero). Quando a usuária anexar uma foto ou PDF (ex.: calendário de atividades da escola, foto de aviso, planilha impressa), leia com atenção e, se houver datas/eventos claros, liste o que você identificou e use a ferramenta certa pra cada um (compromisso, aula avulsa etc.) — a interface já pede confirmação da usuária antes de qualquer ferramenta de escrita executar de verdade, então pode propor com confiança. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
   try{
     let iter=0; const MAX_ITER=6; let respostaFinal='';
     while(iter<MAX_ITER){
@@ -4050,8 +4059,10 @@ function initProjSwipe(){
   },{passive:true});
 }
 /* ── Ocorrência rápida (turma sem aula normal), disparada da tela Hoje ──── */
+let _editandoOcorrenciaId=null;
 function abrirOcorrenciaHoje(turmaId){
   const t=turmas[turmaId]; if(!t) return;
+  _editandoOcorrenciaId=null;
   const abertas=ocorrenciasAbertas(turmaId);
   const cats=Object.entries(OCORR_CATEGORIAS).map(([k,label])=>
     '<button class="btn full" style="margin-bottom:6px;text-align:left" onclick="salvarOcorrenciaHoje(\''+turmaId+'\',\''+k+'\')">'+esc(label)+'</button>'
@@ -4059,7 +4070,9 @@ function abrirOcorrenciaHoje(turmaId){
   const listaAbertas=abertas.length
     ? '<div class="field"><label>Já registrado(s), sem resolver</label>'+
       abertas.map(o=>'<div class="turma-row"><span class="tn" style="flex:1;font-size:12px">'+esc(o.data)+' · '+esc(OCORR_CATEGORIAS[o.categoria]||o.categoria)+(o.observacao?(' — '+esc(o.observacao)):'')+'</span>'+
-        '<button class="btn ghost sm" onclick="resolverOcorrencia(\''+o.id+'\');closeModal();renderHoje();toast(\'Marcado como resolvido.\',\'ok\')">resolver</button></div>').join('')+
+        '<button class="btn ghost sm" onclick="editarOcorrenciaHoje(\''+o.id+'\')">editar</button>'+
+        '<button class="btn ghost sm" onclick="resolverOcorrencia(\''+o.id+'\');closeModal();renderHoje();toast(\'Marcado como resolvido.\',\'ok\')">resolver</button>'+
+        '<button class="btn ghost sm danger" onclick="removerOcorrencia(\''+o.id+'\');abrirOcorrenciaHoje(\''+turmaId+'\')">remover</button></div>').join('')+
       '</div>' : '';
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
     '<div class="modal-h"><h3>⚠ '+esc(turmaNome(t))+' — sem aula normal hoje</h3></div>'+
@@ -4073,8 +4086,25 @@ function abrirOcorrenciaHoje(turmaId){
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   setTimeout(()=>document.getElementById('ocorrObs')?.focus(),50);
 }
+function editarOcorrenciaHoje(id){
+  const o=ocorrencias[id]; if(!o) return;
+  _editandoOcorrenciaId=id;
+  abrirOcorrenciaHoje(o.turmaId);
+  const inp=document.getElementById('ocorrObs'); if(inp) inp.value=o.observacao||'';
+  toast('Editando — toque no novo motivo pra atualizar esta ocorrência.','');
+}
 function salvarOcorrenciaHoje(turmaId, categoria){
   const obs=(document.getElementById('ocorrObs')?.value||'').trim();
+  if(_editandoOcorrenciaId && ocorrencias[_editandoOcorrenciaId]){
+    const o=ocorrencias[_editandoOcorrenciaId];
+    o.categoria=categoria; o.observacao=obs;
+    persistOcorrencia(o);
+    _editandoOcorrenciaId=null;
+    closeModal();
+    renderHoje();
+    toast('Ocorrência atualizada.','ok');
+    return;
+  }
   registrarOcorrencia(turmaId, categoria, obs);
   closeModal();
   renderHoje();
@@ -4250,7 +4280,8 @@ function renderProj(){
     foot.innerHTML='<span class="statusdot">clique numa imagem para ampliar</span>';
   } else if(k==='quadro'||k==='estudo'){
     const objLabel=(OBJ_DEFS.find(o=>o.k===k)||{}).label||'';
-    html='<div class="proj-canvas"><h2>'+esc(objLabel)+'</h2>'+textToHtml(v)+'</div>';
+    const tituloProjetado=(t.tituloExibicao||t.nome||'')+(t.dcgo?(' · '+t.dcgo):'')+' — '+objLabel;
+    html='<div class="proj-canvas"><h2>'+esc(tituloProjetado)+'</h2>'+textToHtml(v)+'</div>';
   } else if(k==='mapaMental'){
     html='<div class="mmint">'+(proj.mapaTree?mapInterativo(v):mapDashboard(v))+'</div>';
     foot.innerHTML=proj.mapaTree
@@ -5147,6 +5178,7 @@ function renderHoje(){
           '<div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
           '<div class="hoje-acoes">'+
             '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+conteudo.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+            '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+conteudo.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
             '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
             '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
             '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula hoje — pode repetir o mesmo tema quantas vezes quiser, cada vez com seus próprios objetos/data">✓ Registrar</button>'+
@@ -5183,6 +5215,7 @@ function renderHoje(){
     const acoes = x.disc==='Estudo Orientado'
       ? '<span class="statusdot">sem planejamento</span>'
       : '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+        '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
         '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
         '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
         (tuHoje?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuHoje.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'');
@@ -5273,7 +5306,7 @@ function marcarAulaAvulsaExecutada(id,dataReal){
 let _editandoAulaAvulsaId=null;
 function abrirNovaAulaAvulsa(dataISO){
   _editandoAulaAvulsaId=null;
-  const turmasOpts=Object.values(turmas).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b))).map(t=>'<option value="'+t.id+'">'+esc(turmaNome(t))+'</option>').join('');
+  const turmasOpts=Object.values(turmas).sort((a,b)=>turmaNomeCompleto(a).localeCompare(turmaNomeCompleto(b))).map(t=>'<option value="'+t.id+'">'+esc(turmaNomeCompleto(t))+'</option>').join('');
   const tipoOpts=Object.entries(AULA_AVULSA_TIPOS).map(([k,v])=>'<option value="'+k+'">'+esc(v)+'</option>').join('');
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>Aula avulsa</h3></div><div class="modal-b">'+
@@ -5288,7 +5321,7 @@ function abrirNovaAulaAvulsa(dataISO){
 function editarAulaAvulsa(id){
   const a=aulasAvulsas[id]; if(!a) return;
   _editandoAulaAvulsaId=id;
-  const turmasOpts=Object.values(turmas).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b))).map(t=>'<option value="'+t.id+'"'+(t.id===a.turmaId?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('');
+  const turmasOpts=Object.values(turmas).sort((a,b)=>turmaNomeCompleto(a).localeCompare(turmaNomeCompleto(b))).map(t=>'<option value="'+t.id+'"'+(t.id===a.turmaId?' selected':'')+'>'+esc(turmaNomeCompleto(t))+'</option>').join('');
   const tipoOpts=Object.entries(AULA_AVULSA_TIPOS).map(([k,v])=>'<option value="'+k+'"'+(k===a.tipo?' selected':'')+'>'+esc(v)+'</option>').join('');
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>Editar aula avulsa</h3></div><div class="modal-b">'+
@@ -5492,6 +5525,14 @@ function abrirChamadaTurma(turmaId){
   const tu=turmas[turmaId]; if(!tu) return;
   irParaAula(tu.disciplina, tu.unidade, tu.serie, tu.letra||'');
   abrirTodasChamadas();
+}
+/* Mesmo atalho da Chamada, mas pra Notas — pedido dela: "quero um atalho
+   assim como o da chamada" pra lançar nota direto do card de Hoje. */
+function abrirNotasAula(disc,uni,serie,letra){ irParaAula(disc,uni,serie,letra); setView('notas'); }
+function abrirNotasTurma(turmaId){
+  const tu=turmas[turmaId]; if(!tu) return;
+  irParaAula(tu.disciplina, tu.unidade, tu.serie, tu.letra||'');
+  setView('notas');
 }
 function projetarAula(disc,uni,serie,letra){
   irParaAula(disc,uni,serie,letra); renderThemes();
