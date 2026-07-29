@@ -4913,9 +4913,17 @@ function openConfig(){
         '<textarea id="cfgFb" class="mono" placeholder=\'{ "apiKey":"...", "databaseURL":"https://SEU-PROJETO.firebaseio.com", ... }\'>'+esc(cfg)+'</textarea>'+
         '<small>Cole o firebaseConfig do seu projeto novo. Vazio = funciona local. Após salvar, a página recarrega conectada.</small></div>'+
       '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:14px;margin-top:4px">'+
-        '<label>Backup</label>'+
-        '<button class="btn full" onclick="abrirExportarBackup()">&#8595; Exportar backup (JSON)</button>'+
-        '<label class="btn ghost full" style="text-align:center;cursor:pointer;margin-top:8px;display:block">Importar backup'+
+        '<label>Backup completo (recomendado) — protege TUDO</label>'+
+        '<small>Inclui notas, chamada/frequência, matrícula e dados do SIAP, aula avulsa, qualitativa, bloco de notas e compromissos — não só o conteúdo das aulas. Use este pra se proteger de perda de dados de verdade.</small>'+
+        '<button class="btn primary full" style="margin-top:8px" onclick="exportarBackupCompleto()">&#8595; Baixar backup completo (JSON)</button>'+
+        '<label class="btn ghost full" style="text-align:center;cursor:pointer;margin-top:8px;display:block">Restaurar backup completo'+
+          '<input type="file" accept="application/json" style="display:none" onchange="importarBackupCompleto(event)">'+
+        '</label></div>'+
+      '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:14px;margin-top:4px">'+
+        '<label>Exportar conteúdo (só aulas, pra reaproveitar/compartilhar)</label>'+
+        '<small>Não protege contra perda de dados — não inclui notas, chamada nem alunos. Use o "Backup completo" acima pra isso.</small>'+
+        '<button class="btn full" style="margin-top:8px" onclick="abrirExportarBackup()">&#8595; Exportar conteúdo (JSON)</button>'+
+        '<label class="btn ghost full" style="text-align:center;cursor:pointer;margin-top:8px;display:block">Importar conteúdo'+
           '<input type="file" accept="application/json" style="display:none" onchange="importBackup(event)">'+
         '</label></div>'+
       '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:14px;margin-top:4px">'+
@@ -4988,6 +4996,60 @@ function executarExportarBackup(){
   a.download='leciona-backup-'+isoLocal(new Date())+'.json'; a.click();
   closeModal();
   toast(temasSel.length+' aula(s) exportada(s).','ok');
+}
+/* ---------- Backup completo — protege TUDO, não só conteúdo de aula ----------
+   O "Exportar conteúdo" acima (versão 2) só cobre conteudos/temas/turmas —
+   ótimo pra reaproveitar aulas, péssimo como proteção contra perda de dado
+   real: não salva uma nota, uma chamada, uma matrícula do SIAP sequer. Este
+   backup (versão 3) cobre todas as coleções do Firebase. */
+const BACKUP_COMPLETO_COLECOES=['conteudos','temas','turmas','alunos','registros','chamadas','atividadesCtrl','notasCtrl','ocorrencias','aulasAvulsas','notasGerais','qualitativa','compromissos'];
+function exportarBackupCompleto(){
+  const estado={conteudos,temas,turmas,alunos,registros,chamadas,atividadesCtrl,notasCtrl,ocorrencias,aulasAvulsas,notasGerais,qualitativa,compromissos,mediaModo};
+  const data={version:3, exportedAt:new Date().toISOString(), ...estado};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='leciona-backup-completo-'+isoLocal(new Date())+'.json'; a.click();
+  closeModal();
+  const total=BACKUP_COMPLETO_COLECOES.reduce((s,k)=>s+Object.keys(estado[k]||{}).length,0);
+  toast('Backup completo baixado — '+total+' registro(s) no total, de '+BACKUP_COMPLETO_COLECOES.length+' categorias.','ok');
+}
+function importarBackupCompleto(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+    const d=JSON.parse(r.result);
+    if(!d.version || d.version<3){ toast('Este arquivo não é um backup completo (é da exportação de conteúdo, mais antiga/limitada). Use "Importar conteúdo" pra esse tipo de arquivo.','err'); ev.target.value=''; return; }
+    const chavePerigosa=(id)=>id==='__proto__'||id==='constructor'||id==='prototype';
+    const contagem={};
+    BACKUP_COMPLETO_COLECOES.forEach(k=>{ contagem[k]=Object.keys(d[k]||{}).filter(id=>!chavePerigosa(id)).length; });
+    const total=Object.values(contagem).reduce((s,n)=>s+n,0);
+    const resumo=BACKUP_COMPLETO_COLECOES.filter(k=>contagem[k]).map(k=>'• '+contagem[k]+' '+k).join('\n');
+    if(!confirm('Isto vai SOBRESCREVER os dados atuais do Leciona (local e Firebase) com o conteúdo deste backup — '+total+' registro(s) no total:\n\n'+resumo+'\n\nEssa ação não pode ser desfeita. Restaurar mesmo assim?')){ ev.target.value=''; return; }
+    const confirmacao=prompt('Para confirmar, digite RESTAURAR (em maiúsculas):');
+    if(confirmacao!=='RESTAURAR'){ toast('Cancelado — o texto de confirmação não bateu. Nada foi restaurado.',''); ev.target.value=''; return; }
+    const persistPorColecao={
+      conteudos:persistConteudo, temas:persistTema, turmas:persistTurma, alunos:persistAluno,
+      registros:persistRegistro, chamadas:persistChamada, atividadesCtrl:persistAtivCtrl, notasCtrl:persistNota,
+      ocorrencias:persistOcorrencia, aulasAvulsas:persistAulaAvulsa, notasGerais:persistNotaGeral,
+      qualitativa:persistQualitativa, compromissos:persistCompromisso,
+    };
+    let restaurados=0;
+    BACKUP_COMPLETO_COLECOES.forEach(k=>{
+      const persistFn=persistPorColecao[k];
+      Object.entries(d[k]||{}).forEach(([id,item])=>{
+        if(chavePerigosa(id) || !item || !item.id || chavePerigosa(item.id)) return;
+        persistFn(item); restaurados++;
+      });
+    });
+    if(d.mediaModo && typeof d.mediaModo==='object'){
+      mediaModo=Object.assign({}, mediaModo, d.mediaModo);
+      lsSet('leciona_media_modo', JSON.stringify(mediaModo));
+    }
+    if(!DB){ migrateAndRender(); }
+    toast(restaurados+' registro(s) restaurado(s). Recarregando…','ok');
+    setTimeout(()=>location.reload(),1200);
+  }catch(e){ toast('Arquivo inválido: '+e.message,'err'); } };
+  r.readAsText(f); ev.target.value='';
 }
 function importBackup(ev){
   const f=ev.target.files[0]; if(!f) return;
