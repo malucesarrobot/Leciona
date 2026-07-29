@@ -3568,11 +3568,20 @@ const FERRAMENTAS_ASSISTENTE=[
   }, required:['id']}},
 ];
 /* Turma citada em texto livre pelo usuário/IA — não tem id, então casa por
-   nome parcial; se vazio, assume a turma selecionada no momento no app. */
+   nome parcial; se vazio, assume a turma selecionada no momento no app.
+   turmaNome() sozinho só dá "1ªA" (sem disciplina/escola — ver comentário
+   ali), então a busca real precisa combinar disciplina+turma+escola+série
+   e exigir que TODAS as palavras da consulta apareçam nessa descrição,
+   não só o nome curto. */
 function acharTurmaPorNome(query){
   if(!query) return turmas[scope.turma]||null;
-  const q=String(query).toLowerCase();
-  return Object.values(turmas).find(t=>t && turmaNome(t).toLowerCase().includes(q)) || null;
+  const normaliza=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[ºª]/g,'');
+  const palavras=normaliza(query).split(/\s+/).filter(Boolean);
+  const desc=t=>normaliza([t.disciplina, turmaNome(t), t.unidade, t.serie].filter(Boolean).join(' '));
+  const todas=Object.values(turmas).filter(Boolean);
+  const porTodasPalavras=todas.filter(t=>palavras.every(p=>desc(t).includes(p)));
+  if(porTodasPalavras.length) return porTodasPalavras[0];
+  return todas.find(t=>normaliza(turmaNome(t)).includes(normaliza(query))) || null;
 }
 function rotuloFerramentaAssistente(nome, input){
   input=input||{};
