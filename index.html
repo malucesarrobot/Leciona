@@ -3621,7 +3621,11 @@ function openAssistente(){
     (contexto ? '<small>Contexto atual: <b>'+esc(contexto)+'</b> — as respostas podem ser anexadas direto a esse tema.</small>' : '<small>Sem tema aberto no momento — abra um tema antes se quiser anexar respostas a ele depois.</small>')+
     '<div id="chatBody" style="max-height:360px;overflow:auto;margin:10px 0;display:flex;flex-direction:column;gap:10px"></div>'+
     '<div id="chatProg" class="statusdot"></div>'+
+    '<div id="chatAnexoChip"></div>'+
     '<div style="display:flex;gap:6px;align-items:flex-end">'+
+      '<button class="btn ghost sm" onclick="document.getElementById(\'chatAnexoInput\').click()" title="Anexar foto ou PDF — ex.: fotografar o calendário de atividades">📎</button>'+
+      '<input type="file" id="chatAnexoInput" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" style="display:none" onchange="selecionarAnexoChat(event)">'+
+      '<button class="btn ghost sm" id="btnMicChat" onclick="alternarDitadoChat()" title="Ditar por voz">🎤</button>'+
       '<textarea id="chatInput" rows="2" placeholder="Pergunte qualquer coisa — pesquisa, ideias, comparações, dúvidas de conteúdo..." style="flex:1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();enviarChat();}"></textarea>'+
       '<button class="btn primary" id="chatSendBtn" onclick="enviarChat()">Enviar</button>'+
     '</div>'+
@@ -3638,26 +3642,138 @@ function renderChat(){
     if(m.role==='tool'){
       return '<div style="font-size:11.5px;color:var(--muted);padding:2px 4px">'+esc(m.text)+'</div>';
     }
+    if(m.role==='confirm'){
+      const itens=m.chamadas.map(c=>'• '+esc(rotuloFerramentaAssistente(c.name,c.input))).join('<br>');
+      if(m.respondido){
+        return '<div style="font-size:12px;color:var(--muted);padding:4px 8px">'+(m.respondido==='confirmado'?'✓ confirmado — ':'✕ cancelado — ')+itens+'</div>';
+      }
+      return '<div style="border:1px solid var(--ochre,#a06a2e);border-radius:10px;padding:10px;background:rgba(160,106,46,.08)">'+
+        '<b style="font-size:12px">A IA quer fazer isto na Agenda:</b><div style="font-size:13px;margin:6px 0">'+itens+'</div>'+
+        '<div style="display:flex;gap:8px"><button class="btn primary sm" onclick="responderConfirmacaoChat('+i+',true)">Confirmar</button><button class="btn ghost sm" onclick="responderConfirmacaoChat('+i+',false)">Cancelar</button></div>'+
+      '</div>';
+    }
     const bg = m.role==='user' ? 'var(--accent-10,#eef2ff)' : 'var(--paper2,#f5f5f0)';
-    const anexar = (m.role==='assistant') ? '<button class="btn ghost sm" style="margin-top:6px" onclick="anexarAoTema('+i+')">📌 Anexar a um tema</button>' : '';
+    const anexoBadge = (m.role==='user' && m.anexoNome) ? '<div style="font-size:11px;opacity:.7;margin-bottom:2px">📎 '+esc(m.anexoNome)+'</div>' : '';
+    const acoes = (m.role==='assistant') ? '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">'+
+      '<button class="btn ghost sm" onclick="ouvirRespostaChat('+i+')">🔊 Ouvir</button>'+
+      '<button class="btn ghost sm" onclick="anexarAoTema('+i+')">📌 Anexar a um tema</button>'+
+    '</div>' : '';
     return '<div style="background:'+bg+';border-radius:10px;padding:8px 10px;white-space:pre-wrap">'+
-      '<b style="font-size:11px;opacity:.6">'+(m.role==='user'?'Você':'Assistente')+'</b><br>'+esc(m.text)+anexar+'</div>';
+      anexoBadge+'<b style="font-size:11px;opacity:.6">'+(m.role==='user'?'Você':'Assistente')+'</b><br>'+esc(m.text)+acoes+'</div>';
   }).join('') || '<div style="opacity:.5;text-align:center;padding:20px 0">Comece perguntando algo.</div>';
   box.scrollTop=box.scrollHeight;
 }
+function ouvirRespostaChat(i){
+  const m=_chatMsgs[i];
+  if(!m || !window.speechSynthesis){ toast('Seu navegador não suporta leitura em voz alta.','err'); return; }
+  window.speechSynthesis.cancel();
+  const fala=new SpeechSynthesisUtterance(m.text);
+  fala.lang='pt-BR';
+  window.speechSynthesis.speak(fala);
+}
+/* ---------- Ditado por voz no chat (Web Speech API do navegador — sem
+   custo de IA, mesma técnica do Lex no Iuris) ---------- */
+let _reconhecimentoVozChat=null, _ditandoChat=false;
+function alternarDitadoChat(){
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognitionAPI){ toast('Seu navegador não suporta ditado por voz. Tente pelo Chrome ou Safari atualizado.','err'); return; }
+  const btn=document.getElementById('btnMicChat'); const input=document.getElementById('chatInput');
+  if(_ditandoChat){ _reconhecimentoVozChat && _reconhecimentoVozChat.stop(); _ditandoChat=false; return; }
+  if(_reconhecimentoVozChat){
+    _reconhecimentoVozChat.onresult=null; _reconhecimentoVozChat.onend=null;
+    try{ _reconhecimentoVozChat.abort(); }catch(e){}
+  }
+  const instancia=new SpeechRecognitionAPI();
+  _reconhecimentoVozChat=instancia;
+  instancia.lang='pt-BR'; instancia.interimResults=false; instancia.maxAlternatives=1; instancia.continuous=false;
+  const textoBase = input.value ? input.value.trim()+' ' : '';
+  instancia.onstart=()=>{
+    _ditandoChat=true;
+    if(btn){ btn.style.background='#a8442f'; btn.style.color='#fff'; btn.textContent='⏹️'; }
+    toast('🎙️ Ouvindo... fale e aguarde parar sozinho','');
+  };
+  instancia.onresult=(e)=>{
+    if(instancia!==_reconhecimentoVozChat) return;
+    const ultimo=e.results[e.results.length-1];
+    const texto=ultimo && ultimo[0] ? ultimo[0].transcript : '';
+    input.value=textoBase+texto;
+  };
+  instancia.onerror=(e)=>{ if(e.error!=='no-speech' && e.error!=='aborted') toast('⚠ Erro no ditado: '+e.error,'err'); };
+  instancia.onend=()=>{
+    if(instancia!==_reconhecimentoVozChat) return;
+    _ditandoChat=false;
+    if(btn){ btn.style.background=''; btn.style.color=''; btn.textContent='🎤'; }
+  };
+  instancia.start();
+}
+/* ---------- Anexo (foto/PDF) no chat — lido inteiramente no navegador
+   (FileReader → base64) e mandado direto no bloco de conteúdo da mensagem.
+   gerarComIA é um proxy burro que repassa `messages` sem mexer, então isso
+   não exige NENHUMA mudança na Cloud Function nem Firebase Storage — o
+   arquivo nunca é salvo em lugar nenhum, só analisado nessa mensagem. */
+let _chatAnexoPendente=null; // {mediaType, base64, nome, isImage}
+const CHAT_ANEXO_MAX=15*1024*1024;
+function selecionarAnexoChat(e){
+  const f=e.target.files && e.target.files[0]; e.target.value='';
+  if(!f) return;
+  if(f.size>CHAT_ANEXO_MAX){ toast('Arquivo maior que 15MB — grande demais pra anexar.','err'); return; }
+  const tiposOk=['image/jpeg','image/png','image/gif','image/webp','application/pdf'];
+  if(!tiposOk.includes(f.type)){ toast('Tipo de arquivo não suportado — envie foto (jpg/png/webp) ou PDF.','err'); return; }
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const base64=String(reader.result).split(',')[1]||'';
+    _chatAnexoPendente={mediaType:f.type, base64, nome:f.name, isImage:f.type!=='application/pdf'};
+    renderAnexoChipChat();
+  };
+  reader.onerror=()=>toast('Não consegui ler esse arquivo.','err');
+  reader.readAsDataURL(f);
+}
+function removerAnexoChat(){ _chatAnexoPendente=null; renderAnexoChipChat(); }
+function renderAnexoChipChat(){
+  const box=document.getElementById('chatAnexoChip'); if(!box) return;
+  if(!_chatAnexoPendente){ box.innerHTML=''; return; }
+  box.innerHTML='<span class="reg-badge" style="display:inline-block;margin-bottom:6px">📎 '+esc(_chatAnexoPendente.nome)+' <a href="#" onclick="event.preventDefault();removerAnexoChat()" style="margin-left:4px;color:inherit">✕</a></span>';
+}
+/* ---------- Confirmação obrigatória antes de qualquer ferramenta de
+   escrita (criar/editar/apagar compromisso) — pedido explícito: nunca
+   sobrescrever nada sem perguntar antes. Ferramentas de leitura e de
+   anotação (só aditivas, fáceis de apagar depois) continuam automáticas. */
+const FERRAMENTAS_ESCRITA=new Set(['criar_compromisso','editar_compromisso']);
+let _chatConfirmResolve=null;
+function aguardarConfirmacaoLote(chamadas){
+  return new Promise(resolve=>{
+    _chatConfirmResolve=resolve;
+    _chatMsgs.push({role:'confirm', chamadas});
+    renderChat();
+  });
+}
+function responderConfirmacaoChat(i, ok){
+  const m=_chatMsgs[i]; if(!m || m.role!=='confirm' || m.respondido) return;
+  m.respondido = ok ? 'confirmado' : 'cancelado';
+  renderChat();
+  if(_chatConfirmResolve){ const r=_chatConfirmResolve; _chatConfirmResolve=null; r(ok); }
+}
 async function enviarChat(){
   const inp=document.getElementById('chatInput'); const txt=(inp.value||'').trim();
-  if(!txt) return;
+  if(!txt && !_chatAnexoPendente) return;
   inp.value='';
-  _chatMsgs.push({role:'user', text:txt});
-  _chatApiMsgs.push({role:'user', content:txt});
+  const anexo=_chatAnexoPendente; _chatAnexoPendente=null; renderAnexoChipChat();
+  let userContent = txt || 'Analise o arquivo anexado.';
+  if(anexo){
+    const bloco = anexo.isImage
+      ? {type:'image', source:{type:'base64', media_type:anexo.mediaType, data:anexo.base64}}
+      : {type:'document', source:{type:'base64', media_type:'application/pdf', data:anexo.base64}};
+    userContent = [bloco, {type:'text', text:(txt||'Analise o arquivo anexado.')+'\n\n[Arquivo anexado: '+anexo.nome+']'}];
+  }
+  _chatMsgs.push({role:'user', text:txt||'(anexo enviado)', anexoNome:anexo?anexo.nome:null});
+  _chatApiMsgs.push({role:'user', content:userContent});
   renderChat();
   const btn=document.getElementById('chatSendBtn'); const prog=document.getElementById('chatProg');
   if(btn) btn.disabled=true;
   const useWeb=(document.getElementById('chatWeb')||{}).checked;
   const contexto = editing ? ('O usuário está atualmente com o tema "'+editing.nome+'" ('+editing.disciplina+', '+editing.serie+') aberto no app Leciona. Se a pergunta parecer relacionada, considere esse contexto — mas responda livremente qualquer outra pergunta também.') : '';
   const hoje='Hoje é '+isoLocal(new Date())+' ('+DIAS_LONGO[new Date().getDay()]+').';
-  const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+hoje+' '+contexto+' Você pode usar ferramentas pra mexer na Agenda do Leciona (criar/editar/apagar compromissos, consultar aulas e compromissos por período), pra anexar uma anotação a um tema de aula, e pra escrever no bloco de notas solto da Agenda (deixar_nota_geral) quando o assunto não for de um tema específico. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
+  const sys='Você é um assistente de apoio para uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista. '+hoje+' '+contexto+' Você pode usar ferramentas pra mexer na Agenda do Leciona (criar/editar/apagar compromissos, consultar aulas e compromissos por período), pra anexar uma anotação a um tema de aula, e pra escrever no bloco de notas solto da Agenda (deixar_nota_geral) quando o assunto não for de um tema específico. Quando a usuária anexar uma foto ou PDF (ex.: calendário de atividades da escola, foto de aviso, planilha impressa), leia com atenção e, se houver datas/eventos claros, liste o que você identificou e use criar_compromisso pra cada um — a interface já pede confirmação da usuária antes de qualquer ferramenta de agenda executar de verdade, então pode propor com confiança. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
   try{
     let iter=0; const MAX_ITER=6; let respostaFinal='';
     while(iter<MAX_ITER){
@@ -3670,10 +3786,22 @@ async function enviarChat(){
       _chatApiMsgs.push({role:'assistant', content});
       if(data.stop_reason==='tool_use' && chamadas.length){
         const resultados=[];
-        for(const c of chamadas){
+        const leitura=chamadas.filter(c=>!FERRAMENTAS_ESCRITA.has(c.name));
+        const escrita=chamadas.filter(c=>FERRAMENTAS_ESCRITA.has(c.name));
+        leitura.forEach(c=>{
           _chatMsgs.push({role:'tool', text:'🔧 '+rotuloFerramentaAssistente(c.name, c.input)});
           const r=executarFerramentaAssistente(c.name, c.input||{});
           resultados.push({type:'tool_result', tool_use_id:c.id, content:JSON.stringify(r)});
+        });
+        renderChat();
+        if(escrita.length){
+          if(prog) prog.innerHTML='';
+          const aprovado=await aguardarConfirmacaoLote(escrita);
+          if(prog) prog.innerHTML='<span class="spin dark"></span> trabalhando…';
+          escrita.forEach(c=>{
+            const r = aprovado ? executarFerramentaAssistente(c.name, c.input||{}) : {recusado:true, motivo:'a professora cancelou esta ação'};
+            resultados.push({type:'tool_result', tool_use_id:c.id, content:JSON.stringify(r)});
+          });
         }
         _chatApiMsgs.push({role:'user', content:resultados});
         renderChat();
