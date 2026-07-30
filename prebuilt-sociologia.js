@@ -284,3 +284,45 @@ Object.assign(PREBUILT_OBJ["Trabalho intelectual e manual"], {
     ]
   }
 });
+
+/* "Novo tema" tinha conteúdo real (Durkheim/Weber) mas ficou com o título padrão do botão "+ Novo tema" — renomeado e completado (30/07/2026) */
+(function(){
+  var titulo = "Durkheim e Weber: divisão do trabalho, solidariedade e ética do capitalismo";
+  PREBUILT_OBJ[titulo] = PREBUILT_OBJ["Novo tema"];
+  delete PREBUILT_OBJ["Novo tema"];
+  PREBUILT_OBJ[titulo].quadro = "• Durkheim ('A Divisão do Trabalho Social', 1893): divisão do trabalho é fato social, não só econômico\n• Solidariedade mecânica: sociedades tradicionais, indivíduos semelhantes, consciência coletiva forte, indivíduo se dissolve no grupo\n• Solidariedade orgânica: sociedades modernas/industriais, funções especializadas e interdependentes, indivíduo ganha autonomia\n• Anomia: quando as normas sociais enfraquecem, gerando desorientação e conflito (criminalidade, suicídio, fragmentação)\n• Weber ('A Ética Protestante e o Espírito do Capitalismo', 1904-05): valores religiosos moldaram o capitalismo moderno\n• Calvinismo e predestinação: ninguém muda seu destino, gerando angústia existencial nos fiéis\n• Ascetismo intramundano: trabalho árduo e disciplina como sinal de graça divina, não isolamento monástico\n• 'Espírito do capitalismo': o ethos religioso se seculariza e vira mentalidade autônoma de acumulação racional\n• 'Jaula de ferro' (Stahlhartes Gehäuse): capitalismo avançado aprisiona a liberdade numa estrutura burocrática racional\n• Brasil: transição de solidariedade mecânica pra orgânica via industrialização/urbanização; presença religiosa ainda influencia visão sobre trabalho e sucesso";
+  PREBUILT_OBJ[titulo].mapaMental = "-   Durkheim e Weber: sociedade, trabalho e capitalismo\n    -   Durkheim: divisão do trabalho como fato social\n    -   Solidariedade mecânica: semelhança, sociedades tradicionais\n    -   Solidariedade orgânica: interdependência, sociedades modernas\n    -   Anomia: enfraquecimento das normas sociais\n    -   Weber: ética protestante molda o espírito do capitalismo\n    -   Calvinismo: predestinação, ascetismo intramundano\n    -   'Jaula de ferro': capitalismo racional aprisiona a liberdade\n    -   Brasil: mecânica → orgânica, religião ainda influencia trabalho/sucesso";
+  PREBUILT_OBJ[titulo].avaliacao = {
+    atividade: [
+      {enunciado:"O que é solidariedade mecânica e em que tipo de sociedade ela predomina?"},
+      {enunciado:"O que é solidariedade orgânica e por que Durkheim usa essa palavra ('orgânica')?"},
+      {enunciado:"O que é anomia, segundo Durkheim, e que fenômenos sociais ela ajuda a explicar?"},
+      {enunciado:"Como a doutrina da predestinação, no calvinismo, gerou o 'ascetismo intramundano' segundo Weber?"},
+      {enunciado:"O que Weber quis dizer com a expressão 'jaula de ferro' do capitalismo?"}
+    ],
+    flashcards: [
+      {frente:"Quem escreveu 'A Divisão do Trabalho Social' (1893)?", verso:"Émile Durkheim"},
+      {frente:"Qual tipo de solidariedade predomina em sociedades tradicionais?", verso:"Solidariedade mecânica"},
+      {frente:"Qual tipo de solidariedade predomina em sociedades modernas industrializadas?", verso:"Solidariedade orgânica"},
+      {frente:"Como Durkheim chama o enfraquecimento das normas sociais?", verso:"Anomia"},
+      {frente:"Quem escreveu 'A Ética Protestante e o Espírito do Capitalismo'?", verso:"Max Weber"},
+      {frente:"Qual doutrina calvinista Weber relaciona ao espírito do capitalismo?", verso:"A predestinação"},
+      {frente:"Como Weber chama a disciplina/trabalho árduo praticado dentro do mundo (não em mosteiros)?", verso:"Ascetismo intramundano"},
+      {frente:"Que expressão Weber usa pra descrever o aprisionamento burocrático do capitalismo avançado?", verso:"'Jaula de ferro' (Stahlhartes Gehäuse)"}
+    ],
+    gabarito: [
+      {resposta:"É o tipo de coesão social típico de sociedades tradicionais, em que os indivíduos são semelhantes entre si (mesmos valores, costumes) e a identidade coletiva é muito forte.", comentario:"Usar o exemplo da aldeia rural do texto."},
+      {resposta:"É a coesão típica de sociedades modernas, baseada na interdependência entre funções especializadas e diferentes — como os órgãos de um corpo, daí o nome 'orgânica'.", comentario:"Contrapor à solidariedade mecânica, baseada na semelhança."},
+      {resposta:"É o estado em que as normas sociais enfraquecem ou desaparecem, gerando desorientação e conflito; ajuda a explicar o aumento da criminalidade, do suicídio e da fragmentação das relações nas sociedades capitalistas.", comentario:"Destacar que Durkheim não via a divisão do trabalho como negativa por si só, só em sua forma patológica."},
+      {resposta:"Como o destino já estava definido por Deus, os calvinistas buscavam sinais de que estavam entre os salvos; o sucesso no trabalho árduo e disciplinado passou a ser interpretado como indício da graça divina.", comentario:"Explicar que essa disciplina era praticada na vida cotidiana, não no isolamento religioso."},
+      {resposta:"Significa que, com o tempo, o capitalismo se tornou uma estrutura burocrática e racional tão poderosa que aprisiona os seres humanos, limitando sua liberdade e o significado da vida social — mesmo sem a motivação religiosa original.", comentario:"Mostrar que o ethos religioso se descolou de suas raízes e virou mentalidade autônoma."}
+    ],
+    questoes: [
+      {enunciado:"Segundo Durkheim, a solidariedade mecânica é característica de sociedades em que os indivíduos:", alternativas:["São muito diferentes e especializados entre si","São semelhantes entre si, compartilhando valores e costumes","Não têm nenhum tipo de coesão social","Vivem isolados uns dos outros"], correta:1, comentario:"A coesão surge da semelhança, como peças de uma máquina simples."},
+      {enunciado:"A solidariedade orgânica, segundo Durkheim, se baseia principalmente na:", alternativas:["Semelhança entre os indivíduos","Interdependência entre funções especializadas e diferentes","Ausência total de divisão do trabalho","Repressão religiosa"], correta:1, comentario:"É comparada aos órgãos de um corpo humano, que dependem uns dos outros."},
+      {enunciado:"O conceito de anomia, em Durkheim, se refere a:", alternativas:["O fortalecimento excessivo das normas sociais","O enfraquecimento ou desaparecimento das normas sociais","Um tipo de solidariedade mecânica","A ascensão do capitalismo"], correta:1, comentario:"Gera desorientação, conflito e sofrimento para os indivíduos."},
+      {enunciado:"Segundo Max Weber, a doutrina calvinista da predestinação contribuiu para o espírito do capitalismo porque:", alternativas:["Eliminou qualquer motivação para o trabalho","Gerou angústia que levou os fiéis a valorizar trabalho árduo e disciplina como sinais de salvação","Proibiu completamente o lucro","Não teve nenhuma relação com a economia"], correta:1, comentario:"O sucesso nos negócios era interpretado como indício da graça divina."},
+      {enunciado:"A expressão 'jaula de ferro', usada por Weber, descreve:", alternativas:["Uma prisão física da época medieval","A estrutura burocrática e racional que o capitalismo avançado impõe, limitando a liberdade humana","Um tipo de fábrica do século XIX","A arquitetura das igrejas protestantes"], correta:1, comentario:"Mostra como o capitalismo, mesmo secularizado, aprisiona a vida social numa lógica racional e burocrática."}
+    ]
+  };
+})();

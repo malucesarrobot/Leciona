@@ -6684,9 +6684,30 @@ function renderRanking(){
     turmasHtml=lista.map(r=>linha(r,false)).join('');
   }
 
+  // Ranking geral da escola: pool de todo aluno de toda turma, por média
+  // individual — pra ela premiar os melhores desempenhos, não pra projetar
+  // pros alunos (por isso fica separado, no fim, sem destaque de medalha
+  // gigante). Cada aluno aparece uma vez por turma/disciplina em que estuda
+  // com ela (não tenta unificar a mesma pessoa entre disciplinas).
+  let geralEscola=[];
+  Object.values(turmas).filter(Boolean).forEach(t=>{
+    const atvsT=atividadesDaTurma(t.id);
+    if(!atvsT.length) return;
+    alunosDaTurma(t.id).forEach(a=>{
+      const m=mediaAluno(a.id,atvsT,t.id);
+      if(m!=null) geralEscola.push({aluno:a, turma:t, media:m});
+    });
+  });
+  geralEscola.sort((a,b)=>b.media-a.media);
+  geralEscola=calcularPosicoes(geralEscola,(a,b)=>a.media===b.media).slice(0,30);
+  const geralHtml = geralEscola.length ? geralEscola.map(r=>
+    '<div class="rk-row'+(r.pos<=3?' rk-top':'')+'"><span class="rk-pos">'+medalha(r.pos)+'</span><span class="rk-nome">'+esc(r.aluno.nome)+' <small style="opacity:.6">· '+esc(turmaNomeCompleto(r.turma))+'</small></span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
+  ).join('') : '<p style="opacity:.6">Sem dados suficientes ainda.</p>';
+
   document.getElementById('rankingBody').innerHTML =
     '<div class="rk-section"><h3>Ranking da turma</h3>'+alunosHtml+'</div>'+
-    '<div class="rk-section"><h3>Turmas</h3>'+toggle+turmasHtml+'</div>';
+    '<div class="rk-section"><h3>Turmas</h3>'+toggle+turmasHtml+'</div>'+
+    '<div class="rk-section"><h3>🏆 Ranking geral da escola — top 30</h3><p style="opacity:.6;font-size:12px;margin-bottom:8px">Todos os alunos de todas as turmas, por média — pra você premiar os melhores desempenhos.</p>'+geralHtml+'</div>';
 }
 
 // ── Render principal ──────────────────────────────────────────────────────
@@ -6941,7 +6962,6 @@ function renderNotas(){
           datasChamada.slice(-12).reverse().map(d=>'<option value="'+d+'"'+(d===window.__chamadaColData?' selected':'')+'>'+d.split('-').reverse().join('/')+'</option>').join('')+
         '</select></th>'
       : '<th style="width:90px"><button class="btn ghost sm" style="font-size:10px;padding:2px 6px" onclick="window.__configurarHorario=true;abrirTodasChamadas()" title="Configurar dias de aula pra habilitar a chamada aqui">📋 configurar</button></th>')+
-    '<th style="width:70px" title="Nota qualitativa (comportamento) — começa em 10, não entra na média das atividades">Qualitativa</th>'+
     atvs.map(av=>{
       const tp=ATIV_TIPOS[av.tipo]||{label:av.tipo,cor:'#888',bg:'#f5f5f5'};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
@@ -6952,7 +6972,9 @@ function renderNotas(){
         '<span class="atv-tipo">peso '+av.peso+(isCheck?' &middot; &check;':'')+'</span>'+
       '</th>';
     }).join('')+
-    '<th style="width:56px">Média</th><th style="width:36px"></th>'+
+    '<th style="width:56px">Média</th>'+
+    '<th style="width:56px;color:var(--muted);font-weight:400" title="Nota qualitativa (comportamento) — começa em 10, não entra na média das atividades. Aparece só pra você, discretamente.">qualit.</th>'+
+    '<th style="width:36px"></th>'+
   '</tr></thead><tbody>';
 
   als.forEach(al=>{
@@ -6969,8 +6991,6 @@ function renderNotas(){
             (falta?'<span style="color:var(--err)">✕ falta</span>':'<span style="color:var(--green)">✓</span>')+
           '</td>'; })()
       : '<td></td>')+
-    (()=>{ const nq=notaQualitativa(al.id,turmaId);
-      return '<td style="text-align:center;cursor:pointer;color:'+(nq>=7?'#2f6b5e':nq>=5?'#a06a2e':'#a8442f')+';font-weight:600" onclick="abrirQualitativaAluno(\''+al.id+'\')" title="Nota qualitativa — clique pra ver histórico e lançar desconto">'+nq.toFixed(1)+'</td>'; })()+
     atvs.map(av=>{
       const tp=ATIV_TIPOS[av.tipo]||{bg:'#fff',checklist:false};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
@@ -6989,6 +7009,8 @@ function renderNotas(){
         'onchange="salvarNota(this)" onblur="salvarNota(this)"></td>';
     }).join('')+
     '<td><span class="nota-media '+medCls+'">'+medStr+'</span></td>'+
+    (()=>{ const nq=notaQualitativa(al.id,turmaId);
+      return '<td style="text-align:center;cursor:pointer;color:var(--muted);font-size:12px;opacity:.75" onclick="abrirQualitativaAluno(\''+al.id+'\')" title="Nota qualitativa — clique pra ver histórico e lançar desconto">'+nq.toFixed(1)+'</td>'; })()+
     '<td><button class="btn ghost sm danger" data-aid="'+al.id+'" onclick="removerAluno(this.dataset.aid)" title="Remover aluno">✕</button></td>'+
     '</tr>';
   });
@@ -6996,9 +7018,9 @@ function renderNotas(){
   // Linha de médias por atividade
   h+='<tr style="background:var(--surface);font-weight:600">'+
     '<td class="aluno-nome">Média turma</td>'+
-    '<td></td><td></td>'+
+    '<td></td>'+
     atvs.map(av=>{ const m=mediaAtividade(av.id,turmaId); return '<td style="text-align:center">'+(m!=null?m.toFixed(1):'-')+'</td>'; }).join('')+
-    '<td></td><td></td></tr>';
+    '<td></td><td></td><td></td></tr>';
 
   h+='</tbody></table></div>';
   box.innerHTML=h;
