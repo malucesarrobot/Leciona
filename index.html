@@ -237,12 +237,18 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .selo.ser{background:#efe6db;color:#a06a2e}
 .selo.goiastec{background:#e6e9ef;color:#3a4a8a}
 .selo.adapt{background:#e7efe9;color:#2f6b5e}
+.selo.casa{background:#f5ecdc;color:#7a5a2e;text-transform:none;cursor:pointer}
+.selo.casa:hover{background:#eee0c5}
 
-.tlist{display:grid;gap:9px}
-.tcard{border:1px solid var(--line);background:#fff;border-radius:9px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.12s}
+.tlist{display:grid;gap:8px}
+.tcard{border:1px solid var(--line);background:#fff;border-radius:9px;padding:11px 13px 11px 17px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.12s;position:relative;overflow:hidden}
+.tcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.tcard.st-aplicado::before{background:var(--green)}
+.tcard.st-planejado::before{background:var(--ochre)}
+.tcard.st-none::before{background:var(--line)}
 .tcard:hover{border-color:var(--green);box-shadow:var(--shadow)}
 .tcard .tname{font-family:var(--serif);font-size:15px;font-weight:600}
-.tcard .tcode{font-size:11px;color:var(--green);font-weight:600;letter-spacing:.04em;margin-right:8px}
+.tcard .tcode{font-size:10.5px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:400;letter-spacing:0;margin-right:8px}
 .tcard .tsub{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
 .tcard .tmeta{flex:1;min-width:0}
 .tcard .prog{display:flex;gap:3px}
@@ -1878,6 +1884,97 @@ function adaptSeloHtml(t){
   if(!perfis.length) return '';
   return '<span class="selo adapt" title="Material adaptado já gerado: '+esc(perfis.map(p=>p.label).join(', '))+'">🧩 '+esc(perfis.map(p=>p.label).join(', '))+'</span>';
 }
+/* Mapeamento código BNCC/DC-GO → página(s) do livro didático (Moderna Plus),
+   extraído dos documentos "Mapeamento de Atividades e Seções de Filosofia
+   Moderna Plus" e "Mapeamento Unificado de Atividades e Seções: Filosofia
+   e História (Moderna Plus)" (Google Drive, 30/07/2026). O doc "Unificado"
+   tem o cabeçalho rotulado "Filosofia" mas o corpo (códigos EM13CHS,
+   Feudalismo→Pós-Guerra Fria) é claramente História — tratado como tal aqui. */
+const LIVRO_PAGINAS_LINHAS=[
+  // Filosofia Moderna Plus
+  {cods:['GO-EMCHS101A'], pag:'18', tema:'Parmênides e a Teoria do Conhecimento'},
+  {cods:['GO-EMCHS104D'], pag:'25', tema:'Robert Grosseteste e o nascimento da mentalidade científica'},
+  {cods:['GO-EMCHS101A','GO-EMCHS104D'], pag:'35', tema:'Transição Antiguidade-Medieval e Pré-socráticos'},
+  {cods:['GO-EMCHS201C'], pag:'43', tema:'Descartes e o racionalismo (Cogito, ergo sum)'},
+  {cods:['GO-EMCHS501A'], pag:'49', tema:'Espinosa e a Teoria dos Afetos'},
+  {cods:['EM13CHS502'], pag:'58-59', tema:'Escola de Frankfurt, Razão Instrumental e Impacto Tecnológico'},
+  {cods:['EM13CHS502'], pag:'63-65', tema:'Cosmopolítica Indígena (Davi Kopenawa) e Ecologia'},
+  {cods:['GO-EMCHS201C'], pag:'69', tema:'Epistemologia Moderna, Bacon e Descartes'},
+  {cods:['GO-EMCHS402A'], pag:'74', tema:'Condição do Trabalhador e Origem Histórica (Tripalium)'},
+  {cods:['GO-EMCHS402A'], pag:'78-79', tema:'John Locke (Propriedade) e Karl Marx (Materialismo Histórico)'},
+  {cods:['GO-EMCHS403B'], pag:'84-88', tema:'Automação, Robótica e Capitalismo 24/7 (Sociedade do Cansaço)'},
+  {cods:['GO-EMCHS403B'], pag:'91-95', tema:'Trabalho, Care, Alienação e Arte (Edvard Munch)'},
+  {cods:['GO-EMCHS201C'], pag:'97-99', tema:'Cooperação Científica Global, Patentes e Experimento de Torricelli'},
+  {cods:['GO-EMCHS201C'], pag:'105-108', tema:'Pierre Duhem (Epistemologia) e Métodos nas Ciências Humanas'},
+  {cods:['GO-EMCHS201C'], pag:'112', tema:'Behaviorismo, Skinner e Condicionamento Operante'},
+  {cods:['GO-EMCHS201C'], pag:'122', tema:'Filosofia da Ciência, John Searle, Psicanálise e Cientificidade'},
+  // História Moderna Plus
+  {cods:['EM13CHS101','EM13CHS102'], pag:'16-17', tema:'Crise do Feudalismo e Monarquias Nacionais'},
+  {cods:['EM13CHS101'], pag:'26-27', tema:'Centralização do Poder Político'},
+  {cods:['EM13CHS101'], pag:'32-34', tema:'Mercantilismo e Transição Feudal-Capitalista'},
+  {cods:['EM13CHS102','EM13CHS401'], pag:'44-45', tema:'Renascimento Cultural e Humanismo'},
+  {cods:['EM13CHS401','EM13CHS402'], pag:'56-57', tema:'Circulação de Ideias e Rupturas Científicas'},
+  {cods:['EM13CHS401'], pag:'62-64', tema:'Reforma Protestante e Contrarreforma'},
+  {cods:['EM13CHS301','EM13CHS303'], pag:'78-79', tema:'Expansão Marítima e Pioneirismo Ibérico'},
+  {cods:['EM13CHS301','EM13CHS303'], pag:'92-93', tema:'Impacto do Contato Euro-Americano'},
+  {cods:['EM13CHS301'], pag:'98-100', tema:'Colonização da América e Povos Originários'},
+  {cods:['EM13CHS301','EM13CHS302'], pag:'114-115', tema:'Sistema Colonial (América Portuguesa/Espanhola)'},
+  {cods:['EM13CHS301','EM13CHS303'], pag:'130-131', tema:'Resistências Indígenas e Africanas'},
+  {cods:['EM13CHS301','EM13CHS302'], pag:'136-138', tema:'Economia e Sociedade na América Colonial'},
+  {cods:['EM13CHS102','EM13CHS401'], pag:'152-153', tema:'Iluminismo e Crítica ao Absolutismo'},
+  {cods:['EM13CHS501'], pag:'166-167', tema:'Liberdade de Expressão e Cidadania'},
+  {cods:['EM13CHS102'], pag:'174-176', tema:'Pensamento Ilustrado e Contratualismo'},
+  {cods:['EM13CHS402','EM13CHS403'], pag:'188-189', tema:'Revoluções Inglesas e Revolução Industrial'},
+  {cods:['EM13CHS403'], pag:'204-205', tema:'Impactos Socioambientais da Industrialização'},
+  {cods:['EM13CHS402','EM13CHS403'], pag:'212-214', tema:'Industrialização e Conflitos de Classe'},
+  {cods:['EM13CHS103','EM13CHS402'], pag:'228-229', tema:'Revoluções Liberais e Surgimento do Socialismo'},
+  {cods:['EM13CHS402','EM13CHS403'], pag:'242-243', tema:'Movimentos Operários (Cartismo e Comuna)'},
+  {cods:['EM13CHS103'], pag:'250-252', tema:'Nacionalismos e Unificações (Itália/Alemanha)'},
+  {cods:['EM13CHS303','EM13CHS304'], pag:'266-267', tema:'Imperialismo e Partilha da África e Ásia'},
+  {cods:['EM13CHS304'], pag:'282-283', tema:'Neocolonialismo e Fronteiras Atuais'},
+  {cods:['EM13CHS303','EM13CHS304'], pag:'290-292', tema:'Consequências do Imperialismo'},
+  {cods:['EM13CHS104','EM13CHS302'], pag:'306-307', tema:'Primeira Guerra Mundial e Crise de 1929'},
+  {cods:['EM13CHS502','EM13CHS104'], pag:'322-323', tema:'Propaganda Política e Regimes Totalitários'},
+  {cods:['EM13CHS104'], pag:'330-332', tema:'Nazifascismo e Queda da Bolsa de NY'},
+  {cods:['EM13CHS104','EM13CHS503'], pag:'346-347', tema:'Segunda Guerra Mundial e Holocausto'},
+  {cods:['EM13CHS503'], pag:'362-363', tema:'Direitos Humanos e Criação da ONU'},
+  {cods:['EM13CHS104','EM13CHS503'], pag:'370-372', tema:'Desfecho Mundial e Nova Ordem Global'},
+  {cods:['EM13CHS302','EM13CHS304'], pag:'386-387', tema:'Guerra Fria e Descolonização Afro-Asiática'},
+  {cods:['EM13CHS302','EM13CHS304'], pag:'402-403', tema:'Conflitos Locais e Guerra do Vietnã'},
+  {cods:['EM13CHS302'], pag:'410-412', tema:'Fim da União Soviética e Muro de Berlim'},
+  {cods:['EM13CHS302','EM13CHS403'], pag:'426-427', tema:'Globalização e Desigualdades Contemporâneas'},
+  {cods:['EM13CHS502'], pag:'442-443', tema:'Crise Climática e Agenda 2030'},
+  {cods:['EM13CHS302','EM13CHS502'], pag:'450-452', tema:'Mundo Pós-Guerra Fria e Desafios do Século XXI'},
+];
+function paginasDoLivro(dcgo){
+  if(!dcgo) return null;
+  const code=dcgo.trim().toUpperCase();
+  const linhas=LIVRO_PAGINAS_LINHAS.filter(l=>l.cods.includes(code));
+  if(!linhas.length) return null;
+  return linhas.map(l=>l.pag).join(', ');
+}
+function deverCasaSeloHtml(t){
+  const pags=paginasDoLivro(t.dcgo);
+  if(!pags) return '';
+  return '<span class="selo casa" title="Clique pra criar a coluna de dever de casa em Notas, com estas páginas" onclick="event.stopPropagation();acrescentarDeverDeCasa(\''+t.id+'\')">🏠 pág. '+esc(pags)+'</span>';
+}
+function acrescentarDeverDeCasa(temaId){
+  const t=temas[temaId]; if(!t) return;
+  const pags=paginasDoLivro(t.dcgo);
+  if(!pags){ toast('Sem página mapeada pro código "'+(t.dcgo||'(sem código)')+'".','err'); return; }
+  const turmaId=t.turmaId||scope.turma;
+  if(!turmaId){ toast('Turma não encontrada pra esse tema.','err'); return; }
+  const nome='Dever de casa — '+(t.tituloExibicao||t.nome)+' (pág. '+pags+')';
+  const jaExiste=Object.values(atividadesCtrl).find(av=>av && av.tipo==='casa' && av.turmaIds && av.turmaIds.includes(turmaId) && av.nome===nome);
+  if(jaExiste){
+    toast('Essa coluna de dever de casa já existe em Notas.','');
+  } else {
+    persistAtivCtrl({id:uid(), nome, tipo:'casa', data:isoLocal(new Date()), peso:0, valorMax:10, checklist:true, turmaIds:[turmaId]});
+    toast('Coluna "Dever de casa" criada em Notas — pág. '+pags+'.','ok');
+  }
+  trocarTurmaNotas(turmaId);
+  setView('notas');
+}
 function selosConteudo(c){
   const ts=temasDoConteudo(c.id);
   let r=false,s=false,g=false,any=false;
@@ -1993,14 +2090,14 @@ function renderThemes(){
       if(ts.length){
         html+='<div class="tlist">';
         ts.forEach((t,ti)=>{
-          html+='<div class="tcard" onclick="abrirEditor(\''+t.id+'\')">'+
+          html+='<div class="tcard st-'+((t.status&&t.status.estado)||'none')+'" onclick="abrirEditor(\''+t.id+'\')">'+
             '<div class="ordbtns" onclick="event.stopPropagation()">'+
               '<button title="Subir" onclick="moverTema(\''+t.id+'\',-1)">▲</button>'+
               '<button title="Descer" onclick="moverTema(\''+t.id+'\',1)">▼</button>'+
             '</div>'+
             '<div class="tmeta">'+
               '<div><span class="tcode">'+esc(t.dcgo||'')+'</span><span class="tname">'+esc(t.tituloExibicao||t.nome)+'</span>'+(t.revisaGoias?'<span class="selo-revisa" title="Este conteúdo aparece no Revisa Goiás deste bimestre">📘 Revisa Goiás</span>':'')+'</div>'+
-              '<div class="tsub">'+selosHtml(t.disciplina,t.serie,t.bimestre,t.dcgo)+adaptSeloHtml(t)+statusResumo(t)+'</div>'+
+              '<div class="tsub">'+selosHtml(t.disciplina,t.serie,t.bimestre,t.dcgo)+adaptSeloHtml(t)+deverCasaSeloHtml(t)+statusResumo(t)+'</div>'+
             '</div>'+
             objStatusHtml(t.id, scope.turma)+
             '<button class="btn ghost sm" onclick="event.stopPropagation();openExportTema(\''+t.id+'\')" title="Copiar esta aula para outra turma">→</button>'+
@@ -6407,6 +6504,7 @@ const ATIV_TIPOS={
   mapa:        {label:'🗺 Mapa/Revisão',        cor:'#2e5a9a', bg:'#ddeaf8', checklist:false},
   prova:       {label:'🏫 Prova/Simulado',      cor:'#6a3a9a', bg:'#ecdff8', checklist:false},
   extra:       {label:'⭐ Extra/Bônus',         cor:'#2e7a73', bg:'#dff5f3', checklist:true},
+  casa:        {label:'🏠 Dever de casa',       cor:'#7a5a2e', bg:'#f5ecdc', checklist:true},
 };
 // Mapa objeto → tipo padrão sugerido
 const OBJ_TIPO_PADRAO={quadro:'texto',estudo:'texto',slides:'debate',mapaMental:'mapa',avaliacao:'atividade'};
@@ -6647,7 +6745,7 @@ function setMediaModo(turmaId,modo){
 }
 function mediaAluno(alunoId,atvs,turmaId){
   const modo = getMediaModo(turmaId || (atvs[0]&&atvs[0].turmaIds&&atvs[0].turmaIds[0]));
-  const pares=atvs.map(av=>{
+  const pares=atvs.filter(av=>av.tipo!=='casa').map(av=>{
     const n=notaDoAluno(alunoId,av.id);
     let notaEm10;
     if(av.checklist===true){
