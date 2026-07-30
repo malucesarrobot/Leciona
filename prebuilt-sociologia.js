@@ -15,3 +15,272 @@ Object.assign(PREBUILT_OBJ, {
 Object.assign(PREBUILT_ADAPT, {
 });
 if(typeof _prebuiltLoadedMark==="function") _prebuiltLoadedMark("Sociologia");
+
+/* Complementos — 6 temas de Sociologia que só tinham estudo (30/07/2026) */
+Object.assign(PREBUILT_OBJ["Concentração de renda e desigualdade social"], {
+  quadro: "• Concentração de renda: uma parcela pequena da população detém uma fatia grande da riqueza\n• Raízes históricas no Brasil: colonização, escravidão, distribuição desigual da terra\n• Coeficiente de Gini (Corrado Gini): 0=igualitário, 1=concentração total; Brasil em 0,518 (2023, PNAD Contínua)\n• 1% mais rico concentra mais renda que os 50% mais pobres somados (Receita Federal/World Inequality Lab)\n• Ciclo que se retroalimenta: educação desigual, saúde desigual, herança/patrimônio, sistema tributário regressivo (mais imposto sobre consumo que sobre lucro)\n• Brasil no IDH ajustado pela desigualdade cai bastante — média nacional esconde disparidades internas\n• Países nórdicos reduziram desigualdade com tributação progressiva + educação/saúde públicas fortes\n• Raça e gênero aprofundam a desigualdade: mulheres negras nos menores rendimentos, homens brancos no topo (Jessé Souza: 'ralé estrutural')\n• Bolsa Família (2003): reduziu Gini e pobreza extrema, mas sozinho não rompe a estrutura da desigualdade",
+  slides: [
+    {titulo:"O que é concentração de renda?", topicos:["Riqueza produzida coletivamente, distribuída de forma desigual","Raízes históricas: colonização, escravidão, terra"]},
+    {titulo:"Como medir a desigualdade", topicos:["Coeficiente de Gini: Brasil em 0,518 (2023)","1% mais rico concentra mais renda que os 50% mais pobres"]},
+    {titulo:"Por que a desigualdade se mantém", topicos:["Educação, saúde e herança desiguais se retroalimentam","Sistema tributário regressivo pesa mais sobre os mais pobres"]},
+    {titulo:"Raça, gênero e desigualdade", topicos:["Mulheres negras nos menores rendimentos do país","Jessé Souza e o conceito de 'ralé estrutural'"]},
+    {titulo:"Políticas de redistribuição", topicos:["Bolsa Família: reduziu Gini e pobreza extrema","Não substitui reformas estruturais (tributária, educação, emprego)"]}
+  ],
+  mapaMental: "-   Concentração de renda e desigualdade social\n    -   O que é: riqueza concentrada em poucas mãos\n    -   Medir: Coeficiente de Gini (Brasil = 0,518 em 2023)\n    -   1% mais rico > 50% mais pobres somados\n    -   Ciclo: educação, saúde, herança, impostos regressivos\n    -   Raça e gênero: mulheres negras nos menores rendimentos\n    -   Políticas: Bolsa Família reduz, mas não resolve sozinho",
+  avaliacao: {
+    atividade: [
+      {enunciado:"O que é o Coeficiente de Gini e o que ele indica sobre o Brasil?"},
+      {enunciado:"Explique por que o sistema tributário brasileiro é considerado 'regressivo'."},
+      {enunciado:"Como a herança e o patrimônio ajudam a perpetuar a desigualdade entre gerações?"},
+      {enunciado:"O que significa dizer que a desigualdade no Brasil 'tem cor e gênero'?"},
+      {enunciado:"O Bolsa Família reduziu a desigualdade sozinho? Justifique com base no texto."}
+    ],
+    flashcards: [
+      {frente:"Quem criou o Coeficiente de Gini?", verso:"O estatístico italiano Corrado Gini"},
+      {frente:"Qual era o Gini do Brasil em 2023?", verso:"0,518"},
+      {frente:"O 1% mais rico do Brasil concentra mais renda que qual grupo?", verso:"Os 50% mais pobres somados"},
+      {frente:"O que significa sistema tributário 'regressivo'?", verso:"Os mais pobres pagam proporcionalmente mais impostos que os mais ricos"},
+      {frente:"Qual sociólogo cunhou o termo 'ralé estrutural'?", verso:"Jessé Souza"},
+      {frente:"Em que ano foi criado o Programa Bolsa Família?", verso:"2003"},
+      {frente:"Quais grupos os países nórdicos usaram para reduzir a desigualdade?", verso:"Tributação progressiva e forte investimento em educação/saúde públicas"},
+      {frente:"Segundo o IBGE, qual grupo tem os menores rendimentos médios do Brasil?", verso:"Mulheres negras"}
+    ],
+    gabarito: [
+      {resposta:"É um índice de 0 a 1 que mede a distribuição de renda; quanto mais perto de 1, maior a concentração. O Brasil ficou em 0,518 em 2023, indicando desigualdade ainda muito expressiva.", comentario:"Mencionar que houve alguma redução em relação a anos anteriores."},
+      {resposta:"Porque grande parte da arrecadação vem de impostos sobre consumo (como o ICMS), que incidem igualmente sobre todos, enquanto lucros e dividendos têm tributação baixa ou nula.", comentario:"Isso faz os mais pobres pagarem proporcionalmente mais."},
+      {resposta:"Quem nasce em famílias ricas herda não só bens materiais, mas capital cultural e social — contatos, hábitos, acesso a redes de influência — ampliando a distância entre grupos ao longo das gerações.", comentario:"Diferenciar renda (salário) de patrimônio (riqueza acumulada)."},
+      {resposta:"Significa que a concentração de renda não é neutra: recai mais pesadamente sobre mulheres negras, que estão entre os menores rendimentos, enquanto homens brancos ocupam o topo da pirâmide salarial.", comentario:"Relacionar ao conceito de 'ralé estrutural' de Jessé Souza."},
+      {resposta:"Não — o Bolsa Família contribuiu para reduzir o Gini e a pobreza extrema, mas especialistas apontam que, sozinho, não é suficiente; são necessárias mudanças estruturais como reforma tributária e ampliação do acesso à educação.", comentario:"Reforçar que transferência de renda é importante, mas não basta sozinha."}
+    ],
+    questoes: [
+      {enunciado:"O Coeficiente de Gini do Brasil, de 0,518 em 2023, indica:", alternativas:["Uma distribuição de renda muito igualitária","Uma desigualdade de renda ainda muito expressiva","A ausência total de desigualdade","Um erro de cálculo do IBGE"], correta:1, comentario:"Quanto mais próximo de 1, maior a concentração de renda."},
+      {enunciado:"O sistema tributário brasileiro é considerado regressivo porque:", alternativas:["Cobra mais impostos dos mais ricos","Os mais pobres pagam proporcionalmente mais impostos, principalmente sobre consumo","Não cobra nenhum imposto sobre consumo","Isenta totalmente os mais pobres"], correta:1, comentario:"Impostos como o ICMS incidem igualmente sobre todos, independente da renda."},
+      {enunciado:"Segundo o sociólogo Jessé Souza, o conceito de 'ralé estrutural' se refere a:", alternativas:["Uma elite econômica brasileira","Uma classe historicamente excluída do acesso a capital econômico e cultural, com raízes na escravidão","Um grupo político específico","Uma categoria fiscal do IBGE"], correta:1, comentario:"O conceito ajuda a entender a desigualdade racial e social persistente no Brasil."},
+      {enunciado:"Os países nórdicos conseguiram reduzir significativamente a desigualdade principalmente por meio de:", alternativas:["Redução de impostos para os mais ricos","Tributação progressiva e forte investimento em educação e saúde públicas","Eliminação de todos os programas sociais","Isolamento econômico internacional"], correta:1, comentario:"Isso mostra que a desigualdade é resultado de escolhas políticas, não um destino inevitável."},
+      {enunciado:"Em relação a raça e gênero, dados do IBGE mostram que, no Brasil:", alternativas:["Não há nenhuma diferença de renda entre grupos raciais ou de gênero","Mulheres negras estão entre os grupos com menores rendimentos médios do país","Homens negros ganham mais que homens brancos","A desigualdade racial já foi superada"], correta:1, comentario:"A concentração de renda recai de forma mais pesada sobre grupos historicamente marginalizados."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Taylorismo e Fordismo"], {
+  quadro: "• Taylorismo (Frederick Taylor, 'Princípios de Administração Científica', 1911): administração científica do trabalho\n• Divisão rigorosa das tarefas: cada trabalhador faz uma função específica, repetida — fragmentação do trabalho\n• Saber sobre o processo produtivo passa do trabalhador pros gerentes/engenheiros; controle do tempo via cronometragem\n• Fordismo (Henry Ford, ~1913, Highland Park): linha de montagem, produção em massa e padronizada\n• Produtos se deslocam até o trabalhador (esteira), eliminando tempo de deslocamento entre etapas\n• 'Dia de cinco dólares' (1914): salários mais altos para reduzir rotatividade E criar operários-consumidores\n• Fordismo = produção em massa + consumo em massa = base da 'sociedade de consumo'\n• Semelhanças: fragmentação das tarefas, separação entre concepção e execução, busca por produtividade\n• Crítica cultural: 'Tempos Modernos' (1936), Charles Chaplin\n• Limites a partir dos anos 1970 (crise do petróleo) abrem espaço pro toyotismo, modelo mais flexível",
+  slides: [
+    {titulo:"O taylorismo: administração científica do trabalho", topicos:["Frederick Taylor (1911): dividir e cronometrar cada tarefa","Separação entre quem pensa (gerência) e quem executa (operário)"]},
+    {titulo:"O fordismo: linha de montagem", topicos:["Henry Ford (~1913): produtos se movem até o trabalhador","Produção em massa, padronizada ('qualquer cor, desde que preta')"]},
+    {titulo:"O 'dia de cinco dólares'", topicos:["Salários mais altos reduzem rotatividade dos operários","Operários viram consumidores dos próprios produtos que fabricam"]},
+    {titulo:"Semelhanças e diferenças", topicos:["Ambos fragmentam tarefas e separam concepção de execução","Crítica cultural: 'Tempos Modernos' (Chaplin, 1936)"]},
+    {titulo:"Impactos e limites", topicos:["Disseminação mundial no pós-2ª Guerra, base da globalização produtiva","Crise dos anos 1970 abre espaço para o toyotismo"]}
+  ],
+  mapaMental: "-   Taylorismo e Fordismo\n    -   Taylorismo (Taylor, 1911): fragmentação, cronometragem, quem pensa x quem faz\n    -   Fordismo (Ford, ~1913): linha de montagem, produção em massa\n    -   'Dia de cinco dólares' (1914): operário também consumidor\n    -   Semelhanças: fragmentação, separação concepção/execução\n    -   Crítica: 'Tempos Modernos' (Chaplin)\n    -   Globalização: fordismo se espalha pelo mundo pós-2ª Guerra\n    -   Limites: crise do petróleo (1970s) abre espaço ao toyotismo",
+  avaliacao: {
+    atividade: [
+      {enunciado:"O que é o taylorismo e qual sua principal proposta para a organização do trabalho?"},
+      {enunciado:"O que Henry Ford inovou em relação ao taylorismo, ao criar a linha de montagem?"},
+      {enunciado:"Explique o que foi o 'dia de cinco dólares' e sua dupla finalidade."},
+      {enunciado:"Quais são as semelhanças entre taylorismo e fordismo?"},
+      {enunciado:"Como o fordismo contribuiu para o avanço da globalização econômica?"}
+    ],
+    flashcards: [
+      {frente:"Quem criou o taylorismo e em que obra o sistematizou?", verso:"Frederick Taylor, em 'Princípios de Administração Científica' (1911)"},
+      {frente:"O que é a fragmentação do trabalho, no taylorismo?", verso:"Cada trabalhador executa uma única função específica, repetidamente"},
+      {frente:"Quem criou a linha de montagem fordista e quando?", verso:"Henry Ford, por volta de 1913"},
+      {frente:"Qual foi o primeiro carro produzido na linha de montagem de Ford?", verso:"O Ford T"},
+      {frente:"O que foi o 'dia de cinco dólares' (1914)?", verso:"Política de salários mais altos para reduzir rotatividade e criar operários-consumidores"},
+      {frente:"Qual filme critica de forma icônica a desumanização do trabalho fordista?", verso:"'Tempos Modernos' (1936), de Charles Chaplin"},
+      {frente:"Qual modelo de produção mais flexível ganhou espaço a partir dos anos 1970?", verso:"O toyotismo"},
+      {frente:"O que os dois sistemas têm em comum?", verso:"Fragmentação das tarefas e separação entre concepção e execução do trabalho"}
+    ],
+    gabarito: [
+      {resposta:"É a 'administração científica do trabalho', de Frederick Taylor, que propõe medir e controlar cientificamente o trabalho, dividindo tarefas em funções específicas e repetitivas.", comentario:"O saber sobre o processo produtivo passa a pertencer aos gerentes, não ao trabalhador."},
+      {resposta:"Ford criou a linha de montagem, na qual os produtos se deslocam até o trabalhador fixo em seu posto, acelerando a produção e permitindo fabricar em massa produtos padronizados.", comentario:"Isso vai além do taylorismo ao reorganizar o próprio espaço da fábrica."},
+      {resposta:"Foi uma política de salários mais altos criada por Ford em 1914; tinha a dupla finalidade de reduzir a rotatividade dos operários e transformá-los em consumidores dos próprios produtos que fabricavam.", comentario:"Essa lógica é a base do que se chama 'sociedade de consumo'."},
+      {resposta:"Ambos compartilham a fragmentação das tarefas, a separação entre concepção e execução do trabalho, e a busca pelo aumento da produtividade por meio da racionalização técnica.", comentario:"O fordismo incorpora os princípios tayloristas e vai além, com a linha de montagem."},
+      {resposta:"O modelo fordista se espalhou por países industrializados no pós-guerra, criando redes de dependência entre mercados, trabalhadores e empresas — fábricas instaladas onde a mão de obra era mais barata.", comentario:"Isso aprofundou as conexões econômicas internacionais, base da globalização produtiva."}
+    ],
+    questoes: [
+      {enunciado:"O taylorismo, criado por Frederick Taylor, tinha como proposta central:", alternativas:["Aumentar a autonomia dos trabalhadores sobre o processo produtivo","Dividir e cronometrar cientificamente cada tarefa do trabalho","Eliminar completamente a produção industrial","Reduzir o número de fábricas no mundo"], correta:1, comentario:"O saber sobre o processo produtivo passou a pertencer aos gerentes e engenheiros."},
+      {enunciado:"A principal inovação de Henry Ford em relação ao taylorismo foi:", alternativas:["Eliminar a fragmentação do trabalho","Criar a linha de montagem, movendo o produto até o trabalhador fixo","Aumentar a jornada de trabalho sem limites","Acabar com a produção em série"], correta:1, comentario:"Isso acelerou a produção e permitiu fabricar em massa produtos padronizados."},
+      {enunciado:"O 'dia de cinco dólares', instituído por Ford em 1914, tinha como objetivo:", alternativas:["Reduzir os salários dos operários","Reduzir a rotatividade e transformar operários em consumidores dos produtos fabricados","Aumentar a jornada de trabalho","Eliminar os sindicatos"], correta:1, comentario:"Criava um ciclo entre produção em massa e consumo em massa."},
+      {enunciado:"O filme 'Tempos Modernos' (1936), de Charles Chaplin, é uma crítica:", alternativas:["Ao cinema mudo","À desumanização do trabalho repetitivo fordista-taylorista","Ao movimento sindical","À Revolução Industrial do século XVIII"], correta:1, comentario:"Retrata de forma icônica o trabalhador como peça da engrenagem fabril."},
+      {enunciado:"A partir da década de 1970, o modelo fordista-taylorista começou a perder força devido, entre outros fatores, à:", alternativas:["Ausência de qualquer crise econômica","Crise do petróleo e ao acirramento da concorrência internacional","Extinção total das fábricas","Proibição da produção em série"], correta:1, comentario:"Isso abriu espaço para modelos mais flexíveis, como o toyotismo japonês."}
+    ]
+  }
+});
+Object.assign(PREBUILT_OBJ["Reforma trabalhista"], {
+  quadro: "• CLT (1943, governo Vargas): salário mínimo, férias, 13º, limitação de jornada, proteção contra demissão arbitrária\n• Lei nº 13.467/2017 (governo Temer): Reforma Trabalhista, altera mais de 100 artigos da CLT\n• Contexto: crise econômica 2015-16, argumento de que legislação rígida atrapalhava geração de empregos\n• Mudança central: o negociado pode prevalecer sobre o legislado (antes: sempre a condição mais favorável ao trabalhador)\n• Novas modalidades: trabalho intermitente, tempo parcial ampliado, teletrabalho regulamentado\n• Jornada 12x36 por acordo individual; banco de horas negociado sem sindicato\n• Férias podem ser fracionadas em até 3 períodos; contribuição sindical virou opcional\n• Demissão por acordo mútuo: metade do aviso prévio e da multa do FGTS, sem seguro-desemprego\n• Impactos: crescimento do trabalho intermitente com renda baixa/incerta; enfraquecimento dos sindicatos\n• Grupos mais vulneráveis à precarização: mulheres, jovens, pessoas negras, menor escolaridade",
+  slides: [
+    {titulo:"Da CLT (1943) à Reforma (2017)", topicos:["CLT: direitos históricos criados no governo Vargas","Lei nº 13.467/2017 altera mais de 100 artigos"]},
+    {titulo:"O prevalecimento do negociado sobre o legislado", topicos:["Acordo entre empresa e trabalhador pode valer mais que a lei","Antes, sempre prevalecia a condição mais favorável ao trabalhador"]},
+    {titulo:"Novas modalidades de contrato", topicos:["Trabalho intermitente, tempo parcial ampliado, teletrabalho","Jornada 12x36 por acordo individual"]},
+    {titulo:"Sindicatos e demissão por acordo", topicos:["Contribuição sindical deixou de ser obrigatória","Demissão por acordo mútuo: menos direitos, sem seguro-desemprego"]},
+    {titulo:"Impactos na vida dos trabalhadores", topicos:["Crescimento do trabalho intermitente com renda incerta (IPEA)","Grupos mais vulneráveis: mulheres, jovens, negros, menor escolaridade"]}
+  ],
+  mapaMental: "-   Reforma Trabalhista (Lei 13.467/2017)\n    -   Antes: CLT (1943), princípio da proteção ao trabalhador\n    -   Mudança central: negociado pode prevalecer sobre legislado\n    -   Novas modalidades: intermitente, tempo parcial, teletrabalho\n    -   Jornada: 12x36 por acordo individual, banco de horas sem sindicato\n    -   Sindicatos: contribuição virou opcional, enfraquecimento financeiro\n    -   Impactos: trabalho intermitente cresce, mas com renda incerta\n    -   Mais vulneráveis: mulheres, jovens, negros, menor escolaridade",
+  avaliacao: {
+    atividade: [
+      {enunciado:"O que é a CLT e quando foi criada?"},
+      {enunciado:"Explique a mudança do 'prevalecimento do negociado sobre o legislado' trazida pela Reforma Trabalhista."},
+      {enunciado:"O que é o trabalho intermitente e qual a principal crítica feita a essa modalidade?"},
+      {enunciado:"Como a Reforma Trabalhista afetou o financiamento e o poder de negociação dos sindicatos?"},
+      {enunciado:"Por que os impactos da reforma não afetam todos os trabalhadores da mesma forma?"}
+    ],
+    flashcards: [
+      {frente:"Em que ano foi criada a CLT e por qual governo?", verso:"1943, governo Getúlio Vargas"},
+      {frente:"Qual lei instituiu a Reforma Trabalhista?", verso:"Lei nº 13.467/2017"},
+      {frente:"Em que governo a Reforma Trabalhista foi aprovada?", verso:"Governo Michel Temer"},
+      {frente:"O que significa 'o negociado prevalece sobre o legislado'?", verso:"Acordos entre empresa e trabalhador podem valer mais que a lei, mesmo sendo menos favoráveis"},
+      {frente:"O que é o trabalho intermitente?", verso:"Contratação para prestar serviço de forma não contínua, pago por hora trabalhada"},
+      {frente:"O que aconteceu com a contribuição sindical após a reforma?", verso:"Deixou de ser obrigatória, tornou-se opcional"},
+      {frente:"Qual regime de jornada de 12h passou a poder ser negociado individualmente?", verso:"Regime 12x36"},
+      {frente:"Quais grupos são mais vulneráveis à precarização do trabalho, segundo o texto?", verso:"Mulheres, jovens, pessoas negras e trabalhadores com menor escolaridade"}
+    ],
+    gabarito: [
+      {resposta:"É a Consolidação das Leis do Trabalho, criada em 1943 no governo Vargas, que estabeleceu direitos como salário mínimo, férias, 13º salário e proteção contra demissão arbitrária.", comentario:"Foi a principal legislação trabalhista brasileira por décadas."},
+      {resposta:"Antes, em caso de conflito, prevalecia sempre a condição mais favorável ao trabalhador; com a reforma, acordos ou convenções coletivas passaram a poder prevalecer sobre a lei, mesmo sendo menos favoráveis.", comentario:"Isso inverteu parcialmente o chamado 'princípio da proteção'."},
+      {resposta:"É a contratação para prestação de serviço não contínua, com pagamento proporcional às horas trabalhadas; a crítica é que não garante renda mínima mensal estável.", comentario:"Estudos do IPEA associam essa modalidade ao crescimento do trabalho precário."},
+      {resposta:"A contribuição sindical obrigatória virou opcional, reduzindo a receita das entidades e, consequentemente, seu poder de negociação coletiva.", comentario:"Isso tende a aprofundar a assimetria de poder entre capital e trabalho."},
+      {resposta:"Porque mulheres, jovens, pessoas negras e trabalhadores com menor escolaridade têm historicamente menor poder de negociação e estão mais concentrados em setores de maior rotatividade e menor remuneração.", comentario:"Reforça que a reforma precisa ser analisada considerando desigualdades estruturais."}
+    ],
+    questoes: [
+      {enunciado:"A Reforma Trabalhista (Lei nº 13.467/2017) alterou mais de cem artigos de qual legislação?", alternativas:["A Constituição Federal","A Consolidação das Leis do Trabalho (CLT)","O Código Civil","O Código Penal"], correta:1, comentario:"A CLT havia sido criada em 1943, no governo Vargas."},
+      {enunciado:"O princípio de que 'o negociado pode prevalecer sobre o legislado', trazido pela reforma, significa que:", alternativas:["A lei sempre prevalece sobre qualquer acordo","Acordos entre empregador e empregado podem ter força de lei, mesmo sendo menos favoráveis ao trabalhador","Os sindicatos passaram a decidir sozinhos todos os salários","Nenhum acordo pode ser feito sem aprovação judicial"], correta:1, comentario:"Isso inverteu parcialmente o antigo 'princípio da proteção' ao trabalhador."},
+      {enunciado:"Uma das críticas ao trabalho intermitente, criado pela reforma, é que ele:", alternativas:["Garante renda mensal fixa e estável","Não garante renda mínima estável, transferindo o risco da demanda ao trabalhador","É proibido no Brasil","Só pode ser usado por grandes empresas"], correta:1, comentario:"Estudos apontam rendimentos baixos e incertos nessa modalidade."},
+      {enunciado:"Após a Reforma Trabalhista, a contribuição sindical:", alternativas:["Tornou-se obrigatória para todos os trabalhadores","Deixou de ser obrigatória, tornando-se opcional","Foi eliminada completamente por lei","Aumentou de valor"], correta:1, comentario:"Isso reduziu a receita e o poder de negociação de muitos sindicatos."},
+      {enunciado:"Segundo o texto, os impactos da Reforma Trabalhista atingem de forma mais intensa:", alternativas:["Igualmente todos os trabalhadores, sem distinção","Mulheres, jovens, pessoas negras e trabalhadores com menor escolaridade","Apenas trabalhadores com ensino superior completo","Apenas funcionários públicos"], correta:1, comentario:"Esses grupos têm historicamente menor poder de negociação no mercado de trabalho."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Tecnologia e empregabilidade"], {
+  quadro: "• Quarta Revolução Industrial: inteligência artificial, automação, robótica avançada, economia digital\n• Automação substitui trabalho humano por máquinas/algoritmos — atinge tanto tarefas manuais quanto administrativas de nível médio\n• Globalização + redes digitais: empresa contrata profissionais de qualquer lugar do mundo, sem escritório físico\n• 'Corrida para o baixo' (race to the bottom): concorrência global pressiona salários pra baixo\n• Deslocalização produtiva: empresas instalam fábricas onde há mão de obra barata e menos regulação (ex.: Bangladesh, Vietnã)\n• Uberização do trabalho: plataformas tratam trabalhador como 'parceiro autônomo', transferindo riscos e custos a ele\n• Ricardo Antunes: precarização se disfarça de liberdade e autonomia\n• Empregabilidade (conceito dos anos 1990): pode responsabilizar individualmente o trabalhador por causas estruturais\n• Zygmunt Bauman: 'modernidade líquida' — certezas do emprego estável substituídas por vínculos fluidos\n• Brasil: industrialização tardia + desigualdade educacional tornam a população mais vulnerável às transformações tecnológicas",
+  slides: [
+    {titulo:"A Quarta Revolução Industrial", topicos:["Inteligência artificial, automação, robótica, economia digital","Atinge tarefas manuais E administrativas de nível médio"]},
+    {titulo:"Globalização e deslocalização produtiva", topicos:["Empresas contratam no mundo todo via plataformas digitais","'Corrida para o baixo': concorrência global pressiona salários"]},
+    {titulo:"A uberização do trabalho", topicos:["Trabalhador tratado como 'parceiro autônomo', não empregado","Ricardo Antunes: precarização disfarçada de liberdade"]},
+    {titulo:"Empregabilidade: um conceito em disputa", topicos:["Pode responsabilizar individualmente o trabalhador","Bauman: 'modernidade líquida' e o fim do emprego estável"]},
+    {titulo:"Desafios e perspectivas para o Brasil", topicos:["Industrialização tardia e desigualdade educacional","Setor de tecnologia cresce, mas exige qualificação elevada"]}
+  ],
+  mapaMental: "-   Tecnologia e empregabilidade\n    -   Quarta Revolução Industrial: IA, automação, robótica\n    -   Globalização: deslocalização produtiva, 'corrida para o baixo'\n    -   Uberização: 'parceiro autônomo' em vez de empregado (Antunes)\n    -   Empregabilidade: individual x estrutural (Bauman: modernidade líquida)\n    -   Brasil: industrialização tardia, desigualdade educacional\n    -   Tecnologia cria empregos também, mas exige qualificação alta",
+  avaliacao: {
+    atividade: [
+      {enunciado:"O que é a Quarta Revolução Industrial e o que a diferencia das anteriores?"},
+      {enunciado:"O que é 'deslocalização produtiva' e como ela se relaciona com a tecnologia?"},
+      {enunciado:"O que é a 'uberização do trabalho' e por que Ricardo Antunes a associa à precarização disfarçada?"},
+      {enunciado:"Por que o conceito de empregabilidade pode ser problemático quando usado para culpar individualmente o trabalhador?"},
+      {enunciado:"Quais desafios específicos o Brasil enfrenta diante da automação e da globalização, segundo o texto?"}
+    ],
+    flashcards: [
+      {frente:"Como é chamada a atual revolução tecnológica, marcada por IA e automação?", verso:"Quarta Revolução Industrial"},
+      {frente:"O que é a 'corrida para o baixo' (race to the bottom)?", verso:"Pressão para reduzir salários e condições de trabalho pela concorrência global"},
+      {frente:"O que é deslocalização produtiva?", verso:"Empresas instalam produção em países com mão de obra barata e menos regulação"},
+      {frente:"De onde vem o termo 'uberização do trabalho'?", verso:"Da empresa Uber, descreve o modelo de 'parceiro autônomo' via plataforma"},
+      {frente:"Qual sociólogo brasileiro analisa a uberização e a precarização disfarçada de autonomia?", verso:"Ricardo Antunes"},
+      {frente:"Qual sociólogo polonês cunhou o conceito de 'modernidade líquida'?", verso:"Zygmunt Bauman"},
+      {frente:"Em que década surgiu o conceito de empregabilidade?", verso:"Anos 1990"},
+      {frente:"Cite dois exemplos de trabalhadores da 'uberização' citados no texto.", verso:"Entregadores e motoristas de aplicativo (ou freelancers, tutores online)"}
+    ],
+    gabarito: [
+      {resposta:"É a revolução tecnológica atual, marcada por inteligência artificial, automação e economia digital; diferencia-se por atingir simultaneamente trabalhadores de distintos níveis de qualificação, não só tarefas manuais.", comentario:"Mencionar que até funções administrativas de nível médio estão sendo substituídas."},
+      {resposta:"É o processo de empresas instalarem produção em países com mão de obra barata e regulação trabalhista frágil, viabilizado pela mobilidade proporcionada pela tecnologia.", comentario:"Exemplos do texto: fábricas têxteis em Bangladesh e Vietnã."},
+      {resposta:"É o modelo em que plataformas tratam o trabalhador como 'parceiro autônomo', não empregado, transferindo a ele os riscos e custos que seriam da empresa; Antunes diz que a precarização se disfarça de liberdade.", comentario:"O exemplo do entregador que trabalha 12h 'sendo seu próprio chefe' ilustra isso."},
+      {resposta:"Porque pode ignorar que o desemprego tecnológico tem causas estruturais, eliminando postos de trabalho mais rápido do que qualquer sistema educacional consegue repor — não é só falta de qualificação individual.", comentario:"Relacionar à crítica de José Pastore e à reflexão de Bauman."},
+      {resposta:"O Brasil tem industrialização tardia, grande desigualdade social e educacional, o que torna sua população mais vulnerável — apesar de também ter um setor de tecnologia em expansão que gera empregos qualificados.", comentario:"Aceitar menção a qualquer um desses dois lados: vulnerabilidade e oportunidade."}
+    ],
+    questoes: [
+      {enunciado:"A Quarta Revolução Industrial é marcada, entre outras coisas, por:", alternativas:["O uso exclusivo de máquinas a vapor","Inteligência artificial, automação e economia digital","O fim total do trabalho humano","A eliminação da globalização"], correta:1, comentario:"Ela atinge simultaneamente trabalhadores de diferentes níveis de qualificação."},
+      {enunciado:"A 'uberização do trabalho' se caracteriza por:", alternativas:["Garantir carteira assinada a todos os trabalhadores de plataforma","Tratar o trabalhador como 'parceiro autônomo', transferindo a ele os riscos da atividade","Eliminar completamente as plataformas digitais","Reduzir a jornada de trabalho para 4 horas diárias"], correta:1, comentario:"A empresa não assume os custos da relação de emprego formal."},
+      {enunciado:"Segundo Ricardo Antunes, a uberização representa uma forma de precarização que:", alternativas:["É claramente identificada como exploração por todos os trabalhadores","Se disfarça de liberdade e autonomia","Não existe na prática","Só afeta trabalhadores de países ricos"], correta:1, comentario:"O entregador que trabalha 12h é, formalmente, 'seu próprio chefe'."},
+      {enunciado:"Zygmunt Bauman descreve a época atual do trabalho como marcada por:", alternativas:["Emprego estável garantido para todos","Vínculos fluidos e precários, na chamada 'modernidade líquida'","Ausência total de tecnologia","Retorno ao trabalho artesanal"], correta:1, comentario:"As certezas do emprego estável do século XX foram substituídas por incerteza permanente."},
+      {enunciado:"Um dos principais desafios do Brasil diante da automação e da globalização é:", alternativas:["O excesso de investimento em educação técnica","A desigualdade social e educacional, que torna a população mais vulnerável","A ausência de qualquer setor de tecnologia","A proibição do trabalho por plataformas"], correta:1, comentario:"Ao mesmo tempo, o setor de tecnologia brasileiro também gera empregos qualificados."}
+    ]
+  }
+});
+Object.assign(PREBUILT_OBJ["Trabalho rural e urbano"], {
+  quadro: "• Trabalho é atividade humana fundamental, mas assume formas diferentes conforme relações de poder\n• Trabalho rural: raízes na exploração colonial da terra; direitos formais só com Estatuto do Trabalhador Rural (1963) e CF/1988\n• Agricultura familiar: 77% dos estabelecimentos rurais, mas só 23% da área agricultável (Censo Agropecuário 2017) — concentração fundiária\n• Trabalho rural: sazonalidade, informalidade maior que nas cidades, casos de trabalho análogo à escravidão ('lista suja')\n• Trabalho urbano cresce com industrialização (1950-1980) e êxodo rural; hoje +87% da população é urbana (Censo 2022)\n• Setor de serviços é hoje o maior empregador urbano, incluindo plataformas digitais\n• Informalidade urbana: 38-40% da população ocupada (PNAD Contínua)\n• Relações de poder no campo: Gini da terra ~0,85 — concentração fundiária extrema, conflitos (MST, quilombolas, indígenas)\n• Relações de poder na cidade: capital x trabalho, sindicatos como mecanismo de negociação\n• Interseccionalidade: classe + raça + gênero se sobrepõem nas desigualdades salariais (mulheres e negros ganham menos)",
+  slides: [
+    {titulo:"O trabalho como atividade social", topicos:["Produz bens, constrói identidades, ocupa posições sociais","Assume formas diferentes conforme lugar, tecnologia e leis"]},
+    {titulo:"Trabalho rural no Brasil", topicos:["Direitos formais só a partir de 1963 e da CF/1988","Agricultura familiar: 77% dos estabelecimentos, só 23% da terra"]},
+    {titulo:"Trabalho urbano e suas transformações", topicos:["Industrialização (1950-80) e êxodo rural; hoje +87% urbano","Setor de serviços é hoje o maior empregador"]},
+    {titulo:"Relações de poder: campo e cidade", topicos:["Gini da terra ~0,85: concentração fundiária extrema","MST, quilombolas e indígenas em luta pela terra"]},
+    {titulo:"Interseccionalidade no mundo do trabalho", topicos:["Classe, raça e gênero se sobrepõem nas desigualdades","Mulheres e trabalhadores negros ganham sistematicamente menos"]}
+  ],
+  mapaMental: "-   Trabalho rural e urbano\n    -   Rural: raízes coloniais, direitos só a partir de 1963/1988\n    -   Agricultura familiar: 77% dos estabelecimentos, 23% da terra\n    -   Urbano: cresce com industrialização (1950-80), +87% da população hoje\n    -   Informalidade: maior no campo, mas também alta na cidade (38-40%)\n    -   Poder no campo: Gini da terra ~0,85, MST/quilombolas/indígenas\n    -   Poder na cidade: capital x trabalho, papel dos sindicatos\n    -   Interseccionalidade: classe + raça + gênero nas desigualdades salariais",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Quando os trabalhadores rurais brasileiros passaram a ter direitos trabalhistas formais equivalentes aos urbanos?"},
+      {enunciado:"O que revela o dado de que a agricultura familiar ocupa 77% dos estabelecimentos, mas só 23% da área agricultável?"},
+      {enunciado:"O que é o índice de Gini da distribuição de terras, e o que o valor de ~0,85 no Brasil indica?"},
+      {enunciado:"Cite um exemplo de movimento social que luta por acesso à terra no campo brasileiro."},
+      {enunciado:"O que o conceito de interseccionalidade ajuda a entender sobre as desigualdades no mundo do trabalho?"}
+    ],
+    flashcards: [
+      {frente:"Em que ano foi criado o Estatuto do Trabalhador Rural?", verso:"1963"},
+      {frente:"Que porcentagem dos estabelecimentos rurais é agricultura familiar (Censo 2017)?", verso:"77%"},
+      {frente:"Que porcentagem da área agricultável a agricultura familiar ocupa?", verso:"23%"},
+      {frente:"Que porcentagem da população brasileira é urbana hoje (Censo 2022)?", verso:"Mais de 87%"},
+      {frente:"Qual é o índice de Gini da distribuição de terras no Brasil?", verso:"Aproximadamente 0,85"},
+      {frente:"Qual movimento social luta historicamente pela reforma agrária no Brasil?", verso:"MST — Movimento dos Trabalhadores Rurais Sem Terra"},
+      {frente:"Qual documento do Ministério do Trabalho registra empregadores flagrados com trabalho análogo à escravidão?", verso:"A 'lista suja'"},
+      {frente:"Qual a taxa de informalidade urbana, segundo a PNAD Contínua?", verso:"Entre 38% e 40%"}
+    ],
+    gabarito: [
+      {resposta:"Formalmente, a partir do Estatuto do Trabalhador Rural (1963) e, de forma plena, com a Constituição de 1988, que estendeu ao campo os mesmos direitos garantidos aos trabalhadores urbanos.", comentario:"Antes disso, trabalhadores rurais ficaram décadas sem proteção formal, mesmo após a abolição de 1888."},
+      {resposta:"Revela a enorme concentração fundiária do Brasil: a maioria dos estabelecimentos rurais é pequena (agricultura familiar), mas ocupa uma fração pequena da terra, enquanto grandes propriedades concentram a maior parte da área.", comentario:"A agricultura familiar, porém, produz boa parte dos alimentos que chegam à mesa dos brasileiros."},
+      {resposta:"É um índice de 0 a 1 que mede a concentração da posse da terra; o valor de ~0,85 no Brasil indica concentração fundiária extremamente alta, com poucos proprietários controlando a maior parte da terra agricultável.", comentario:"Quanto mais perto de 1, maior a concentração."},
+      {resposta:"O MST (Movimento dos Trabalhadores Rurais Sem Terra) — aceitar também menção a comunidades quilombolas e indígenas em luta por seus territórios.", comentario:"Esses conflitos fundiários persistem até hoje no Brasil."},
+      {resposta:"Ajuda a entender que as desigualdades de classe, raça e gênero não operam isoladamente — mulheres e trabalhadores negros recebem, sistematicamente, salários menores, tanto no campo quanto na cidade.", comentario:"Citar dados do IBGE/CAGED mencionados no texto."}
+    ],
+    questoes: [
+      {enunciado:"Os trabalhadores rurais brasileiros passaram a ter direitos trabalhistas equivalentes aos urbanos, de forma plena, a partir de:", alternativas:["Da abolição da escravidão, em 1888","Da Constituição Federal de 1988","Da criação da CLT, em 1943","Não têm até hoje os mesmos direitos"], correta:1, comentario:"O Estatuto do Trabalhador Rural (1963) foi um passo anterior, mas a equiparação plena veio com a CF/1988."},
+      {enunciado:"O dado de que a agricultura familiar representa 77% dos estabelecimentos rurais, mas ocupa apenas 23% da área agricultável, evidencia:", alternativas:["Uma distribuição de terras igualitária no Brasil","Uma enorme concentração fundiária no país","Que a agricultura familiar não produz alimentos relevantes","Que não existem grandes propriedades no Brasil"], correta:1, comentario:"A maioria dos estabelecimentos é pequena, mas ocupa pouca terra."},
+      {enunciado:"O índice de Gini da distribuição de terras no Brasil, próximo a 0,85, indica:", alternativas:["Distribuição de terra muito igualitária","Concentração fundiária extremamente alta","Ausência de propriedade privada da terra","Um erro estatístico do IBGE"], correta:1, comentario:"Uma minoria de grandes proprietários controla a maior parte da terra agricultável."},
+      {enunciado:"Segundo o texto, mais de 87% da população brasileira, atualmente, vive em áreas:", alternativas:["Rurais","Urbanas","Litorâneas exclusivamente","Fronteiriças"], correta:1, comentario:"O Brasil se tornou majoritariamente urbano entre as décadas de 1960 e 1980."},
+      {enunciado:"O conceito de interseccionalidade, aplicado ao mundo do trabalho, ajuda a entender que:", alternativas:["Classe, raça e gênero são fatores isolados e sem relação entre si","As desigualdades de classe, raça e gênero se sobrepõem e se potencializam","Apenas a classe social determina a renda de uma pessoa","Não existe desigualdade salarial no Brasil"], correta:1, comentario:"Mulheres negras, por exemplo, enfrentam a sobreposição dessas desigualdades."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Trabalho intelectual e manual"], {
+  quadro: "• Marx: trabalho é essencialmente humano porque planejamos mentalmente antes de executar (diferente dos animais)\n• Trabalho manual: execução física predomina — mas não é destituído de conhecimento (pedreiro, costureira dominam técnicas precisas)\n• Trabalho manual historicamente associado a classes pobres e grupos marginalizados (ex.: escravizados na Grécia Antiga)\n• Trabalho intelectual: produção de ideias, planos, análises — maior prestígio social e remuneração nas sociedades modernas\n• Gramsci: todo ser humano é intelectual, mas nem todos exercem a FUNÇÃO social de intelectual\n• Gramsci distingue 'intelectuais tradicionais' (se dizem neutros) de 'intelectuais orgânicos' (ligados a uma classe)\n• Divisão intelectual/manual não é natural — é construção histórica, aprofundada pela Revolução Industrial e pelo taylorismo\n• Taylor: trabalho planejado por especialistas, operário só executa — separa radicalmente quem pensa de quem faz\n• Transformações contemporâneas tornam fronteiras mais porosas (técnico que programa E conserta), mas hierarquia persiste sob novas formas (entregador x engenheiro da plataforma)\n• Gênero e raça: mulheres no trabalho doméstico/cuidado (desvalorizado), negros/indígenas excluídos historicamente da educação",
+  slides: [
+    {titulo:"O que une trabalho manual e intelectual", topicos:["Marx: todo trabalho envolve pensar e executar em algum grau","Um arquiteto imagina antes de construir; um carpinteiro, antes de cortar"]},
+    {titulo:"Trabalho manual: o corpo como instrumento", topicos:["Execução física predomina, mas exige conhecimento técnico real","Historicamente associado a classes pobres e grupos marginalizados"]},
+    {titulo:"Trabalho intelectual e Gramsci", topicos:["Produção de ideias ganha prestígio e remuneração maiores","Gramsci: todos pensam, mas nem todos exercem a função de intelectual"]},
+    {titulo:"Uma divisão histórica, não natural", topicos:["Revolução Industrial e taylorismo aprofundam a separação","Quem pensa (gerência) x quem executa (operário)"]},
+    {titulo:"Gênero, raça e valorização desigual", topicos:["Trabalho doméstico/cuidado desvalorizado, feito majoritariamente por mulheres","Negros e indígenas historicamente excluídos da educação formal"]}
+  ],
+  mapaMental: "-   Trabalho intelectual e manual\n    -   O que une: Marx — todo trabalho envolve pensar e agir\n    -   Manual: execução física, mas com conhecimento técnico real\n    -   Intelectual: produção de ideias, mais prestígio social\n    -   Gramsci: todos são intelectuais, nem todos exercem essa função\n    -   Divisão é histórica: Revolução Industrial, taylorismo\n    -   Hoje: fronteiras mais porosas, mas hierarquia persiste\n    -   Gênero/raça: trabalho doméstico desvalorizado, exclusão histórica",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Segundo Karl Marx, o que diferencia o trabalho humano do 'trabalho' de outros animais?"},
+      {enunciado:"Por que se diz que o trabalho manual não é 'destituído de conhecimento'?"},
+      {enunciado:"Explique a distinção de Gramsci entre 'intelectuais tradicionais' e 'intelectuais orgânicos'."},
+      {enunciado:"Como o taylorismo aprofundou a separação entre trabalho intelectual e manual?"},
+      {enunciado:"Dê um exemplo contemporâneo em que as fronteiras entre trabalho manual e intelectual estão mais porosas."}
+    ],
+    flashcards: [
+      {frente:"Qual filósofo/sociólogo destacou que o trabalho humano envolve planejamento mental prévio?", verso:"Karl Marx"},
+      {frente:"Quem distinguiu 'intelectuais tradicionais' de 'intelectuais orgânicos'?", verso:"Antonio Gramsci"},
+      {frente:"Segundo Gramsci, todo ser humano é, em alguma medida, o quê?", verso:"Um intelectual (pois todos pensam e interpretam o mundo)"},
+      {frente:"Qual sistema aprofundou a separação entre quem pensa e quem executa no trabalho?", verso:"O taylorismo (administração científica do trabalho)"},
+      {frente:"Na Grécia Antiga, quem realizava o trabalho manual/braçal?", verso:"Pessoas escravizadas"},
+      {frente:"Cite uma profissão de trabalho predominantemente intelectual citada no texto.", verso:"Professor, médico, engenheiro, cientista, advogado (qualquer uma)"},
+      {frente:"Que tipo de trabalho, feito majoritariamente por mulheres, combina esforço físico e conhecimento mas é desvalorizado?", verso:"O trabalho doméstico e de cuidado"},
+      {frente:"Dê um exemplo de profissão contemporânea que mistura habilidades manuais e intelectuais.", verso:"Técnico de manutenção que programa sistemas e faz reparos físicos"}
+    ],
+    gabarito: [
+      {resposta:"Segundo Marx, os seres humanos planejam mentalmente o que pretendem realizar antes de executá-lo, diferente dos animais, que agem por instinto.", comentario:"Usar o exemplo do arquiteto e do carpinteiro citado no texto."},
+      {resposta:"Porque trabalhadores manuais, como pedreiros e costureiras, dominam técnicas precisas e conhecimentos específicos de seu ofício — a diferença é que frequentemente executam o que foi planejado por outra pessoa.", comentario:"O que diferencia não é ausência de saber, mas a posição hierárquica na estrutura social."},
+      {resposta:"Os 'intelectuais tradicionais' (como sacerdotes e filósofos) se apresentam como neutros e universais; os 'intelectuais orgânicos' surgem ligados a uma classe social e expressam seus interesses e visão de mundo.", comentario:"Essa distinção mostra que o trabalho intelectual também é atravessado por relações de poder."},
+      {resposta:"O taylorismo defendia que o trabalho deveria ser planejado por especialistas, cabendo ao operário apenas executar tarefas repetitivas sem entender o processo produtivo como um todo.", comentario:"Isso está na base da organização das fábricas fordistas do século XX."},
+      {resposta:"Um técnico de manutenção de equipamentos modernos, que precisa programar sistemas e diagnosticar falhas digitalmente, além de realizar intervenções físicas na máquina.", comentario:"Aceitar também o exemplo do designer gráfico, que une criatividade e ferramentas computacionais."}
+    ],
+    questoes: [
+      {enunciado:"Segundo Karl Marx, o que distingue o trabalho humano do comportamento de outros animais é que:", alternativas:["Os humanos trabalham mais horas por dia","Os humanos planejam mentalmente o que pretendem realizar antes de executá-lo","Os animais não realizam nenhum tipo de atividade produtiva","Os humanos não precisam de ferramentas"], correta:1, comentario:"Essa capacidade de planejamento prévio é central na definição marxista de trabalho."},
+      {enunciado:"Segundo Antonio Gramsci, os 'intelectuais orgânicos' se diferenciam dos 'tradicionais' porque:", alternativas:["Não pensam nem interpretam o mundo","Estão ligados a uma classe social e expressam seus interesses","São sempre religiosos","Não existem na sociedade atual"], correta:1, comentario:"Os intelectuais tradicionais se apresentam, ao contrário, como neutros e universais."},
+      {enunciado:"O taylorismo aprofundou a separação entre trabalho intelectual e manual ao defender que:", alternativas:["Todo trabalhador deveria planejar e executar suas próprias tarefas","O trabalho deveria ser planejado por especialistas, cabendo ao operário só executar","Não deveria haver nenhuma divisão de tarefas nas fábricas","Os operários deveriam substituir os gerentes"], correta:1, comentario:"Essa lógica está na base das fábricas fordistas do século XX."},
+      {enunciado:"Na Grécia Antiga, segundo o texto, o trabalho manual/braçal era predominantemente realizado por:", alternativas:["Filósofos e cidadãos livres","Pessoas escravizadas","Apenas mulheres livres","Sacerdotes"], correta:1, comentario:"A vida contemplativa e filosófica era reservada aos cidadãos livres."},
+      {enunciado:"Um exemplo contemporâneo de como a tecnologia recriou, sob novas formas, a hierarquia entre trabalho intelectual e manual é:", alternativas:["A extinção total do trabalho manual","O contraste entre entregadores de aplicativo (trabalho físico precário) e engenheiros que desenvolvem as plataformas","O fim de qualquer diferença salarial entre profissões","A eliminação completa da tecnologia no trabalho"], correta:1, comentario:"A tecnologia não eliminou a hierarquia entre trabalho manual e intelectual; recriou-a sob novas formas."}
+    ]
+  }
+});

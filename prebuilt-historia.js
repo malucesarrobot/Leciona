@@ -726,3 +726,47 @@ Object.assign(PREBUILT_OBJ["Anistia de 1979"], {
     ]
   }
 });
+
+/* Complemento — quadro/slides/mapaMental/avaliação pra "Regimes totalitários pelo mundo" (30/07/2026): slides/avaliação antigos não batiam com o texto de estudo, substituídos */
+PREBUILT_OBJ["Regimes totalitários pelo mundo. Diferenças de autoritarismo e totalitarismo"].quadro = "• Regime político: quanto controle o governo exerce sobre a vida das pessoas, e se há limites\n• Autoritarismo: poder concentrado, elimina oposição, mas NÃO controla toda a vida privada (ex.: ditaduras militares latino-americanas, Franco na Espanha)\n• Totalitarismo: quer controlar TODAS as dimensões da vida — política, cultura, educação, pensamento (conceito de Hannah Arendt, 'As Origens do Totalitarismo', 1951)\n• 3 exemplos clássicos: Fascismo italiano (Mussolini, 1922-43), Nazismo alemão (Hitler, 1933-45), Stalinismo soviético (Stalin, 1924-53)\n• Totalitarismo usa: partido único, culto ao líder, propaganda massiva, polícia política, terror sistemático\n• Contexto de surgimento: 1ª Guerra Mundial, Revolução Russa (1917), Crise de 1929 — medo, humilhação nacional, líderes 'salvadores'\n• Arendt: totalitarismo se alimenta de massas isoladas, sem senso de comunidade, vulneráveis à propaganda\n• Distinção é analítica — na prática, regimes raramente se encaixam perfeitamente numa categoria só";
+PREBUILT_OBJ["Regimes totalitários pelo mundo. Diferenças de autoritarismo e totalitarismo"].mapaMental = "-   Autoritarismo x Totalitarismo\n    -   Autoritarismo: poder concentrado, oposição eliminada, vida privada relativamente livre\n    -   Totalitarismo: controle de TUDO — política, cultura, pensamento, família\n    -   Totalitarismo (Hannah Arendt): partido único, culto ao líder, terror, propaganda\n    -   3 exemplos: Fascismo (Mussolini), Nazismo (Hitler), Stalinismo (Stalin)\n    -   Contexto: 1ª Guerra, Revolução Russa, Crise de 1929\n    -   Arendt: massas isoladas são vulneráveis à propaganda totalitária";
+PREBUILT_OBJ["Regimes totalitários pelo mundo. Diferenças de autoritarismo e totalitarismo"].slides = [
+  {titulo:"O que é um regime político?", topicos:["Como o poder é organizado e limitado (ou não) num país","Democracias limitam o poder; autoritarismo e totalitarismo, não"]},
+  {titulo:"Autoritarismo: poder concentrado, com limites informais", topicos:["Elimina oposição política, mas não controla toda a vida privada","Exemplos: ditaduras militares latino-americanas, Franco na Espanha"]},
+  {titulo:"Totalitarismo: o poder que invade tudo", topicos:["Conceito de Hannah Arendt: controle de todas as dimensões da vida","Fascismo, Nazismo e Stalinismo como exemplos clássicos"]},
+  {titulo:"Por que surgiram no século XX?", topicos:["1ª Guerra Mundial, Revolução Russa, Crise de 1929","Medo, humilhação nacional e busca por líderes 'salvadores'"]},
+  {titulo:"O legado e a memória", topicos:["Arendt: totalitarismo se alimenta de massas isoladas","Conhecimento histórico como forma de resistência"]}
+];
+PREBUILT_OBJ["Regimes totalitários pelo mundo. Diferenças de autoritarismo e totalitarismo"].avaliacao = {
+  atividade: [
+    {enunciado:"Qual a diferença central entre autoritarismo e totalitarismo?"},
+    {enunciado:"Cite os três regimes totalitários clássicos do século XX e seus líderes."},
+    {enunciado:"Por que uma ditadura militar latino-americana é considerada autoritária, e não totalitária?"},
+    {enunciado:"Quais condições históricas favoreceram o surgimento dos regimes totalitários?"},
+    {enunciado:"O que Hannah Arendt quis dizer ao afirmar que o totalitarismo se alimenta de 'massas isoladas'?"}
+  ],
+  flashcards: [
+    {frente:"Quem escreveu 'As Origens do Totalitarismo' (1951)?", verso:"Hannah Arendt"},
+    {frente:"O que caracteriza o autoritarismo, diferente do totalitarismo?", verso:"Concentra o poder político, mas não controla toda a vida privada"},
+    {frente:"Quem liderou o Fascismo italiano?", verso:"Benito Mussolini"},
+    {frente:"Quem liderou o Nazismo alemão?", verso:"Adolf Hitler"},
+    {frente:"Quem liderou o Stalinismo soviético?", verso:"Josef Stalin"},
+    {frente:"Como se chamavam os campos de trabalho forçado da URSS stalinista?", verso:"Gulag"},
+    {frente:"Que crise econômica mundial ajudou a criar as condições para o totalitarismo?", verso:"A Crise de 1929"},
+    {frente:"Cite um exemplo de regime autoritário (não totalitário) do século XX.", verso:"Ditadura de Franco na Espanha, ou ditaduras militares latino-americanas"}
+  ],
+  gabarito: [
+    {resposta:"O autoritarismo concentra o poder político e reprime a oposição, mas tolera certa autonomia na vida privada; o totalitarismo pretende controlar TODAS as dimensões da vida humana, incluindo pensamento e cultura.", comentario:"Usar a tabela comparativa do texto como referência."},
+    {resposta:"Fascismo italiano (Benito Mussolini), Nazismo alemão (Adolf Hitler) e Stalinismo soviético (Josef Stalin).", comentario:"Cada um tinha ideologia própria, mas todos compartilhavam características totalitárias."},
+    {resposta:"Porque reprime a oposição política e os direitos civis, mas não pretende controlar a religião, a economia privada ou os pensamentos de cada cidadão como fazem os regimes totalitários.", comentario:"Usar o exemplo da ditadura militar brasileira (1964-1985) citado no texto."},
+    {resposta:"A devastação da 1ª Guerra Mundial, o medo do comunismo após a Revolução Russa de 1917, e a Crise de 1929, que gerou desemprego e instabilidade.", comentario:"Esse cenário de insegurança abriu espaço para líderes que prometiam ordem e grandeza."},
+    {resposta:"Ela quis dizer que o totalitarismo se fortalece quando as pessoas perdem o senso de comunidade e ficam vulneráveis à propaganda, pois não têm mais vínculos sociais que as protejam da manipulação.", comentario:"Relacionar com o alerta da autora sobre solidão e desinformação nas sociedades atuais."}
+  ],
+  questoes: [
+    {enunciado:"A principal diferença entre autoritarismo e totalitarismo está no fato de que o totalitarismo:", alternativas:["É sempre mais brando que o autoritarismo","Pretende controlar todas as dimensões da vida humana, não só a política","Nunca usa partido único","Sempre respeita a liberdade de imprensa"], correta:1, comentario:"O totalitarismo busca transformar a sociedade inteira segundo uma ideologia."},
+    {enunciado:"Hannah Arendt é a autora do conceito de totalitarismo desenvolvido principalmente na obra:", alternativas:["O Capital","As Origens do Totalitarismo","O Príncipe","A Riqueza das Nações"], correta:1, comentario:"Publicada em 1951, é referência fundamental sobre o tema."},
+    {enunciado:"São considerados exemplos clássicos de regimes totalitários do século XX:", alternativas:["Apenas democracias parlamentares europeias","Fascismo italiano, Nazismo alemão e Stalinismo soviético","Apenas monarquias constitucionais","Apenas regimes da América Latina"], correta:1, comentario:"Os três surgiram no período entre guerras e no pós-Revolução Russa."},
+    {enunciado:"Uma ditadura militar latino-americana, como a brasileira (1964-1985), é geralmente classificada como:", alternativas:["Totalitária, pois controlava toda a vida privada dos cidadãos","Autoritária, pois reprimia a oposição mas não controlava toda a vida social", "Uma democracia plena","Um regime totalitário idêntico ao nazismo"], correta:1, comentario:"Não pretendia transformar a consciência da população como os regimes totalitários clássicos."},
+    {enunciado:"Segundo Hannah Arendt, o totalitarismo se fortalece quando a sociedade apresenta:", alternativas:["Forte senso de comunidade e participação política","Massas isoladas e atomizadas, vulneráveis à propaganda","Instituições democráticas sólidas","Imprensa livre e plural"], correta:1, comentario:"A solidão social é, para Arendt, terreno fértil para a manipulação totalitária."}
+  ]
+};

@@ -97,6 +97,29 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .atv-dup-btn{border:0;background:transparent;cursor:pointer;font-size:11px;padding:0 2px;color:var(--green);vertical-align:middle}
 .atv-del-btn{border:0;background:transparent;cursor:pointer;font-size:11px;padding:0 2px;color:#a8442f;vertical-align:middle}
 .selo-revisa{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;background:#eef4ff;color:#3a5fa8;border:1px solid #c3d4f0;border-radius:20px;padding:1px 8px;vertical-align:middle}
+.lt-head{display:flex;align-items:center;gap:10px;margin:14px 0 10px;flex-wrap:wrap}
+.lt-head h2{font-family:var(--serif);font-size:19px}
+.lt-aulaxy{font-size:13px;color:var(--muted);font-weight:600;margin-left:auto}
+.lt-strip-wrap{overflow-x:auto;padding-bottom:6px;border:1px solid var(--line);border-radius:var(--radius);background:#fff}
+.lt-strip{display:flex;gap:4px;padding:10px}
+.lt-dia{flex:0 0 auto;width:52px;height:52px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:11px;line-height:1.3;cursor:pointer;color:var(--ink)}
+.lt-dia.lt-dado{background:#e3f3ec;border-color:#8fc9ab;color:#1f5c42}
+.lt-dia.lt-hoje{background:#dce9fb;border-color:#7fa8de;color:#2a4d80;font-weight:700}
+.lt-dia.lt-buraco{background:#fbecdc;border-color:#e0ab6b;color:#8a5620}
+.lt-dia.lt-futuro{opacity:.55}
+.lt-legenda{display:flex;gap:14px;align-items:center;font-size:12px;color:var(--muted);margin:8px 2px}
+.lt-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px;vertical-align:middle}
+.lt-dot.lt-dado{background:#8fc9ab}
+.lt-dot.lt-hoje{background:#7fa8de}
+.lt-dot.lt-buraco{background:#e0ab6b}
+.lt-dot.lt-futuro{background:var(--line)}
+.lt-pendencias{margin-top:18px}
+.lt-pendencias h3{font-size:14px;margin-bottom:8px}
+.lt-pend-item{padding:8px 10px;background:var(--surface);border-radius:8px;margin-bottom:5px;font-size:13px;cursor:pointer}
+.lt-pend-item:hover{background:var(--line)}
+.lt-modal-item{padding:7px 0;font-size:13px;border-bottom:1px solid var(--line)}
+.lt-modal-click{cursor:pointer;color:#2a4d80}
+.lt-modal-click:hover{text-decoration:underline}
 .chamada-wrap{max-width:640px}
 .chamada-datas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
 .chamada-resumo{font-size:13px;color:var(--muted);margin-bottom:10px}
@@ -562,6 +585,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button class="btn full" onclick="setView('acervo')">&#128218; Acervo — buscar em tudo</button>
       <button class="btn full" onclick="_painelOrigin='gestao';_painelBim=scope.bim;setView('painel')">&#128200; Painel geral — progresso de todas as turmas</button>
       <button class="btn full" onclick="_agendaOrigin='gestao';setView('agenda')">&#128197; Agenda</button>
+      <button class="btn full" onclick="_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">&#128197; Linha do tempo desta turma</button>
       <div class="sep"></div>
       <button class="btn ghost full" onclick="toggleMaisOpcoesGestao()" id="btnMaisOpcoesGestao">&#8943; mais opções</button>
       <div class="hidden" id="maisOpcoesGestao">
@@ -587,6 +611,8 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     </main>
   </div>
 </div>
+
+<div id="viewLinhaTempo" class="hidden"><div class="acervo-wrap" id="linhaTempoBody"></div></div>
 
 <div id="editor" class="editor hidden">
   <div class="editor-top">
@@ -4634,18 +4660,24 @@ function contarAulas(t, bim){
    ∩ dia da semana em que a turma tem aula, menos feriados) — base pra
    Chamada saber quais dias oferecer sem ela ter que digitar nada, e também
    pra futuras automações no SIAP (mesmos dados, mesma fonte). */
-function datasDeAula(t, bim){
+/* Todas as datas de aula da turma no bimestre (calendário oficial ∩ dia
+   da semana da turma, menos feriados) — passado, hoje E futuro. Base pra
+   datasDeAula() (só passado) e pra Linha do tempo (passado+futuro). */
+function datasDoBimestre(t, bim){
   const r=BIM_RANGES[bim]; const grade=gradeDe(t); if(!r || !Object.keys(grade).length) return [];
   const [iy,im,id]=r[0].split('-').map(Number), [fy,fm,fd]=r[1].split('-').map(Number);
   let cur=new Date(iy,im-1,id); const end=new Date(fy,fm-1,fd);
-  const hoje=isoLocal(new Date());
   const datas=[];
   while(cur<=end){
     const wd=cur.getDay(), iso=isoLocal(cur);
-    if(grade[wd] && !FERIADOS_2026.has(iso) && iso<=hoje) datas.push(iso);
+    if(grade[wd] && !FERIADOS_2026.has(iso)) datas.push(iso);
     cur.setDate(cur.getDate()+1);
   }
   return datas;
+}
+function datasDeAula(t, bim){
+  const hoje=isoLocal(new Date());
+  return datasDoBimestre(t, bim).filter(iso=>iso<=hoje);
 }
 /* true se hoje é dia de aula desta turma segundo o horário configurado. */
 function hojeTemAula(t){
@@ -4671,6 +4703,94 @@ function aulasDadas(t, bim){
   // aula avulsa executada (explicação, atividade, correção, recomposição) conta como aula dada também
   Object.values(aulasAvulsas).filter(a=>a&&a.turmaId===t.id&&a.status==='executada'&&a.data>=r[0]&&a.data<=fim).forEach(a=>somaData(a.data));
   return total;
+}
+
+/* ── Linha do tempo da turma — visão geral separada da Gestão, pedida
+   depois que "aula livre" virou só um widget pequeno no canto. Não edita
+   nada aqui: cada clique manda pra abrirEditor/editarAulaAvulsa/
+   abrirTodasChamadas/abrirNovaAulaAvulsa, que já existem. ──────────── */
+let _ltTurma=null, _ltBim=null;
+function renderLinhaDoTempo(){
+  const box=document.getElementById('linhaTempoBody'); if(!box) return;
+  if(!_ltTurma) _ltTurma=scope.turma;
+  if(!_ltBim) _ltBim=scope.bim;
+  const tu=turmas[_ltTurma];
+  const turmaOpts=Object.values(turmas).filter(Boolean).sort((a,b)=>turmaNomeCompleto(a).localeCompare(turmaNomeCompleto(b)))
+    .map(t=>'<option value="'+t.id+'"'+(t.id===_ltTurma?' selected':'')+'>'+esc(turmaNomeCompleto(t))+'</option>').join('');
+  const bimOpts=BIMESTRES.map(b=>'<option value="'+esc(b)+'"'+(b===_ltBim?' selected':'')+'>'+esc(b)+'</option>').join('');
+  let html='<div class="acervo-filtros">'+
+    '<select onchange="_ltTurma=this.value;renderLinhaDoTempo()">'+turmaOpts+'</select>'+
+    '<select onchange="_ltBim=this.value;renderLinhaDoTempo()">'+bimOpts+'</select>'+
+  '</div>';
+  if(!tu){ box.innerHTML=html+'<div class="empty"><p>Selecione uma turma.</p></div>'; return; }
+  const atrasada=turmaAtrasada(tu.id);
+  const abertas=ocorrenciasAbertas(tu.id);
+  const cont=contarAulas(tu,_ltBim), dadas=aulasDadas(tu,_ltBim);
+  html+='<div class="lt-head">'+
+    '<h2>'+esc(turmaNomeCompleto(tu))+'</h2>'+
+    (atrasada?'<span class="reg-badge" style="background:#a8442f" title="'+esc(abertas.map(o=>OCORR_CATEGORIAS[o.categoria]||o.categoria).join(', '))+'">⚠ atrasada</span>':'')+
+    '<span class="lt-aulaxy">Aula '+dadas+'/'+cont.total+'</span>'+
+  '</div>';
+  const hoje=isoLocal(new Date());
+  const datas=datasDoBimestre(tu,_ltBim);
+  if(!datas.length){
+    html+='<div class="empty"><p>Essa turma não tem horário configurado, ou o bimestre está fora do calendário.</p></div>';
+    box.innerHTML=html; return;
+  }
+  html+='<div class="lt-strip-wrap"><div class="lt-strip">';
+  datas.forEach(iso=>{
+    const chamada=chamadaDoDia(tu.id,iso);
+    const regs=Object.values(registros).filter(r=>r&&r.turmaId===tu.id&&r.data===iso);
+    const avulsas=aulasAvulsasDoDia(tu.id,iso);
+    let status;
+    if(iso===hoje) status='hoje';
+    else if(iso>hoje) status='futuro';
+    else if(chamada||regs.length||avulsas.length) status='dado';
+    else status='buraco';
+    const d=new Date(iso+'T00:00:00');
+    const rotulo=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][d.getDay()]+'<br>'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+    let titleParts=[];
+    if(chamada) titleParts.push('chamada lançada');
+    if(regs.length) titleParts.push(regs.length+' aplicação(ões)');
+    if(avulsas.length) titleParts.push(avulsas.length+' aula(s) avulsa(s)');
+    const title=titleParts.length?titleParts.join(', '):(status==='futuro'?'ainda não chegou':status==='hoje'?'hoje':'nada registrado');
+    html+='<button class="lt-dia lt-'+status+'" title="'+esc(title)+'" onclick="abrirDiaLinhaTempo(\''+tu.id+'\',\''+iso+'\')">'+rotulo+'</button>';
+  });
+  html+='</div></div>';
+  html+='<div class="lt-legenda"><span class="lt-dot lt-dado"></span> dado <span class="lt-dot lt-hoje"></span> hoje <span class="lt-dot lt-buraco"></span> sem registro <span class="lt-dot lt-futuro"></span> futuro</div>';
+  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===tu.id&&c.bimestre===_ltBim);
+  let pendentes=[];
+  conts.forEach(c=>temasDoConteudo(c.id).forEach(t=>{ if(!registrosDoTema(t.id).some(r=>r.turmaId===tu.id)) pendentes.push(t); }));
+  html+='<div class="lt-pendencias"><h3>Temas pendentes nesta turma/bimestre ('+pendentes.length+')</h3>'+
+    (pendentes.length ? pendentes.map(t=>'<div class="lt-pend-item" onclick="abrirEditor(\''+t.id+'\')">'+esc(t.dcgo||'')+' '+esc(t.tituloExibicao||t.nome)+'</div>').join('')
+      : '<p style="color:var(--muted);font-size:13px">Nenhum — tudo aplicado.</p>')+
+  '</div>';
+  box.innerHTML=html;
+}
+function abrirDiaLinhaTempo(turmaId,dataISO){
+  const tu=turmas[turmaId]||{};
+  const chamada=chamadaDoDia(turmaId,dataISO);
+  const regs=Object.values(registros).filter(r=>r&&r.turmaId===turmaId&&r.data===dataISO);
+  const avulsas=aulasAvulsasDoDia(turmaId,dataISO);
+  let corpo='';
+  if(chamada) corpo+='<div class="lt-modal-item">📋 Chamada lançada nesse dia.</div>';
+  regs.forEach(r=>{
+    const t=temas[r.temaId]||{};
+    corpo+='<div class="lt-modal-item lt-modal-click" onclick="closeModal();abrirEditor(\''+r.temaId+'\')">📗 '+esc(t.tituloExibicao||t.nome||'tema')+' — '+esc((r.objetos||[]).join(', '))+'</div>';
+  });
+  avulsas.forEach(a=>{
+    corpo+='<div class="lt-modal-item lt-modal-click" onclick="closeModal();editarAulaAvulsa(\''+a.id+'\')">✎ Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+' · '+esc(a.titulo)+' ('+(a.status==='executada'?'executada':'planejada')+')</div>';
+  });
+  if(!chamada && !regs.length && !avulsas.length){
+    corpo='<p style="color:var(--muted);font-size:13px">Nada registrado nesse dia.</p>'+
+      '<button class="btn ghost full" style="margin-top:6px" onclick="closeModal();abrirTodasChamadas()">📋 Lançar chamada</button>'+
+      '<button class="btn ghost full" style="margin-top:6px" onclick="closeModal();abrirNovaAulaAvulsa(\''+dataISO+'\')">✎ Aula avulsa nesse dia</button>';
+  }
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:420px">'+
+    '<div class="modal-h"><h3>'+esc(turmaNome(tu))+' — '+dataISO.split('-').reverse().join('/')+'</h3></div>'+
+    '<div class="modal-b">'+corpo+'</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function persistChamada(c){ c._ts=Date.now(); chamadas[c.id]=c; lsSet(LS_CHAMADAS,JSON.stringify(chamadas)); if(DB) DB.ref('leciona/chamadas/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar chamada no Firebase (mantida localmente). '+e.message,'err')); }
 function chamadaDoDia(turmaId,data){ return Object.values(chamadas).find(c=>c&&c.turmaId===turmaId&&c.data===data)||null; }
@@ -5594,7 +5714,7 @@ function projetarAula(disc,uni,serie,letra){
 }
 function setView(v){
   fecharProjecao();
-  ['viewHoje','viewPainel','viewAcervo','viewAgenda','viewNotas','viewGestao'].forEach(id=>{
+  ['viewHoje','viewPainel','viewAcervo','viewAgenda','viewNotas','viewGestao','viewLinhaTempo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('hidden', id!=='view'+v.charAt(0).toUpperCase()+v.slice(1));
   });
   ['tabHoje','tabPainel','tabAcervo','tabAgenda','tabNotas','tabGestao'].forEach(id=>{
@@ -5606,6 +5726,7 @@ function setView(v){
   if(v==='acervo') renderAcervo();
   if(v==='agenda') renderAgenda();
   if(v==='notas') renderNotas();
+  if(v==='linhaTempo') renderLinhaDoTempo();
 }
 
 
