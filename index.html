@@ -95,6 +95,8 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .stat-box span{font-size:11px;color:var(--muted)}
 .atv-tipo{font-size:10px;display:block;color:var(--muted);font-weight:normal}
 .atv-dup-btn{border:0;background:transparent;cursor:pointer;font-size:11px;padding:0 2px;color:var(--green);vertical-align:middle}
+.atv-del-btn{border:0;background:transparent;cursor:pointer;font-size:11px;padding:0 2px;color:#a8442f;vertical-align:middle}
+.selo-revisa{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;background:#eef4ff;color:#3a5fa8;border:1px solid #c3d4f0;border-radius:20px;padding:1px 8px;vertical-align:middle}
 .chamada-wrap{max-width:640px}
 .chamada-datas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
 .chamada-resumo{font-size:13px;color:var(--muted);margin-bottom:10px}
@@ -524,7 +526,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button id="tabProjecao" onclick="abrirProjecaoAtual()">Projetar</button>
       <button id="tabPainel" class="hidden" onclick="setView('painel')">📈 Painel</button>
       <button id="tabAcervo" class="hidden" onclick="setView('acervo')">📚 Acervo</button>
-      <button id="tabAgenda" class="hidden" onclick="setView('agenda')">📅 Agenda</button>
+      <button id="tabAgenda" onclick="_agendaOrigin='hoje';setView('agenda')">📅 Agenda</button>
     </nav>
     <span class="conn" id="conn" onclick="location.reload()" style="cursor:pointer" title="Toque para recarregar o app"><span class="led"></span><span id="connTxt">Local</span></span>
     <button class="icon-btn" title="Assistente (chat livre com IA)" onclick="openAssistente()">&#128172;</button>
@@ -558,7 +560,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button class="btn primary full" onclick="novoConteudo()">+ Novo conteúdo</button>
       <button class="btn full" onclick="openRelatorio()">&#128196; Gerar relatório / PDF</button>
       <button class="btn full" onclick="setView('acervo')">&#128218; Acervo — buscar em tudo</button>
-      <button class="btn full" onclick="_painelOrigin='gestao';setView('painel')">&#128200; Painel geral — progresso de todas as turmas</button>
+      <button class="btn full" onclick="_painelOrigin='gestao';_painelBim=scope.bim;setView('painel')">&#128200; Painel geral — progresso de todas as turmas</button>
       <button class="btn full" onclick="_agendaOrigin='gestao';setView('agenda')">&#128197; Agenda</button>
       <div class="sep"></div>
       <button class="btn ghost full" onclick="toggleMaisOpcoesGestao()" id="btnMaisOpcoesGestao">&#8943; mais opções</button>
@@ -1869,7 +1871,13 @@ function _buildTemasIdx(){
 }
 function temasDoConteudo(cid){
   if(!_temaIdx) _buildTemasIdx();
-  return (_temaIdx[cid]||[]).slice().sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+  return (_temaIdx[cid]||[]).slice().sort((a,b)=>{
+    const ca=(a.dcgo||'').trim(), cb=(b.dcgo||'').trim();
+    if(ca&&cb) return ca.localeCompare(cb,'pt-BR',{numeric:true,sensitivity:'base'});
+    if(ca&&!cb) return -1;
+    if(!ca&&cb) return 1;
+    return (a.ordem||0)-(b.ordem||0);
+  });
 }
 function nextOrdemConteudo(){
   const arr=conteudosDoScope();
@@ -1950,7 +1958,7 @@ function renderThemes(){
               '<button title="Descer" onclick="moverTema(\''+t.id+'\',1)">▼</button>'+
             '</div>'+
             '<div class="tmeta">'+
-              '<div><span class="tcode">'+esc(t.dcgo||'')+'</span><span class="tname">'+esc(t.tituloExibicao||t.nome)+'</span></div>'+
+              '<div><span class="tcode">'+esc(t.dcgo||'')+'</span><span class="tname">'+esc(t.tituloExibicao||t.nome)+'</span>'+(t.revisaGoias?'<span class="selo-revisa" title="Este conteúdo aparece no Revisa Goiás deste bimestre">📘 Revisa Goiás</span>':'')+'</div>'+
               '<div class="tsub">'+selosHtml(t.disciplina,t.serie,t.bimestre,t.dcgo)+statusResumo(t)+'</div>'+
             '</div>'+
             objStatusHtml(t.id, scope.turma)+
@@ -2803,7 +2811,7 @@ function abrirEditor(id){
   if(!editing.status) editing.status={};
   dirty=false;
   const tuEd=turmas[editing.turmaId];
-  document.getElementById('edTurmaBadge').textContent=tuEd?turmaNomeCompleto(tuEd):'';
+  document.getElementById('edTurmaBadge').innerHTML=esc(tuEd?turmaNomeCompleto(tuEd):'')+(editing.revisaGoias?' <span class="selo-revisa" title="Este conteúdo aparece no Revisa Goiás deste bimestre">📘 Revisa Goiás</span>':'');
   document.getElementById('edNome').value=editing.nome||'';
   document.getElementById('edDcgo').value=editing.dcgo||'';
   document.getElementById('edTituloExibicao').value=editing.tituloExibicao||'';
@@ -3160,8 +3168,8 @@ function renderObjTabs(){
   const br=document.createElement('button');
   const nReg=registrosDoTema(editing.id).length;
   br.className=(activeObj==='__registro'?'active ':'')+(nReg?'done':'');
-  br.innerHTML='<span class="badge"></span>📋'+(nReg?' ('+nReg+')':'');
-  br.title='Registro de aplicação por turma';
+  br.innerHTML='<span class="badge"></span>📋 Registro'+(nReg?' ('+nReg+')':'');
+  br.title='Ver, editar ou apagar as aplicações já lançadas deste tema';
   br.onclick=()=>{ saveActiveObj(); activeObj='__registro'; renderObjTabs(); renderAbaRegistro(); };
   el.appendChild(br);
 }
@@ -5228,6 +5236,8 @@ function renderHoje(){
         return '<div class="hoje-row">'+
           '<div class="hoje-info"><b style="color:'+cor+'">Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+'</b><span>'+esc(turmaNome(tu))+' · '+esc(a.titulo)+' · '+(a.status==='executada'?'executada':'planejada')+(a.observacoes?(' · '+esc(a.observacoes)):'')+'</span></div>'+
           '<div class="hoje-acoes">'+
+            '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+a.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+            '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+a.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
             (a.status!=='executada'?'<button class="btn ghost sm" onclick="marcarAulaAvulsaExecutada(\''+a.id+'\')">marcar executada</button>':'')+
             '<button class="btn ghost sm" onclick="editarAulaAvulsa(\''+a.id+'\')">editar</button>'+
             '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">remover</button>'+
@@ -6764,7 +6774,7 @@ function renderNotas(){
     '</select>'+
     '<button class="btn ghost sm" onclick="abrirExportarCSV()">↓ CSV</button>'+
     '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
-    '<button class="btn ghost sm" onclick="_painelOrigin=\'notas\';setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
+    '<button class="btn ghost sm" onclick="_painelOrigin=\'notas\';_painelBim=scope.bim;setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
     '<button class="btn ghost sm" onclick="_agendaOrigin=\'notas\';setView(\'agenda\')" title="Agenda — aulas, cronograma e compromissos por dia">📅 Agenda</button>'+
   '</div>';
 
@@ -6817,6 +6827,7 @@ function renderNotas(){
       return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+' — '+esc(tp.label||av.tipo)+(isCheck?' (checklist)':' (nota)')+'" data-avid="'+av.id+'">'+
         '<span class="atv-col-header">'+esc(av.nome)+'</span>'+
         (av.recorrente?'<button class="atv-dup-btn" onclick="event.stopPropagation();abrirDuplicarAtividade(\''+av.id+'\')" title="Duplicar pra outra turma/data, sem redigitar">⧉</button>':'')+
+        '<button class="atv-del-btn" onclick="event.stopPropagation();removerAtividade(\''+av.id+'\')" title="Remover esta atividade (e as notas lançadas)">✕</button>'+
         '<span class="atv-tipo">peso '+av.peso+(isCheck?' &middot; &check;':'')+'</span>'+
       '</th>';
     }).join('')+
@@ -6870,19 +6881,6 @@ function renderNotas(){
 
   h+='</tbody></table></div>';
   box.innerHTML=h;
-  // Delegação de eventos para remover atividade via .atv-remover
-  // Botão ✕ nos cabeçalhos via dblclick
-  box.querySelectorAll('th[data-avid]').forEach(th=>{
-    th.style.cursor='pointer';
-    th.addEventListener('dblclick', ()=>{
-      if(confirm('Remover atividade "'+th.querySelector('.atv-col-header')?.textContent+'"?'))
-        removerAtividade(th.getAttribute('data-avid'));
-    });
-    const hint=document.createElement('span');
-    hint.style.cssText='display:block;font-size:9px;color:rgba(0,0,0,.35)';
-    hint.textContent='2× para remover';
-    th.appendChild(hint);
-  });
 }
 
 function salvarNota(input){

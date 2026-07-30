@@ -145,3 +145,584 @@ Object.assign(PREBUILT_ADAPT, {
 "Ditadura Militar e reabertura democrática":{"tea":{"estudo":"## Resistência à Ditadura: \"Milagre Econômico\" x Arrocho e Concentração de Renda\n\n---\n\n### O que você vai aprender neste texto\n\nVocê vai entender o que foi o \"milagre econômico\" da ditadura militar brasileira, para quem ele funcionou e por que ele terminou.\n\n---\n\n### Antes de começar: palavras importantes\n\nLeia os significados abaixo. Eles vão aparecer no texto.\n\n- **PIB (Produto Interno Bruto):** valor total de tudo que um país produz em um ano.\n- **Endividamento externo:** quando o país pega dinheiro emprestado de outros países ou de bancos internacionais.\n- **Arrocho salarial:** política do governo de segurar os salários dos trabalhadores em valores baixos.\n- **Sindicato:** organização de trabalhadores que luta por melhores salários e condições de trabalho.\n- **Greve:** parada coletiva do trabalho usada pelos trabalhadores para exigir direitos.\n- **Concentração de renda:** quando a maior parte do dinheiro do país fica nas mãos de poucas pessoas.\n- **Choque do petróleo (1973):** momento em que os países produtores de petróleo aumentaram muito o preço do produto, afetando países que dependiam de importá-lo.\n- **Subversão:** palavra usada pela ditadura para chamar de \"inimigo\" quem contestava o regime.\n\n---\n\n### Parte 1 — O que foi o \"milagre econômico\"?\n\nEntre **1968 e 1973**, a economia brasileira cresceu muito rápido.\n\nVeja os dados abaixo:\n\n| O que aconteceu | Como a ditadura apresentava isso |\n|---|---|\n| O PIB crescia mais de 10% ao ano | Sinal de que o Brasil estava se tornando uma grande potência |\n| Foram construídas grandes obras: Transamazônica, Ponte Rio-Niterói e Usina de Itaipu | Símbolo da \"grandeza\" e do progresso do país |\n| A indústria avançava | O Brasil estava se modernizando |\n\nA ditadura chamou esse período de **\"milagre econômico\"**.\n\n**Mas esse crescimento tinha um problema escondido:** ele foi financiado com dinheiro emprestado de outros países. O Brasil contraiu dívidas externas para pagar as obras e os investimentos. Enquanto os juros internacionais estavam baixos, a estratégia parecia funcionar. Mas isso não duraria.\n\n---\n\n### Parte 2 — Para quem era o \"milagre\"?\n\nO crescimento econômico **não chegou igual para todos**.\n\nVeja o que aconteceu com os trabalhadores durante esse período:\n\n**1.** A ditadura congelou os salários. Os trabalhadores não recebiam aumentos que acompanhassem o crescimento da economia.\n\n**2.** O salário mínimo perdeu poder de compra ao longo dos anos. Isso significa que, com o mesmo salário, o trabalhador conseguia comprar menos coisas.\n\n**3.** As greves foram reprimidas com violência. Trabalhadores que tentavam parar o trabalho para exigir melhores salários eram tratados como inimigos do Estado.\n\n**4.** Os sindicatos foram controlados pelo governo. As organizações que defendiam os trabalhadores perderam sua independência.\n\n**5.** Qualquer trabalhador que reivindicasse seus direitos podia ser acusado de \"subversão\" — palavra usada pela ditadura para justificar prisões e perseguições.\n\n**O resultado foi este:**\n\n- O **1% mais rico** da população acumulou a maior parte dos benefícios do crescimento.\n- Trabalhadores rurais, trabalhadores urbanos, pessoas pobres e moradores de periferias **não viram melhoria** em suas condições de vida.\n\nEsse processo tem um nome: **concentração de renda extrema**.\n\nO \"milagre\" foi crescimento **sem distribuição**. Foi modernização para uma elite, endividamento para o país e miséria para a maioria.\n\n---\n\n### Parte 3 — Por que o \"milagre\" terminou?\n\nEm **1973**, aconteceu o **choque do petróleo**.\n\nSiga os passos abaixo para entender essa sequência de causa e consequência:\n\n**Passo 1:** Os países produtores de petróleo aumentaram muito o preço do produto.\n\n**Passo 2:** O Brasil dependia de importar petróleo. Com o preço alto, o país passou a gastar muito mais dinheiro para comprar esse recurso.\n\n**Passo 3:** As contas externas do Brasil desmoronaram. O país devia muito dinheiro ao exterior e não conseguia mais pagar.\n\n**Passo 4:** A dívida externa tornou-se insustentável.\n\n**Passo 5:** O crescimento acelerado parou.\n\n**Conclusão:** O modelo econômico da ditadura era frágil porque dependia de dois fatores externos que o Brasil não controlava — juros internacionais baixos e petróleo barato. Quando esses fatores mudaram, o \"milagre\" acabou.\n\n---\n\n### Resumo — leia com atenção\n\n| Aspecto | O que a ditadura dizia | O que realmente acontecia |\n|---|---|---|\n| Crescimento econômico | \"O Brasil está progredindo\" | O crescimento era financiado por dívidas externas |\n| Salários | — | Foram congelados; trabalhadores perderam poder de compra |\n| Greves e sindicatos | \"Subversão, ameaça ao país\" | Forma legítima de os trabalhadores exigirem direitos; foram reprimidos com violência |\n| Distribuição de renda | \"O Brasil está enriquecendo\" | A riqueza ficou concentrada no 1% mais rico |\n| Fim do crescimento | — | O choque do petróleo revelou que o modelo dependia de fatores externos que o Brasil não controlava |\n\n---\n\n### Perguntas de reflexão\n\nLeia cada pergunta com atenção. Pense na resposta antes de escrever.\n\n**Pergunta 1**\n\nPor que a ditadura reprimia sindicatos e greves durante o \"milagre econômico\"?\n\nUse estas informações para montar sua resposta:\n\n- O que era o arrocho salarial?\n- O que aconteceria se os trabalhadores pudessem se organizar livremente?\n- Como a ditadura chamava quem reivindicava direitos?\n\n---\n\n**Pergunta 2**\n\nO que o fim do \"milagre\" com o choque do petróleo revela sobre a fragilidade do modelo econômico da ditadura?\n\nUse estas informações para montar sua resposta:\n\n- De onde vinha o dinheiro que financiava o crescimento?\n- O Brasil controlava os juros internacionais e o preço do petróleo?\n- O que aconteceu quando esses fatores mudaram?\n\n---\n\n### Referências\n\n- BIELSCHOWSKY, Ricardo. *Pensamento econômico brasileiro*. Rio de Janeiro: IPEA/INPS, 1988.\n- FAUSTO, Boris. *História do Brasil*. São Paulo: EDUSP, 2006."}},
 });
 if(typeof _prebuiltLoadedMark==="function") _prebuiltLoadedMark("História");
+
+/* Complementos de conteúdo — quadro/slides/mapaMental/avaliação pros 13 temas que só tinham "estudo" (achado em auditoria de 29/07/2026) */
+Object.assign(PREBUILT_OBJ["Mídias digitais e cultura de massas"], {
+  quadro: "• Cultura de massas: produção cultural padronizada, em série, pro consumo em larga escala\n• Nasce com o capitalismo industrial: jornais populares, cinema, rádio, TV\n• Indústria cultural (Adorno e Horkheimer, Escola de Frankfurt, 1947): crítica à padronização e ao controle social pela cultura de massa\n• Internet, smartphones e redes sociais substituem TV/rádio como mídia dominante\n• Modelo de negócio das plataformas: vender atenção do usuário pra anunciantes\n• Capitalismo de vigilância (Shoshana Zuboff): experiência humana vira matéria-prima de dados\n• Algoritmos não são neutros — maximizam engajamento, geram bolhas informacionais/câmaras de eco\n• Influenciadores digitais: publicidade que parece recomendação espontânea\n• Desinformação (fake news) se espalha mais rápido nas redes\n• Resposta necessária: pensamento crítico sobre fontes, algoritmos e interesses econômicos",
+  slides: [
+    {titulo:"O que é cultura de massas?", topicos:["Produção cultural em série, capitalismo industrial (séc. XIX-XX)","Jornais, cinema, rádio, TV: mass media"]},
+    {titulo:"Indústria cultural (Adorno e Horkheimer)", topicos:["Cultura padronizada serve ao controle social, não à emancipação","Entretenimento superficial dificulta o pensamento crítico"]},
+    {titulo:"Das telas de tubo às telas de celular", topicos:["TV Globo (1965) e a influência cultural/política","Internet e redes sociais mudam quem produz conteúdo"]},
+    {titulo:"Algoritmo e capitalismo de vigilância", topicos:["Plataformas vendem atenção e dados comportamentais","Bolhas informacionais e câmaras de eco"]},
+    {titulo:"Desinformação e pensamento crítico", topicos:["Fake news ganham escala global nas redes","Questionar fontes, algoritmos e interesses por trás do conteúdo"]}
+  ],
+  mapaMental: "-   Mídias digitais e cultura de massas\n    -   Cultura de massas: produção em série, capitalismo industrial\n    -   Indústria cultural (Adorno/Horkheimer): controle social pelo entretenimento\n    -   TV Globo → internet/redes sociais: nova mídia dominante\n    -   Capitalismo de vigilância (Zuboff): dados como matéria-prima\n    -   Algoritmos: engajamento, bolhas informacionais\n    -   Influenciadores: publicidade que parece recomendação\n    -   Desinformação e necessidade de pensamento crítico",
+  avaliacao: {
+    atividade: [
+      {enunciado:"O que é 'indústria cultural' segundo Adorno e Horkheimer, e qual crítica eles fazem à cultura produzida em massa?"},
+      {enunciado:"Explique o conceito de 'capitalismo de vigilância' de Shoshana Zuboff."},
+      {enunciado:"Como os algoritmos das redes sociais influenciam o que cada pessoa vê e acredita?"},
+      {enunciado:"O que são 'bolhas informacionais' e por que elas dificultam o debate público?"},
+      {enunciado:"Na sua opinião, como a publicidade feita por influenciadores digitais é diferente da publicidade tradicional de TV?"}
+    ],
+    flashcards: [
+      {frente:"Quem cunhou o conceito de 'indústria cultural'?", verso:"Theodor Adorno e Max Horkheimer"},
+      {frente:"Em que obra e ano surgiu o conceito de indústria cultural?", verso:"Dialética do Esclarecimento, 1947"},
+      {frente:"Quem escreveu 'A Era do Capitalismo de Vigilância'?", verso:"Shoshana Zuboff"},
+      {frente:"O que as plataformas digitais vendem, em essência?", verso:"A atenção dos usuários"},
+      {frente:"Como se chama o ambiente onde só circulam opiniões parecidas com as nossas?", verso:"Bolha informacional / câmara de eco"},
+      {frente:"Em que ano foi fundada a TV Globo?", verso:"1965"},
+      {frente:"O que os algoritmos são programados para maximizar?", verso:"O engajamento (tempo de tela)"},
+      {frente:"Como se chamam informações falsas que circulam rapidamente nas redes?", verso:"Fake news / desinformação"}
+    ],
+    gabarito: [
+      {resposta:"É o conceito que denuncia que a cultura produzida pelo capitalismo serve ao controle social e ao consumo, não à emancipação, tendendo à padronização e ao entretenimento superficial.", comentario:"Reforçar que a crítica é ao modo de produção em série da cultura, não à cultura em si."},
+      {resposta:"É a ideia de que grandes empresas de tecnologia transformam a experiência humana (cliques, curtidas, localização) em dados comportamentais usados para prever e influenciar o consumo.", comentario:"Destacar que a experiência humana vira matéria-prima, como numa linha de produção."},
+      {resposta:"Os algoritmos selecionam o que aparece na tela pra maximizar o tempo de uso, mostrando conteúdos que geram reação emocional forte e reforçam crenças já existentes.", comentario:"Explicar que isso não é neutro — é uma escolha de programação com objetivo comercial."},
+      {resposta:"São ambientes digitais onde só circulam opiniões semelhantes às nossas, dificultando o contato com pontos de vista diferentes e empobrecendo o debate público.", comentario:"Relacionar ao papel do algoritmo em criar essas bolhas."},
+      {resposta:"Resposta pessoal — valorizar a percepção de que a publicidade de influenciador parece recomendação espontânea de um amigo, o que a torna mais persuasiva.", comentario:"Aceitar qualquer argumentação coerente com o texto estudado."}
+    ],
+    questoes: [
+      {enunciado:"O conceito de 'indústria cultural', de Adorno e Horkheimer, denuncia que a produção cultural capitalista:", alternativas:["Serve à emancipação humana e ao pensamento crítico","Serve ao controle social e ao estímulo ao consumo","Não tem relação com a economia capitalista","Surgiu apenas com a internet"], correta:1, comentario:"Adorno e Horkheimer criticavam a padronização da cultura produzida em série."},
+      {enunciado:"Segundo Shoshana Zuboff, o 'capitalismo de vigilância' transforma em matéria-prima:", alternativas:["Apenas o dinheiro dos anunciantes","Apenas os produtos vendidos online","A experiência humana (cliques, dados, comportamento)","Apenas os equipamentos eletrônicos"], correta:2, comentario:"A experiência humana capturada em dados é o centro desse modelo."},
+      {enunciado:"Os algoritmos das redes sociais são programados principalmente para:", alternativas:["Mostrar sempre notícias verdadeiras","Maximizar o engajamento do usuário","Reduzir o tempo de uso das plataformas","Eliminar a publicidade"], correta:1, comentario:"O objetivo comercial é manter o usuário conectado o maior tempo possível."},
+      {enunciado:"As 'bolhas informacionais' ou 'câmaras de eco' são um problema porque:", alternativas:["Aumentam o contato com opiniões diferentes","Empobrecem o debate ao mostrar só opiniões semelhantes às nossas","Eliminam completamente a publicidade","Só existem na televisão"], correta:1, comentario:"Isso dificulta o contato com pontos de vista diferentes dos nossos."},
+      {enunciado:"A publicidade feita por influenciadores digitais é considerada mais eficaz que a tradicional porque:", alternativas:["É sempre mais barata","Parece uma recomendação espontânea de um amigo","Não usa a internet","É proibida em redes sociais"], correta:1, comentario:"Essa aparência de espontaneidade aumenta o poder de persuasão."}
+    ]
+  }
+});
+Object.assign(PREBUILT_OBJ["O acidente do Césio-137 em Goiânia"], {
+  quadro: "• Setembro de 1987: catadores encontram cápsula de Césio-137 em prédio abandonado do Instituto Goiano de Radioterapia\n• Pó azulado brilhante é manipulado por curiosidade — ninguém sabia que era radioativo\n• Material se espalha por pelo menos 5 pontos de Goiânia\n• 4 mortes diretas: Leide das Neves (6 anos), Gabriela Maria Ferreira, Israel Baptista, Admilson Alves\n• Mais de 100 mil pessoas avaliadas; 249 contaminadas em algum grau\n• CNEN assume a crise; Estádio Olímpico vira centro de triagem\n• Lixo radioativo depositado em Abadia de Goiás\n• Discriminação nacional contra goianienses: hotéis, produtos e caminhões de Goiás barrados\n• AIEA classifica como nível 5 (máximo fora de usina nuclear) na escala INES\n• Lição de cidadania: informação é direito, fiscalização é dever do Estado",
+  slides: [
+    {titulo:"O início do acidente", topicos:["Catadores encontram a cápsula no IGR abandonado","Setembro de 1987, bairro Aeroporto, Goiânia"]},
+    {titulo:"A contaminação se espalha", topicos:["Pó azulado manipulado por curiosidade, sem informação","Leide das Neves, 6 anos, é a vítima mais simbólica"]},
+    {titulo:"A resposta das autoridades", topicos:["CNEN assume o controle; Estádio Olímpico vira triagem","249 contaminados, 4 mortes confirmadas"]},
+    {titulo:"Estigma e discriminação", topicos:["Goianienses barrados em hotéis e estradas de outros estados","Pânico alimentado pela desinformação"]},
+    {titulo:"Repercussão internacional e lições", topicos:["AIEA classifica nível 5 na escala INES","Informação e fiscalização como direitos de cidadania"]}
+  ],
+  mapaMental: "-   Acidente do Césio-137 (Goiânia, 1987)\n    -   Origem: cápsula abandonada no Instituto Goiano de Radioterapia\n    -   Contaminação: manipulação por desconhecimento, 5 pontos da cidade\n    -   Vítimas: 4 mortes, 249 contaminados, +100 mil avaliados\n    -   Resposta: CNEN, Estádio Olímpico, Abadia de Goiás\n    -   Repercussão: discriminação nacional contra goianienses\n    -   Internacional: AIEA, nível 5 na escala INES\n    -   Lição: informação e fiscalização como direito de cidadania",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Como o Césio-137 chegou às mãos da população de Goiânia?"},
+      {enunciado:"Por que a falta de informação foi decisiva para o agravamento do acidente?"},
+      {enunciado:"Explique o fenômeno de discriminação sofrido pelos goianienses após o acidente."},
+      {enunciado:"Qual foi a resposta institucional (nacional e internacional) ao acidente?"},
+      {enunciado:"Que lição sobre cidadania e responsabilidade do Estado o acidente do Césio-137 deixa até hoje?"}
+    ],
+    flashcards: [
+      {frente:"Em que ano ocorreu o acidente do Césio-137?", verso:"1987"},
+      {frente:"De onde veio a cápsula de Césio-137?", verso:"Instituto Goiano de Radioterapia (IGR), abandonado"},
+      {frente:"Quantas mortes diretas o acidente causou?", verso:"4"},
+      {frente:"Qual foi a vítima mais jovem, símbolo da tragédia?", verso:"Leide das Neves Ferreira, 6 anos"},
+      {frente:"Qual órgão assumiu o controle da crise?", verso:"CNEN — Comissão Nacional de Energia Nuclear"},
+      {frente:"Onde foi depositado o lixo radioativo?", verso:"Abadia de Goiás"},
+      {frente:"Qual organização internacional avaliou o acidente?", verso:"AIEA — Agência Internacional de Energia Atômica"},
+      {frente:"Qual o nível do acidente na escala INES?", verso:"Nível 5 (máximo fora de usina nuclear)"}
+    ],
+    gabarito: [
+      {resposta:"Catadores de material reciclável retiraram uma cápsula de um aparelho de radioterapia abandonado e a venderam a um ferro-velho, onde foi aberta por curiosidade.", comentario:"Reforçar que ninguém sabia se tratar de material radioativo."},
+      {resposta:"Porque as pessoas não sabiam que o pó brilhante era perigoso, manipulando-o diretamente com as mãos e distribuindo fragmentos entre familiares e vizinhos.", comentario:"Conectar à ideia de que informação básica poderia ter evitado a tragédia."},
+      {resposta:"Moradores de Goiânia foram impedidos de circular em outras cidades, hotéis recusaram hóspedes goianos, e produtos e caminhões do estado foram boicotados/barrados.", comentario:"Destacar que o medo foi alimentado pela desinformação sobre radioatividade."},
+      {resposta:"A CNEN assumiu a crise no Brasil; internacionalmente, a AIEA enviou representantes, elaborou relatório e classificou o caso no nível 5 da escala INES.", comentario:"Aceitar menção a qualquer uma das duas respostas, nacional ou internacional."},
+      {resposta:"Resposta pessoal — valorizar argumentos sobre o direito à informação e o dever do Estado de fiscalizar o descarte de materiais perigosos.", comentario:"Não há resposta única; avaliar a qualidade da reflexão sobre cidadania."}
+    ],
+    questoes: [
+      {enunciado:"O acidente do Césio-137 em Goiânia, em 1987, teve origem:", alternativas:["Em um vazamento de uma usina nuclear","Em uma cápsula radioativa de um aparelho de radioterapia abandonado","Em um ataque terrorista","Em um experimento militar secreto"], correta:1, comentario:"O equipamento foi deixado sem descarte adequado quando o IGR mudou de endereço."},
+      {enunciado:"A criança Leide das Neves Ferreira, símbolo da tragédia, foi contaminada ao:", alternativas:["Trabalhar no Instituto Goiano de Radioterapia","Comer com as mãos sujas do pó radioativo","Visitar o Estádio Olímpico","Morar em Abadia de Goiás"], correta:1, comentario:"Ela tinha apenas 6 anos e foi contaminada em casa."},
+      {enunciado:"A discriminação sofrida pelos goianienses após o acidente incluiu:", alternativas:["Aumento do turismo na cidade","Recusa de hospedagem e boicote a produtos goianos em outros estados","Isenção total de impostos","Nenhuma consequência social"], correta:1, comentario:"O medo e a desinformação geraram preconceito generalizado contra a população de Goiás."},
+      {enunciado:"A Agência Internacional de Energia Atômica (AIEA) classificou o acidente do Césio-137 na escala INES como:", alternativas:["Nível 1, o mais baixo","Nível 5, o máximo para acidentes fora de usina nuclear","Não classificável","Nível 0, sem gravidade"], correta:1, comentario:"É considerado um dos piores desastres radiológicos fora de uma usina nuclear."},
+      {enunciado:"Uma das principais lições cívicas deixadas pelo acidente do Césio-137 é que:", alternativas:["Radioatividade não é um risco real","A informação e a fiscalização pública são direitos e deveres essenciais","O acidente não teve nenhuma repercussão internacional","O problema foi resolvido sem qualquer mudança na legislação"], correta:1, comentario:"O episódio pressionou o país a reformular normas de controle radiológico."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Goiás na década de 1980"], {
+  quadro: "• Redemocratização nacional chega a Goiás: eleições diretas retomadas em 1982\n• Iris Rezende (PMDB) eleito governador — 1ª eleição direta em quase 2 décadas\n• Goianos participam das Diretas Já (1983-84) com comícios em Goiânia\n• Economia nacional: 'década perdida' — inflação alta, estagnação, Plano Cruzado (1986)\n• Goiás moderniza a agricultura do Cerrado com apoio da EMBRAPA — soja e milho\n• Modernização agrícola tem custo social/ambiental: conflitos de terra, desmatamento\n• Goiânia cresce rápido: migração, favelização, pressão sobre saúde/educação\n• Efervescência cultural: teatro, música, UFG como espaço de debate político\n• Assembleia Constituinte (1987-88): parlamentares goianos participam da nova Constituição\n• Novos atores políticos: sindicatos, associações de moradores, movimentos de mulheres",
+  slides: [
+    {titulo:"Redemocratização em Goiás", topicos:["Eleições diretas de 1982: Iris Rezende governador","Diretas Já em Goiânia (1983-84)"]},
+    {titulo:"Economia: crise nacional x modernização local", topicos:["'Década perdida': inflação e estagnação no Brasil","Modernização da agricultura do Cerrado (EMBRAPA)"]},
+    {titulo:"Custos sociais e ambientais", topicos:["Conflitos pela terra, expulsão de comunidades tradicionais","Desmatamento do Cerrado, crescimento desordenado de Goiânia"]},
+    {titulo:"Vida cultural e universidades", topicos:["Teatro, música e artes plásticas em efervescência","UFG como espaço de debate político e mobilização estudantil"]},
+    {titulo:"Goiás na Constituinte de 1988", topicos:["Parlamentares goianos na Assembleia Constituinte","Novos atores: sindicatos, movimentos de mulheres, associações"]}
+  ],
+  mapaMental: "-   Goiás na década de 1980\n    -   Política: eleições diretas 1982 (Iris Rezende), Diretas Já\n    -   Economia: década perdida x modernização do Cerrado (EMBRAPA)\n    -   Custo social/ambiental: conflitos de terra, desmatamento, favelização\n    -   Cultura: teatro, música, UFG como centro de debate\n    -   Constituinte 1987-88: participação goiana na Constituição de 1988\n    -   Novos atores políticos: sindicatos, movimentos de mulheres",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Por que a eleição de Iris Rezende em 1982 foi considerada um marco para a democracia goiana?"},
+      {enunciado:"O que foi a 'década perdida' e como ela afetou Goiás?"},
+      {enunciado:"Explique o que foi a modernização da agricultura do Cerrado goiano e seus custos sociais/ambientais."},
+      {enunciado:"Qual foi o papel da UFG e do movimento estudantil goiano na redemocratização?"},
+      {enunciado:"Como Goiás participou da elaboração da Constituição de 1988?"}
+    ],
+    flashcards: [
+      {frente:"Quem foi eleito governador de Goiás em 1982?", verso:"Iris Rezende Machado (PMDB)"},
+      {frente:"Como ficou conhecida a década de 1980 na economia brasileira?", verso:"Década perdida"},
+      {frente:"Qual instituição impulsionou a modernização agrícola do Cerrado?", verso:"EMBRAPA"},
+      {frente:"Quais grãos passaram a ser produzidos em larga escala em Goiás?", verso:"Soja e milho"},
+      {frente:"Qual movimento popular por eleições diretas para presidente ocorreu em 1983-84?", verso:"Diretas Já"},
+      {frente:"Qual universidade foi centro de debate político em Goiás nos anos 1980?", verso:"Universidade Federal de Goiás (UFG)"},
+      {frente:"Quando foi promulgada a nova Constituição brasileira?", verso:"1988"},
+      {frente:"Como ficou conhecida a Constituição de 1988?", verso:"Constituição Cidadã"}
+    ],
+    gabarito: [
+      {resposta:"Porque foi a primeira vez em quase duas décadas que os goianos puderam escolher diretamente seu governador, refletindo o desgaste do regime militar.", comentario:"Relacionar ao processo nacional de abertura democrática."},
+      {resposta:"Foi um período de estagnação econômica, inflação alta e crise da dívida externa no Brasil; em Goiás, afetou trabalhadores urbanos e rurais, corroendo salários.", comentario:"Mencionar planos econômicos frustrados, como o Plano Cruzado."},
+      {resposta:"Foi o avanço da agricultura tecnificada no Cerrado (soja, milho) com apoio da EMBRAPA; trouxe crescimento econômico, mas também conflitos de terra, expulsão de comunidades e desmatamento.", comentario:"Valorizar respostas que mencionem os dois lados: crescimento e custo social/ambiental."},
+      {resposta:"A UFG foi espaço de debate político; estudantes e professores participaram das Diretas Já e da mobilização pela Constituinte.", comentario:"Conectar ao maior contexto de liberdade de expressão da redemocratização."},
+      {resposta:"Parlamentares goianos participaram das comissões temáticas da Assembleia Constituinte (1987-88), que resultou na Constituição de 1988.", comentario:"Reforçar que a elaboração foi um processo coletivo com vozes de todo o país."}
+    ],
+    questoes: [
+      {enunciado:"A eleição de 1982 em Goiás foi um marco porque:", alternativas:["Foi a primeira eleição da história do estado","Foi a primeira eleição direta para governador em quase duas décadas","Elegeu um governador militar","Não teve nenhuma repercussão política"], correta:1, comentario:"Refletia o desgaste do regime militar e o anseio por mudanças."},
+      {enunciado:"A 'década perdida' se refere a um período marcado, no Brasil, por:", alternativas:["Crescimento econômico acelerado","Estagnação, inflação alta e crise da dívida externa","Ausência total de problemas econômicos","Fim da inflação"], correta:1, comentario:"Os anos 1980 foram marcados por instabilidade econômica generalizada."},
+      {enunciado:"A modernização da agricultura do Cerrado goiano nos anos 1980 teve como custo social e ambiental:", alternativas:["Nenhum impacto negativo","Conflitos pela posse da terra e desmatamento","Redução da produção agrícola","Fim da migração para Goiânia"], correta:1, comentario:"O avanço do agronegócio expulsou comunidades tradicionais e acelerou o desmatamento."},
+      {enunciado:"Na Assembleia Nacional Constituinte (1987-1988), os parlamentares goianos:", alternativas:["Não participaram do processo","Participaram ativamente das comissões temáticas","Se opuseram à nova Constituição","Representavam apenas o Poder Executivo"], correta:1, comentario:"Contribuíram para a elaboração da Constituição de 1988."},
+      {enunciado:"Um dos novos atores políticos que passaram a ocupar espaços de negociação em Goiás nos anos 1980 foi(ram):", alternativas:["Apenas os grandes latifundiários","Sindicatos, associações de moradores e movimentos de mulheres","Somente as Forças Armadas","Apenas empresas multinacionais"], correta:1, comentario:"A redemocratização abriu espaço político para grupos antes excluídos."}
+    ]
+  }
+});
+Object.assign(PREBUILT_OBJ["Relações de poder e interferências internacionais (1960-80)"], {
+  quadro: "• Guerra Fria: EUA (capitalismo) x URSS (socialismo) disputam influência mundial\n• Revolução Cubana (1959) aumenta preocupação dos EUA com a América Latina\n• Governo Jango propõe Reformas de Base — vistas como ameaça pelos EUA\n• Embaixador Lincoln Gordon sinaliza apoio dos EUA ao golpe de 1964\n• Aliança para o Progresso (1961): ajuda dos EUA pra reduzir apelo do socialismo\n• Após 1964: alinhamento com os EUA, 'Milagre Econômico' (1968-73) financiado por capital estrangeiro\n• Doutrina de Segurança Nacional: 'inimigo interno' — militantes, sindicalistas, estudantes\n• Escola das Américas: treinamento de militares brasileiros em técnicas repressivas\n• Operação Condor: rede repressiva entre ditaduras da América do Sul, com apoio dos EUA\n• Crise do Petróleo (1973): Brasil busca 'Pragmatismo Responsável' (Geisel) — relações com África, mundo árabe\n• Dívida externa cresce e explode nos anos 1980, levando à moratória técnica de 1987",
+  slides: [
+    {titulo:"Guerra Fria e a América Latina", topicos:["EUA x URSS disputam influência mundial","Revolução Cubana (1959) aumenta vigilância dos EUA na região"]},
+    {titulo:"A interferência dos EUA no golpe de 1964", topicos:["Reformas de Base de Jango preocupam EUA e elites","Embaixador Lincoln Gordon sinaliza apoio ao golpe"]},
+    {titulo:"Alinhamento e Milagre Econômico", topicos:["Empréstimos e investimentos estrangeiros sustentam o crescimento","Multinacionais se instalam com incentivos fiscais"]},
+    {titulo:"Doutrina de Segurança Nacional e repressão", topicos:["Escola das Américas: treinamento militar repressivo","Operação Condor: cooperação entre ditaduras sul-americanas"]},
+    {titulo:"Crise do petróleo e Pragmatismo Responsável", topicos:["Geisel busca autonomia: África, mundo árabe","Dívida externa cresce e explode nos anos 1980"]}
+  ],
+  mapaMental: "-   Relações de poder e interferências internacionais (1960-80)\n    -   Guerra Fria: EUA x URSS disputam a América Latina\n    -   Golpe de 1964: apoio dos EUA (embaixador Lincoln Gordon)\n    -   Milagre Econômico: financiado por capital e empréstimos estrangeiros\n    -   Doutrina de Segurança Nacional: Escola das Américas, Operação Condor\n    -   Crise do petróleo (1973): Pragmatismo Responsável de Geisel\n    -   Dívida externa: moratória técnica em 1987",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Como o contexto da Guerra Fria influenciou a atitude dos Estados Unidos em relação ao governo de João Goulart?"},
+      {enunciado:"O que foi a Doutrina de Segurança Nacional e como ela definia o 'inimigo interno'?"},
+      {enunciado:"Explique o que foi a Operação Condor."},
+      {enunciado:"O que mudou na política externa brasileira após a Crise do Petróleo de 1973?"},
+      {enunciado:"Por que o modelo econômico da ditadura gerou uma dívida externa tão grande?"}
+    ],
+    flashcards: [
+      {frente:"Quais eram as duas superpotências da Guerra Fria?", verso:"Estados Unidos e União Soviética (URSS)"},
+      {frente:"Qual evento de 1959 aumentou a preocupação dos EUA com a América Latina?", verso:"Revolução Cubana"},
+      {frente:"Quem era o embaixador dos EUA no Brasil em 1964?", verso:"Lincoln Gordon"},
+      {frente:"Como ficou conhecido o crescimento econômico de 1968-1973?", verso:"Milagre Econômico"},
+      {frente:"Onde militares brasileiros eram treinados em técnicas repressivas?", verso:"Escola das Américas"},
+      {frente:"Como se chamava a rede de cooperação repressiva entre ditaduras sul-americanas?", verso:"Operação Condor"},
+      {frente:"Qual política externa Geisel adotou após a Crise do Petróleo?", verso:"Pragmatismo Responsável"},
+      {frente:"O que o Brasil declarou em 1987 por não conseguir pagar sua dívida externa?", verso:"Moratória técnica"}
+    ],
+    gabarito: [
+      {resposta:"Os EUA temiam que as Reformas de Base de Jango aproximassem o Brasil do bloco soviético, e por isso apoiaram os militares no golpe de 1964.", comentario:"Mencionar o papel do embaixador Lincoln Gordon como evidência desse apoio."},
+      {resposta:"Era a doutrina que definia como 'inimigo interno' não um exército estrangeiro, mas militantes políticos, sindicalistas, estudantes e qualquer um considerado subversivo.", comentario:"Relacionar à repressão interna promovida pelo regime militar."},
+      {resposta:"Foi uma rede de coordenação entre as ditaduras do Brasil, Argentina, Chile, Paraguai, Uruguai e Bolívia, com apoio dos EUA, pra perseguir opositores políticos além-fronteiras.", comentario:"Destacar que envolvia troca de informações e perseguição de exilados."},
+      {resposta:"O Brasil, sob Geisel, adotou o 'Pragmatismo Responsável', buscando parcerias com países africanos e árabes, reduzindo o alinhamento automático com os EUA.", comentario:"Mencionar também o Acordo Nuclear com a Alemanha Ocidental como exemplo de autonomia."},
+      {resposta:"Porque o crescimento do Milagre Econômico foi financiado por empréstimos externos, que se tornaram impagáveis quando os juros internacionais subiram no início dos anos 1980.", comentario:"Conectar à moratória técnica declarada em 1987."}
+    ],
+    questoes: [
+      {enunciado:"O apoio dos Estados Unidos ao golpe militar de 1964 no Brasil está relacionado, principalmente, ao contexto:", alternativas:["Da Primeira Guerra Mundial","Da Guerra Fria e do temor da expansão socialista","Da Revolução Industrial","Da independência das colônias africanas"], correta:1, comentario:"Os EUA temiam a aproximação do Brasil com o bloco soviético."},
+      {enunciado:"Segundo a Doutrina de Segurança Nacional, o principal 'inimigo' do regime militar era:", alternativas:["Um exército estrangeiro invasor","O chamado 'inimigo interno': opositores políticos e sociais","Apenas outros países da América Latina","A União Soviética diretamente"], correta:1, comentario:"A repressão se voltava para dentro do próprio país."},
+      {enunciado:"A Operação Condor foi:", alternativas:["Um programa de intercâmbio cultural entre países latino-americanos","Uma rede de cooperação repressiva entre ditaduras sul-americanas, com apoio dos EUA","Uma missão espacial brasileira","Um acordo comercial entre Brasil e Argentina"], correta:1, comentario:"Envolvia troca de informações e perseguição de opositores além-fronteiras."},
+      {enunciado:"O 'Pragmatismo Responsável', adotado no governo Geisel, buscava:", alternativas:["Romper totalmente relações com os Estados Unidos","Ampliar parcerias diplomáticas além do eixo EUA-Europa Ocidental","Isolar completamente o Brasil do mundo","Aumentar a dependência do petróleo importado"], correta:1, comentario:"O Brasil buscou relações com países africanos e árabes após a Crise do Petróleo."},
+      {enunciado:"A dívida externa brasileira cresceu de forma preocupante durante a ditadura porque:", alternativas:["O país não fazia empréstimos internacionais","O Milagre Econômico foi financiado por capital e empréstimos estrangeiros","Os juros internacionais sempre foram baixos","O Brasil não exportava nenhum produto"], correta:1, comentario:"Quando os juros internacionais subiram nos anos 1980, o custo da dívida disparou."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Contestação e resistência nos anos 1960"], {
+  quadro: "• Anos 1960: contestação global — direitos civis nos EUA, Maio de 68 na França, protestos contra a Guerra do Vietnã\n• Cultura de rebeldia: rock, movimento hippie, Beatles e Rolling Stones\n• Brasil: Reformas de Base de Jango, Bossa Nova, Cinema Novo (Glauber Rocha)\n• Golpe de 1º de abril de 1964: militares + civis (empresários, latifundiários, Igreja, imprensa), com apoio dos EUA\n• AI-5 (dezembro de 1968): suspende direitos políticos, fecha o Congresso, abre caminho pra tortura e censura\n• Movimento estudantil: UNE na clandestinidade, Passeata dos Cem Mil (1968) após morte de Edson Luís\n• Resistência cultural: Geraldo Vandré, Tropicalismo (Caetano/Gil), Teatro de Arena e Oficina, jornal O Pasquim\n• Luta armada: ALN (Marighella) e MR-8 — assaltos e sequestros pra financiar e negociar presos políticos\n• Revolução Cubana (1959) inspira uma geração latino-americana\n• Repressão a artistas e militantes foi extremamente violenta: prisão, tortura, morte",
+  slides: [
+    {titulo:"O mundo em transformação", topicos:["Direitos civis nos EUA, Maio de 68 na França","Protestos contra a Guerra do Vietnã, cultura hippie"]},
+    {titulo:"Brasil: esperança e golpe", topicos:["Reformas de Base de Jango, Bossa Nova, Cinema Novo","Golpe civil-militar de 1º de abril de 1964"]},
+    {titulo:"O AI-5 e o endurecimento do regime", topicos:["Suspensão de direitos, fechamento do Congresso (dez. 1968)","Censura sistemática e prática de tortura"]},
+    {titulo:"Resistência estudantil e cultural", topicos:["Passeata dos Cem Mil (1968), morte de Edson Luís","Tropicalismo, festivais de música, teatro engajado"]},
+    {titulo:"A luta armada", topicos:["ALN (Carlos Marighella) e MR-8","Assaltos e sequestros pra financiar a luta e trocar presos políticos"]}
+  ],
+  mapaMental: "-   Contestação e resistência nos anos 1960\n    -   Mundo: direitos civis EUA, Maio de 68, Guerra do Vietnã\n    -   Brasil pré-golpe: Reformas de Base, Bossa Nova, Cinema Novo\n    -   Golpe de 1964: militares + civis + apoio dos EUA\n    -   AI-5 (1968): suspensão de direitos, censura, tortura\n    -   Resistência estudantil: UNE, Passeata dos Cem Mil\n    -   Resistência cultural: Tropicalismo, Vandré, teatro, O Pasquim\n    -   Luta armada: ALN, MR-8",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Cite três movimentos de contestação que ocorreram no mundo durante os anos 1960."},
+      {enunciado:"O que mudou no regime militar brasileiro a partir do AI-5, em 1968?"},
+      {enunciado:"Qual foi o papel da União Nacional dos Estudantes (UNE) na resistência à ditadura?"},
+      {enunciado:"Explique como a censura influenciou a linguagem usada por artistas como os do Tropicalismo."},
+      {enunciado:"Por que alguns grupos optaram pela luta armada contra a ditadura, e quais foram as consequências dessa escolha?"}
+    ],
+    flashcards: [
+      {frente:"Que evento marcou a França em 1968?", verso:"Maio de 68"},
+      {frente:"Quem liderava o movimento pelos direitos civis nos EUA?", verso:"Martin Luther King Jr."},
+      {frente:"Em que data ocorreu o golpe civil-militar no Brasil?", verso:"1º de abril de 1964"},
+      {frente:"O que foi o AI-5?", verso:"Ato Institucional que suspendeu direitos políticos e abriu caminho à repressão, em dezembro de 1968"},
+      {frente:"Qual estudante morto em 1968 gerou a Passeata dos Cem Mil?", verso:"Edson Luís de Lima Souto"},
+      {frente:"Quem liderou o Tropicalismo?", verso:"Caetano Veloso e Gilberto Gil"},
+      {frente:"Qual organização de luta armada foi liderada por Carlos Marighella?", verso:"ALN — Aliança Libertadora Nacional"},
+      {frente:"Qual revolução latino-americana inspirou a geração de 1960?", verso:"Revolução Cubana (1959)"}
+    ],
+    gabarito: [
+      {resposta:"Movimento pelos direitos civis nos EUA, Maio de 68 na França e os protestos contra a Guerra do Vietnã (aceitar também o movimento hippie).", comentario:"Aceitar quaisquer três exemplos citados no texto."},
+      {resposta:"O AI-5 suspendeu direitos políticos, fechou o Congresso, suprimiu o habeas corpus e abriu caminho para censura sistemática e tortura.", comentario:"Marca a virada para a fase mais brutal do regime."},
+      {resposta:"Mesmo proibida, a UNE continuou na clandestinidade e organizou manifestações, incluindo grandes passeatas em 1968.", comentario:"Mencionar a Passeata dos Cem Mil como exemplo concreto."},
+      {resposta:"Diante da censura prévia, artistas usaram metáforas, alegorias e duplos sentidos pra comunicar mensagens que os censores não conseguiam decifrar.", comentario:"O Tropicalismo misturava cultura popular com vanguarda internacional."},
+      {resposta:"Grupos como ALN e MR-8 acreditavam que só a luta armada poderia derrubar o regime após o AI-5; a repressão a eles foi extremamente violenta, com prisões, torturas e mortes.", comentario:"Contextualizar a perda de esperança na resistência pacífica após 1968."}
+    ],
+    questoes: [
+      {enunciado:"O AI-5, editado em dezembro de 1968, teve como principal efeito:", alternativas:["Ampliar os direitos políticos da população","Suspender direitos políticos e abrir caminho para tortura e censura","Encerrar imediatamente a ditadura militar","Restaurar o funcionamento pleno do Congresso"], correta:1, comentario:"Marca o início da fase mais dura do regime militar."},
+      {enunciado:"A Passeata dos Cem Mil, em 1968, foi motivada:", alternativas:["Pela eleição de um novo presidente","Pela morte do estudante Edson Luís durante uma repressão policial","Pela promulgação da Constituição de 1988","Por uma crise econômica internacional"], correta:1, comentario:"Foi uma das maiores mobilizações políticas da história do Brasil."},
+      {enunciado:"O movimento Tropicalista, liderado por Caetano Veloso e Gilberto Gil, se caracterizava por:", alternativas:["Rejeitar toda influência estrangeira","Misturar cultura popular brasileira com vanguarda internacional","Apoiar abertamente o regime militar","Ser um movimento exclusivamente político, sem arte"], correta:1, comentario:"A 'antropofagia cultural' era uma de suas marcas centrais."},
+      {enunciado:"Organizações como a ALN e o MR-8 optaram por:", alternativas:["Apoio incondicional ao regime militar","A luta armada contra a ditadura","Migração em massa para o exterior","Abandonar toda forma de resistência"], correta:1, comentario:"Reuniam jovens que perderam esperança na resistência pacífica após o AI-5."},
+      {enunciado:"A Revolução Cubana de 1959 influenciou a resistência brasileira dos anos 1960 porque:", alternativas:["Não teve nenhuma repercussão na América Latina","Inspirou uma geração de jovens que acreditava ser possível transformar suas sociedades pela luta revolucionária","Foi um evento exclusivamente econômico","Ocorreu depois do golpe de 1964"], correta:1, comentario:"Che Guevara tornou-se símbolo da rebeldia juvenil em toda a região."}
+    ]
+  }
+});
+Object.assign(PREBUILT_OBJ["Questão indígena durante a ditadura"], {
+  quadro: "• SPI (1910) tratava indígenas com tutela/controle; ditadura trata questão indígena como segurança nacional\n• Relatório Figueiredo (1967) expõe crimes do SPI: assassinatos, tortura, apropriação de terras\n• FUNAI criada em 1967, mas mantém lógica de tutela, subordinada ao Ministério do Interior\n• Estatuto do Índio (1973): trata indígenas como 'relativamente incapazes', prevê 'integração' obrigatória\n• 'Integrar para não entregar' (Mário Andreazza): ocupação do Centro-Oeste/Norte ignora presença indígena\n• Povo Waimiri-Atroari: de ~3 mil pra menos de 500 pessoas — BR-174 e hidrelétrica de Balbina\n• Grandes obras (Transamazônica, hidrelétrica de Tucuruí) desalojam e destroem territórios indígenas\n• Resistência: cacique Mário Juruna, 1º deputado federal indígena (eleito 1982)\n• União das Nações Indígenas (UNI, 1980) articula demarcação de terras e fim da tutela\n• Constituição de 1988: reconhece organização social, terras e direitos originários dos povos indígenas",
+  slides: [
+    {titulo:"Antes do golpe: SPI e a lógica da tutela", topicos:["Serviço de Proteção aos Índios (1910): 'proteção' que era controle","Ditadura trata questão indígena como segurança nacional"]},
+    {titulo:"FUNAI e o Estatuto do Índio", topicos:["Relatório Figueiredo (1967) expõe crimes do SPI","Estatuto de 1973: indígenas tratados como 'relativamente incapazes'"]},
+    {titulo:"A questão da terra: expropriação e violência", topicos:["'Integrar para não entregar' — ocupação do Centro-Oeste/Norte","Waimiri-Atroari: população reduzida de 3 mil a menos de 500"]},
+    {titulo:"Grandes obras e seus impactos", topicos:["Transamazônica, hidrelétrica de Tucuruí desalojam povos","FUNAI muitas vezes facilita avanço sobre terras indígenas"]},
+    {titulo:"Resistência e conquistas", topicos:["Mário Juruna: 1º deputado federal indígena (1982)","UNI (1980) e Constituição de 1988: direitos reconhecidos"]}
+  ],
+  mapaMental: "-   Questão indígena durante a ditadura (1964-1985)\n    -   Antes do golpe: SPI e a lógica da tutela\n    -   FUNAI (1967): nasce da crise do Relatório Figueiredo, mas mantém tutela\n    -   Estatuto do Índio (1973): indígenas como 'relativamente incapazes'\n    -   Terra: 'integrar para não entregar', grandes obras (Transamazônica, Tucuruí)\n    -   Caso extremo: Waimiri-Atroari (3 mil → menos de 500)\n    -   Resistência: Mário Juruna, UNI (1980)\n    -   Conquista: Constituição de 1988 reconhece direitos originários",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Por que a criação da FUNAI, em 1967, não representou uma mudança real na política indigenista?"},
+      {enunciado:"O que significava a frase 'integrar para não entregar', atribuída a Mário Andreazza?"},
+      {enunciado:"Descreva o impacto das grandes obras de infraestrutura da ditadura sobre os povos indígenas, usando o caso Waimiri-Atroari como exemplo."},
+      {enunciado:"Quem foi Mário Juruna e qual a importância de sua trajetória política?"},
+      {enunciado:"O que a Constituição de 1988 mudou na relação entre o Estado brasileiro e os povos indígenas?"}
+    ],
+    flashcards: [
+      {frente:"Qual órgão foi extinto por causa do Relatório Figueiredo?", verso:"SPI — Serviço de Proteção aos Índios"},
+      {frente:"Em que ano foi criada a FUNAI?", verso:"1967"},
+      {frente:"Em que ano foi aprovado o Estatuto do Índio?", verso:"1973"},
+      {frente:"Quem disse a frase 'integrar para não entregar'?", verso:"Mário Andreazza, Ministro do Interior"},
+      {frente:"Qual povo indígena teve sua população reduzida de 3 mil para menos de 500 durante a ditadura?", verso:"Waimiri-Atroari"},
+      {frente:"Quem foi o primeiro deputado federal indígena do Brasil?", verso:"Mário Juruna, eleito em 1982"},
+      {frente:"O que significa UNI, fundada em 1980?", verso:"União das Nações Indígenas"},
+      {frente:"Qual artigo da Constituição de 1988 trata dos direitos indígenas às terras?", verso:"Artigo 231"}
+    ],
+    gabarito: [
+      {resposta:"Porque manteve a lógica da tutela — os indígenas continuaram sendo tratados como incapazes de decidir seu destino, e a FUNAI ficou subordinada às prioridades econômicas do regime.", comentario:"Mencionar que funcionários da própria FUNAI facilitaram a entrada de madeireiros e garimpeiros."},
+      {resposta:"Era o argumento de que as regiões Centro-Oeste e Norte precisavam ser ocupadas para o desenvolvimento nacional, tratando os territórios indígenas como obstáculo ao 'progresso'.", comentario:"Destacar que essa visão ignorava a presença indígena há séculos nessas regiões."},
+      {resposta:"A rodovia BR-174 e a hidrelétrica de Balbina destruíram o território Waimiri-Atroari, reduzindo sua população de cerca de 3 mil para menos de 500 pessoas por doenças, violência e destruição do território.", comentario:"Usar esse caso como exemplo concreto das consequências das 'grandes obras'."},
+      {resposta:"Foi um cacique Xavante que gravava as promessas não cumpridas do governo e da FUNAI; em 1982, tornou-se o primeiro deputado federal indígena do Brasil.", comentario:"Sua eleição representou uma ruptura simbólica na representação política indígena."},
+      {resposta:"A Constituição reconheceu oficialmente o direito dos povos indígenas à sua organização social, costumes, línguas e aos direitos originários sobre suas terras, abandonando progressivamente a lógica da tutela.", comentario:"Mencionar que a demarcação de terras passou a ser obrigação da União."}
+    ],
+    questoes: [
+      {enunciado:"A FUNAI foi criada em 1967 para substituir:", alternativas:["O Ministério do Interior","O Serviço de Proteção aos Índios (SPI)","O Estatuto do Índio","A União das Nações Indígenas"], correta:1, comentario:"A criação da FUNAI foi resposta ao escândalo revelado pelo Relatório Figueiredo."},
+      {enunciado:"O Estatuto do Índio, de 1973, tratava os povos indígenas como:", alternativas:["Cidadãos com direitos plenos e iguais","'Relativamente incapazes', com integração à sociedade como destino inevitável","Donos exclusivos de todo o território nacional","Representantes oficiais do governo"], correta:1, comentario:"Essa visão assimilacionista foi superada apenas pela Constituição de 1988."},
+      {enunciado:"O caso do povo Waimiri-Atroari, durante a ditadura, é um exemplo de:", alternativas:["Proteção bem-sucedida de um território indígena","Devastação populacional por doenças, violência e grandes obras","Aumento populacional graças às políticas do regime","Ausência total de conflito com o Estado"], correta:1, comentario:"A população caiu de cerca de 3 mil para menos de 500 pessoas."},
+      {enunciado:"Mário Juruna se tornou um símbolo da luta indígena ao:", alternativas:["Fundar o SPI","Ser eleito o primeiro deputado federal indígena do Brasil, em 1982","Liderar o golpe militar de 1964","Ser o primeiro presidente da FUNAI"], correta:1, comentario:"Sua eleição representou a entrada de lideranças indígenas na política institucional."},
+      {enunciado:"A Constituição de 1988 representou uma ruptura na política indigenista porque:", alternativas:["Manteve a tutela do Estado sobre os indígenas","Reconheceu os direitos originários dos povos indígenas às suas terras e à sua organização social","Extinguiu todos os direitos indígenas","Não tratou do tema"], correta:1, comentario:"O artigo 231 tornou a demarcação de terras obrigação da União."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Racismo e resistência negra na ditadura"], {
+  quadro: "• Ditadura não criou o racismo brasileiro, mas o aprofundou usando o mito da 'democracia racial' (Gilberto Freyre)\n• População negra concentrava pobreza, trabalho precário e violência policial\n• DOPS vigiava terreiros de candomblé/umbanda, associando cultura afro à 'desordem'\n• Abdias do Nascimento (Teatro Experimental do Negro) exilado após o AI-5 (1968)\n• Black Rio (anos 1970): estética/música soul como afirmação de orgulho racial\n• Movimento Negro Unificado (MNU) fundado em 7 de julho de 1978, em plena ditadura\n• MNU surge após mortes de Robson Silveira da Luz e expulsão de atletas negros do Clube Tietê\n• Mulheres negras enfrentavam dupla discriminação — Lélia González e o conceito de 'amefricanidade'\n• Comunidade Kalunga (norte de Goiás): maior comunidade quilombola do Brasil, terras ameaçadas pelo Cerrado\n• Constituição de 1988: racismo vira crime inafiançável e imprescritível; terras quilombolas reconhecidas",
+  slides: [
+    {titulo:"O racismo sob o regime autoritário", topicos:["Mito da 'democracia racial' encobre desigualdade real","População negra concentra pobreza e violência policial"]},
+    {titulo:"Repressão à cultura e organização negra", topicos:["DOPS vigia terreiros de candomblé e umbanda","Abdias do Nascimento exilado após o AI-5"]},
+    {titulo:"Resistência cultural: o Black Rio", topicos:["Estética soul como afirmação de orgulho racial","Regime via o movimento com suspeita e censura"]},
+    {titulo:"O Movimento Negro Unificado (1978)", topicos:["Fundado em ato público, em plena ditadura","Resposta a casos concretos de violência racista"]},
+    {titulo:"Kalunga e o legado da resistência", topicos:["Maior comunidade quilombola do Brasil, no norte de Goiás","Constituição de 1988: racismo é crime, quilombos têm direito à terra"]}
+  ],
+  mapaMental: "-   Racismo e resistência negra na ditadura (1964-1985)\n    -   Mito da 'democracia racial' encobre desigualdade\n    -   Repressão: DOPS vigia terreiros, Abdias do Nascimento exilado\n    -   Resistência cultural: Black Rio (anos 1970)\n    -   Resistência política: MNU, fundado em 1978\n    -   Mulheres negras: dupla discriminação, Lélia González\n    -   Goiás: comunidade quilombola Kalunga\n    -   Legado: Constituição de 1988 criminaliza racismo, reconhece quilombos",
+  avaliacao: {
+    atividade: [
+      {enunciado:"O que era o mito da 'democracia racial' e que função ele cumpria durante a ditadura?"},
+      {enunciado:"Como o DOPS reprimia manifestações da cultura afro-brasileira?"},
+      {enunciado:"O que foi o movimento Black Rio e o que ele representava?"},
+      {enunciado:"Em que contexto foi fundado o Movimento Negro Unificado (MNU), em 1978?"},
+      {enunciado:"O que a Constituição de 1988 mudou em relação ao racismo e às comunidades quilombolas?"}
+    ],
+    flashcards: [
+      {frente:"Quem formulou a ideia de 'democracia racial' no Brasil?", verso:"Gilberto Freyre"},
+      {frente:"Qual órgão de repressão vigiava terreiros de candomblé e umbanda?", verso:"DOPS"},
+      {frente:"Quem fundou o Teatro Experimental do Negro e foi exilado após o AI-5?", verso:"Abdias do Nascimento"},
+      {frente:"Como se chamava o movimento cultural negro carioca dos anos 1970?", verso:"Black Rio"},
+      {frente:"Em que ano e cidade foi fundado o MNU?", verso:"1978, em São Paulo"},
+      {frente:"Quem formulou o conceito de 'amefricanidade'?", verso:"Lélia González"},
+      {frente:"Qual é a maior comunidade quilombola do Brasil, localizada em Goiás?", verso:"Kalunga"},
+      {frente:"O que a Constituição de 1988 estabeleceu sobre o crime de racismo?", verso:"Tornou-o inafiançável e imprescritível"}
+    ],
+    gabarito: [
+      {resposta:"Era a ideia de que negros e brancos conviviam em harmonia no Brasil; servia pra encobrir as desigualdades reais e silenciar quem denunciasse o racismo como problema político.", comentario:"Associar essa ideia às teorias de Gilberto Freyre."},
+      {resposta:"O DOPS monitorava, invadia e fechava terreiros, associando as religiões de matriz africana à 'desordem' e enquadrando-as como 'curandeirismo' ou 'vadiagem'.", comentario:"Mostrar que a repressão à religiosidade negra era também repressão política."},
+      {resposta:"Foi um movimento cultural em que jovens negros das periferias cariocas adotaram a estética soul como afirmação de orgulho racial; a ditadura o via com suspeita, chamando-o de 'infiltração estrangeira'.", comentario:"Destacar o caráter político da afirmação de identidade negra."},
+      {resposta:"Foi fundado em ato público nas escadarias do Teatro Municipal de São Paulo, em resposta a casos de violência racista, como a morte de Robson Silveira da Luz.", comentario:"Ressaltar a coragem de se organizar publicamente em plena ditadura."},
+      {resposta:"Criminalizou o racismo como crime inafiançável e imprescritível e reconheceu o direito das comunidades quilombolas às suas terras.", comentario:"Mencionar que essas conquistas foram resultado de décadas de resistência organizada."}
+    ],
+    questoes: [
+      {enunciado:"O mito da 'democracia racial', difundido durante a ditadura, servia principalmente para:", alternativas:["Denunciar o racismo estrutural brasileiro","Encobrir as profundas desigualdades raciais existentes no país","Promover políticas de ação afirmativa","Fortalecer o Movimento Negro Unificado"], correta:1, comentario:"A narrativa dificultava que o racismo fosse denunciado como problema político."},
+      {enunciado:"O Movimento Negro Unificado (MNU) foi fundado em 1978 em resposta, entre outros fatores, à:", alternativas:["Aprovação da Lei Maria da Penha","Morte do trabalhador negro Robson Silveira da Luz, torturado pela polícia","Criação da FUNAI","Promulgação da Constituição de 1988"], correta:1, comentario:"Episódios concretos de violência racista motivaram a fundação do MNU."},
+      {enunciado:"O movimento Black Rio, dos anos 1970, representava:", alternativas:["Uma moda sem significado político","Uma afirmação de identidade e orgulho racial negro","Um movimento de apoio ao regime militar","Uma organização político-partidária"], correta:1, comentario:"A estética soul era usada como declaração política de orgulho racial."},
+      {enunciado:"A comunidade Kalunga, no norte de Goiás, é reconhecida como:", alternativas:["A menor comunidade quilombola do Brasil","A maior comunidade quilombola do Brasil","Uma aldeia indígena","Uma cidade fundada por imigrantes europeus"], correta:1, comentario:"Suas terras foram historicamente ameaçadas pelo avanço da fronteira agrícola."},
+      {enunciado:"A Constituição de 1988, em relação à luta antirracista, representou um avanço ao:", alternativas:["Manter o racismo como contravenção leve","Tornar o racismo crime inafiançável e imprescritível, e reconhecer terras quilombolas","Extinguir o Movimento Negro Unificado","Proibir manifestações culturais afro-brasileiras"], correta:1, comentario:"Essas conquistas resultaram de décadas de mobilização do movimento negro."}
+    ]
+  }
+});
+Object.assign(PREBUILT_OBJ["Ocupação do centro-oeste e construção de Brasília"], {
+  quadro: "• Centro-Oeste visto como 'vazio demográfico' — discurso que ignorava povos indígenas já presentes\n• Marcha para o Oeste (Vargas, 1937-40): Colônia Agrícola Nacional de Goiás (CANG, 1941, em Ceres)\n• Ideia de transferir a capital vem desde José Bonifácio; JK a concretiza\n• JK (1956): slogan '50 anos em 5', Brasília como símbolo da modernidade\n• Planalto Central de Goiás escolhido; NOVACAP coordena as obras\n• Lúcio Costa (plano piloto), Oscar Niemeyer (edifícios), Burle Marx (paisagismo)\n• Eixo Monumental x Eixo Rodoviário — forma de avião/pássaro vista de cima\n• Candangos: trabalhadores migrantes, principalmente nordestinos, em condições precárias\n• Massacre dos Candangos (nov. 1959): grevistas atacados pela Guarda Especial de Brasília\n• Brasília inaugurada em 21/04/1960; candangos empurrados pra cidades-satélites (Ceilândia, Taguatinga)\n• Impactos: desmatamento do Cerrado, Distrito Federal desmembrado de Goiás, Goiânia como polo regional\n• Brasília tombada Patrimônio Cultural da Humanidade pela UNESCO em 1987",
+  slides: [
+    {titulo:"O 'vazio demográfico' e a Marcha para o Oeste", topicos:["Discurso ignorava a presença indígena na região","CANG (1941), em Ceres, símbolo da colonização de Vargas"]},
+    {titulo:"JK e o projeto de Brasília", topicos:["Slogan '50 anos em 5' e a Construção de Brasília","Lúcio Costa, Oscar Niemeyer e Burle Marx"]},
+    {titulo:"Os candangos", topicos:["Trabalhadores migrantes em condições precárias","Massacre dos Candangos (1959), episódio silenciado"]},
+    {titulo:"Segregação após a inauguração", topicos:["Brasília inaugurada em 21/04/1960","Candangos empurrados pra cidades-satélites (Ceilândia, Taguatinga)"]},
+    {titulo:"Impactos sobre o Centro-Oeste", topicos:["Desmatamento do Cerrado, expansão da fronteira agrícola","Impactos dramáticos sobre povos indígenas da região"]}
+  ],
+  mapaMental: "-   Ocupação do Centro-Oeste e construção de Brasília\n    -   'Vazio demográfico': discurso que ignora povos indígenas\n    -   Marcha para o Oeste (Vargas): CANG, 1941, em Ceres\n    -   JK: '50 anos em 5', Planalto Central de Goiás\n    -   Construção: Lúcio Costa, Niemeyer, Burle Marx\n    -   Candangos: migrantes, condições precárias, Massacre de 1959\n    -   Pós-inauguração (1960): segregação em cidades-satélites\n    -   Impactos: desmatamento do Cerrado, povos indígenas atingidos",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Por que a expressão 'vazio demográfico', usada para descrever o Centro-Oeste, é historicamente incorreta?"},
+      {enunciado:"O que foi a 'Marcha para o Oeste' de Getúlio Vargas?"},
+      {enunciado:"Quem foram os candangos e em que condições trabalharam na construção de Brasília?"},
+      {enunciado:"O que foi o Massacre dos Candangos, em 1959?"},
+      {enunciado:"Explique como a construção de Brasília, apesar de sua grandiosidade arquitetônica, reproduziu desigualdades sociais."}
+    ],
+    flashcards: [
+      {frente:"Em que ano Vargas lançou a 'Marcha para o Oeste'?", verso:"1937 (discurso em 1940)"},
+      {frente:"Qual colônia agrícola foi fundada em Ceres (GO) em 1941?", verso:"CANG — Colônia Agrícola Nacional de Goiás"},
+      {frente:"Qual era o slogan de JK para seu governo?", verso:"'50 anos em 5'"},
+      {frente:"Quem projetou o plano piloto de Brasília?", verso:"Lúcio Costa"},
+      {frente:"Quem projetou os principais edifícios públicos de Brasília?", verso:"Oscar Niemeyer"},
+      {frente:"Como eram chamados os trabalhadores que construíram Brasília?", verso:"Candangos"},
+      {frente:"Em que data Brasília foi inaugurada?", verso:"21 de abril de 1960"},
+      {frente:"Qual reconhecimento a UNESCO deu a Brasília em 1987?", verso:"Patrimônio Cultural da Humanidade"}
+    ],
+    gabarito: [
+      {resposta:"Porque a região já era habitada há milhares de anos por povos indígenas; o discurso do 'vazio' servia pra justificar a ocupação e a expulsão dessas populações.", comentario:"Reforçar que era um discurso político, não um fato histórico."},
+      {resposta:"Foi um programa do governo Vargas para integrar o interior do Brasil à economia nacional, criando colônias agrícolas como a CANG, em Ceres.", comentario:"Mencionar também o forte componente ideológico de valorização do 'sertanejo'."},
+      {resposta:"Eram trabalhadores migrantes, principalmente do Nordeste, que construíram Brasília em condições precárias, com jornadas intensas, acidentes frequentes e direitos trabalhistas desrespeitados.", comentario:"Destacar que a palavra 'candango', de origem africana, foi ressignificada como identidade."},
+      {resposta:"Foi um episódio em que trabalhadores em greve foram atacados pela Guarda Especial de Brasília, resultando em mortes; o caso foi pouco divulgado e ficou silenciado por muito tempo.", comentario:"Contrastar com a imagem oficial e grandiosa da construção da capital."},
+      {resposta:"Muitos candangos que queriam ficar na cidade foram empurrados para cidades-satélites periféricas, como Ceilândia e Taguatinga, mostrando que o projeto modernista reproduziu a desigualdade social típica do Brasil.", comentario:"Conectar arquitetura grandiosa e segregação espacial dos trabalhadores."}
+    ],
+    questoes: [
+      {enunciado:"A expressão 'vazio demográfico', usada para justificar a ocupação do Centro-Oeste, é considerada historicamente problemática porque:", alternativas:["A região realmente não tinha nenhum habitante","Ignorava a presença de povos indígenas que habitavam a região há milênios","Foi criada pelos próprios povos indígenas","Não teve nenhuma consequência política"], correta:1, comentario:"O discurso do 'vazio' serviu para justificar políticas de ocupação violentas."},
+      {enunciado:"A construção de Brasília, symbol do governo de Juscelino Kubitschek, tinha como slogan:", alternativas:["'Ordem e Progresso'","'50 anos em 5'","'Diretas Já'","'Marcha para o Oeste'"], correta:1, comentario:"Refletia o ambicioso programa de desenvolvimento de JK."},
+      {enunciado:"Os candangos, responsáveis por construir Brasília, eram majoritariamente:", alternativas:["Engenheiros estrangeiros","Trabalhadores migrantes, principalmente do Nordeste","Servidores públicos de Goiânia","Militares do Exército"], correta:1, comentario:"Trabalhavam em condições precárias e perigosas."},
+      {enunciado:"O Massacre dos Candangos, ocorrido em 1959, envolveu:", alternativas:["Um ataque de povos indígenas aos operários","O ataque da Guarda Especial de Brasília a trabalhadores em greve","Uma disputa entre Niemeyer e Lúcio Costa","Um acidente de trânsito nas obras"], correta:1, comentario:"O episódio permaneceu silenciado por muito tempo na historiografia oficial."},
+      {enunciado:"Após a inauguração de Brasília, muitos candangos foram:", alternativas:["Nomeados para cargos no governo federal","Empurrados para cidades-satélites periféricas, como Ceilândia e Taguatinga","Enviados de volta ao Nordeste com terras garantidas","Contratados permanentemente pela NOVACAP"], correta:1, comentario:"Isso revela como o projeto modernista reproduziu desigualdades sociais."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Exclusão e inclusão precária no Brasil contemporâneo"], {
+  quadro: "• Exclusão social vai além da pobreza material: negação de direitos, invisibilidade política\n• 'Inclusão precária': grupo inserido na sociedade, mas em condições inferiores e instáveis\n• Racismo estrutural (Silvio Almeida): está nas instituições, não só em atitudes individuais\n• IBGE: negros/pardos são maioria da população, mas concentram piores indicadores sociais\n• Atlas da Violência: população negra é a principal vítima de homicídios no Brasil\n• Políticas públicas: SEPPIR (2003), Estatuto da Igualdade Racial (2010), Lei de Cotas (12.711/2012)\n• Constituição de 1988 (art. 231): reconhece direito indígena às terras tradicionalmente ocupadas\n• 'Marco Temporal': tese que limitava direito indígena a terras ocupadas até 1988 — julgada inconstitucional em 2023\n• Crise Yanomami: garimpo ilegal, desnutrição, emergência de saúde pública decretada em 2023\n• Naturalização das desigualdades (Lilia Schwarcz): hierarquias vistas como 'normais'",
+  slides: [
+    {titulo:"O que é exclusão social?", topicos:["Vai além da pobreza: negação de direitos e invisibilidade política","Inclusão precária: inserido, mas em condição desigual"]},
+    {titulo:"Afrodescendentes no Brasil contemporâneo", topicos:["Racismo estrutural (Silvio Almeida) nas instituições","Atlas da Violência: negros são maioria das vítimas de homicídio"]},
+    {titulo:"Políticas públicas de combate à desigualdade racial", topicos:["SEPPIR (2003), Estatuto da Igualdade Racial (2010)","Lei de Cotas (12.711/2012) nas universidades federais"]},
+    {titulo:"Povos indígenas: direitos e violações", topicos:["Constituição de 1988 (art. 231) e o Marco Temporal","STF julga Marco Temporal inconstitucional em 2023"]},
+    {titulo:"Crise Yanomami e naturalização da desigualdade", topicos:["Garimpo ilegal, desnutrição, emergência sanitária (2023)","Naturalização das desigualdades como 'normais' (Lilia Schwarcz)"]}
+  ],
+  mapaMental: "-   Exclusão e inclusão precária no Brasil contemporâneo\n    -   Exclusão social: além da pobreza, negação de direitos\n    -   Inclusão precária: inserido, mas em condição desigual\n    -   Racismo estrutural (Silvio Almeida): nas instituições\n    -   Políticas públicas: SEPPIR, Estatuto da Igualdade Racial, Lei de Cotas\n    -   Povos indígenas: Constituição 1988, Marco Temporal (inconstitucional em 2023)\n    -   Crise Yanomami: garimpo ilegal, emergência de saúde (2023)\n    -   Naturalização das desigualdades (Lilia Schwarcz)",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Qual é a diferença entre exclusão social e 'inclusão precária'?"},
+      {enunciado:"O que é racismo estrutural, segundo Silvio Almeida?"},
+      {enunciado:"Cite duas políticas públicas brasileiras voltadas à redução da desigualdade racial."},
+      {enunciado:"O que foi a tese do 'Marco Temporal' e por que ela foi criticada pelos povos indígenas?"},
+      {enunciado:"Explique a situação de saúde do povo Yanomami mencionada no texto."}
+    ],
+    flashcards: [
+      {frente:"Quem desenvolveu o conceito de racismo estrutural citado no texto?", verso:"Silvio Almeida"},
+      {frente:"Qual órgão criado em 2003 promove a igualdade racial?", verso:"SEPPIR"},
+      {frente:"Qual lei criou as cotas raciais nas universidades federais?", verso:"Lei nº 12.711/2012"},
+      {frente:"Qual artigo da Constituição trata dos direitos territoriais indígenas?", verso:"Artigo 231"},
+      {frente:"O que defendia a tese do 'Marco Temporal'?", verso:"Que indígenas só teriam direito a terras ocupadas até 5/10/1988"},
+      {frente:"Em que ano o STF julgou o Marco Temporal inconstitucional?", verso:"2023"},
+      {frente:"Qual povo indígena sofreu emergência de saúde pública em 2023?", verso:"Yanomami"},
+      {frente:"Quem fala sobre a 'naturalização das desigualdades' no Brasil?", verso:"Lilia Moritz Schwarcz"}
+    ],
+    gabarito: [
+      {resposta:"Exclusão social é a negação de direitos e a marginalização; inclusão precária é quando o grupo é inserido na sociedade, mas em condições instáveis, desprotegidas e desiguais.", comentario:"Usar o exemplo do trabalhador informal citado no texto."},
+      {resposta:"É a ideia de que o racismo está enraizado nas instituições, leis e práticas econômicas, reproduzindo desigualdades mesmo sem intenção declarada de discriminar.", comentario:"Diferenciar de preconceito individual."},
+      {resposta:"SEPPIR (2003), Estatuto da Igualdade Racial (2010) ou Lei de Cotas (12.711/2012) — aceitar quaisquer duas citadas no texto.", comentario:"Reconhecer que são avanços, mas não eliminam desigualdades estruturais."},
+      {resposta:"Defendia que indígenas só teriam direito a terras que ocupavam em 5 de outubro de 1988; foi criticada por ignorar que muitas comunidades foram expulsas de seus territórios por violência antes dessa data.", comentario:"Mencionar que o STF julgou a tese inconstitucional em 2023."},
+      {resposta:"O avanço do garimpo ilegal em terras Yanomami causou contaminação de rios, desmatamento e doenças, levando o governo a decretar emergência de saúde pública em 2023, com casos graves de desnutrição infantil.", comentario:"Relacionar à vulnerabilidade histórica dos povos indígenas."}
+    ],
+    questoes: [
+      {enunciado:"O conceito de 'inclusão precária' se refere a situações em que um grupo social:", alternativas:["É totalmente excluído da sociedade","É inserido na sociedade, mas em condições inferiores e instáveis","Tem acesso pleno e igual a todos os direitos","Não sofre nenhum tipo de discriminação"], correta:1, comentario:"O exemplo do texto é o trabalhador informal, formalmente 'incluído' mas em condição vulnerável."},
+      {enunciado:"Segundo o conceito de racismo estrutural, as desigualdades raciais no Brasil:", alternativas:["Dependem apenas de atitudes individuais de preconceito","Estão enraizadas nas instituições, leis e práticas econômicas","Não existem mais na sociedade atual","Foram completamente resolvidas pela Constituição de 1988"], correta:1, comentario:"O racismo estrutural opera mesmo sem intenção declarada de discriminar."},
+      {enunciado:"A Lei nº 12.711/2012 é conhecida por:", alternativas:["Criminalizar o racismo","Estabelecer cotas para escolas públicas, negros, pardos e indígenas nas universidades federais","Reconhecer terras quilombolas","Criar a SEPPIR"], correta:1, comentario:"É um marco das políticas afirmativas no ensino superior."},
+      {enunciado:"A tese do 'Marco Temporal', julgada inconstitucional pelo STF em 2023, defendia que:", alternativas:["Todas as terras indígenas deveriam ser demarcadas imediatamente","Indígenas só teriam direito a terras ocupadas até a data da Constituição de 1988","O garimpo em terras indígenas deveria ser proibido","Os indígenas não teriam nenhum direito territorial"], correta:1, comentario:"A tese ignorava expulsões violentas ocorridas antes de 1988."},
+      {enunciado:"A emergência de saúde pública decretada no território Yanomami em 2023 foi motivada, entre outros fatores, por:", alternativas:["Falta de acesso à internet","O avanço do garimpo ilegal, contaminação de rios e desnutrição infantil","Excesso de investimento em saúde na região","Ausência total de povos indígenas na área"], correta:1, comentario:"O garimpo ilegal trouxe contaminação, desmatamento e doenças às comunidades."}
+    ]
+  }
+});
+Object.assign(PREBUILT_OBJ["Movimentos contra feminicídio, racismo e homofobia"], {
+  quadro: "• Feminicídio: assassinato de mulher pelo simples fato de ser mulher, raiz no patriarcado\n• Lei Maria da Penha (2006): proteção contra violência doméstica; Lei do Feminicídio (2015): qualificadora no Código Penal\n• Brasil está entre os países com maiores taxas de feminicídio do mundo\n• Racismo estrutural: produto de +300 anos de escravidão sem política de inclusão pós-abolição\n• MNU (1978) denuncia o mito da 'democracia racial'; hoje, Lei Caó (1989) criminaliza o racismo\n• Cotas raciais (Lei 12.711/2012) confirmadas constitucionais pelo STF\n• Homofobia: raízes no colonialismo europeu e na moral cristã que perseguia identidades dissidentes\n• Marcos jurídicos LGBTQIA+: união homoafetiva (2011), casamento civil (2013), STF criminaliza homofobia/transfobia (2019)\n• Brasil segue entre os países que mais matam pessoas LGBTQIA+ no mundo\n• Interseccionalidade (Kimberlé Crenshaw): opressões de gênero, raça e sexualidade se cruzam e se potencializam",
+  slides: [
+    {titulo:"Feminicídio e a luta das mulheres", topicos:["Lei Maria da Penha (2006) e Lei do Feminicídio (2015)","Brasil entre os países com maiores taxas de feminicídio"]},
+    {titulo:"Racismo estrutural e movimentos negros", topicos:["Raízes na escravidão e na ausência de inclusão pós-1888","MNU (1978) e a Lei de Cotas (2012)"]},
+    {titulo:"Homofobia e movimentos LGBTQIA+", topicos:["Parada do Orgulho (1997) e avanços jurídicos (2011-2019)","Brasil segue entre os países que mais matam pessoas LGBTQIA+"]},
+    {titulo:"Interseccionalidade", topicos:["Conceito de Kimberlé Crenshaw: opressões se cruzam","Feminismo negro brasileiro adota o conceito"]},
+    {titulo:"Luta conjunta por justiça social", topicos:["Avanços legais não bastam sem mudança cultural","Sociedade organizada consegue mudar leis e consciências"]}
+  ],
+  mapaMental: "-   Movimentos contra feminicídio, racismo e homofobia\n    -   Feminicídio: Lei Maria da Penha (2006), Lei do Feminicídio (2015)\n    -   Racismo: MNU (1978), Lei Caó (1989), Lei de Cotas (2012)\n    -   Homofobia: união homoafetiva (2011) a criminalização (2019)\n    -   Interseccionalidade (Crenshaw): opressões se cruzam\n    -   Conclusão: leis avançam, mas cultura ainda precisa mudar",
+  avaliacao: {
+    atividade: [
+      {enunciado:"O que é feminicídio e quando ele foi tipificado como crime específico no Brasil?"},
+      {enunciado:"Explique o que significa dizer que o racismo no Brasil é 'estrutural'."},
+      {enunciado:"Cite dois avanços jurídicos conquistados pelo movimento LGBTQIA+ nas últimas décadas."},
+      {enunciado:"O que é interseccionalidade e por que esse conceito é importante para entender as opressões no Brasil?"},
+      {enunciado:"Por que a existência de leis de proteção não é suficiente, sozinha, para acabar com a violência e a discriminação?"}
+    ],
+    flashcards: [
+      {frente:"Em homenagem a quem foi nomeada a Lei Maria da Penha?", verso:"Maria da Penha Maia Fernandes"},
+      {frente:"Em que ano foi aprovada a Lei do Feminicídio?", verso:"2015"},
+      {frente:"Quando foi fundado o Movimento Negro Unificado?", verso:"1978"},
+      {frente:"Qual lei criminaliza o racismo no Brasil?", verso:"Lei Caó (Lei nº 7.716/1989)"},
+      {frente:"Em que ano o STF reconheceu a união homoafetiva?", verso:"2011"},
+      {frente:"Em que ano o STF equiparou homofobia e transfobia ao crime de racismo?", verso:"2019"},
+      {frente:"Quem desenvolveu o conceito de interseccionalidade?", verso:"Kimberlé Crenshaw"},
+      {frente:"Desde quando existe a Parada do Orgulho LGBT de São Paulo?", verso:"1997"}
+    ],
+    gabarito: [
+      {resposta:"É o assassinato de uma mulher pelo simples fato de ser mulher; foi tipificado como qualificadora do homicídio pela Lei do Feminicídio, em 2015.", comentario:"Relacionar à raiz do crime no patriarcado."},
+      {resposta:"Significa que o racismo não se limita a atitudes individuais — está incorporado nas instituições, leis, práticas econômicas e na cultura brasileira.", comentario:"Conectar à ausência de política de inclusão após a abolição de 1888."},
+      {resposta:"Reconhecimento da união homoafetiva (2011), casamento civil (2013) ou criminalização da homofobia/transfobia (2019) — aceitar quaisquer dois.", comentario:"Destacar que ainda não há lei federal específica sobre o tema."},
+      {resposta:"É o conceito que explica como diferentes formas de opressão (gênero, raça, sexualidade) se cruzam e se potencializam na vida de uma mesma pessoa, como uma mulher negra e lésbica.", comentario:"Mencionar sua origem na jurista Kimberlé Crenshaw e sua adoção pelo feminismo negro brasileiro."},
+      {resposta:"Porque a violência e a discriminação têm raízes culturais e sociais profundas; leis são importantes, mas precisam vir acompanhadas de mudança na educação, na cultura e nas práticas cotidianas.", comentario:"Aceitar qualquer argumentação coerente com o texto."}
+    ],
+    questoes: [
+      {enunciado:"A Lei do Feminicídio, aprovada em 2015, teve como principal efeito:", alternativas:["Revogar a Lei Maria da Penha","Inserir o feminicídio como qualificadora do crime de homicídio no Código Penal","Extinguir a violência doméstica no Brasil","Criar a Marcha das Mulheres"], correta:1, comentario:"Reconheceu legalmente a gravidade do assassinato de mulheres por razões de gênero."},
+      {enunciado:"Dizer que o racismo no Brasil é 'estrutural' significa que ele:", alternativas:["Só existe em atitudes individuais isoladas","Está incorporado nas instituições, leis e práticas sociais","Foi completamente eliminado pela Constituição","Nunca existiu no país"], correta:1, comentario:"O racismo estrutural opera de forma sistemática, não apenas individual."},
+      {enunciado:"Em 2019, o Supremo Tribunal Federal decidiu que a homofobia e a transfobia:", alternativas:["Não são crimes no Brasil","Passam a ser equiparadas ao crime de racismo","São permitidas em espaços privados","Só podem ser julgadas por lei federal específica, ainda inexistente"], correta:1, comentario:"A decisão supriu a omissão do Congresso Nacional sobre o tema."},
+      {enunciado:"O conceito de interseccionalidade, de Kimberlé Crenshaw, ajuda a entender:", alternativas:["Que as opressões de gênero, raça e sexualidade são fenômenos isolados","Como diferentes opressões se cruzam e se potencializam na vida das pessoas","Que o racismo é mais importante que o sexismo","Que a discriminação só existe nos Estados Unidos"], correta:1, comentario:"Uma mulher negra e lésbica, por exemplo, enfrenta opressões simultâneas."},
+      {enunciado:"Segundo o texto, a existência de leis de proteção contra a violência de gênero, racial e homofóbica:", alternativas:["É suficiente, sozinha, para eliminar essas violências","É importante, mas precisa vir acompanhada de mudança cultural e educacional","É desnecessária no Brasil atual","Nunca teve nenhum efeito prático"], correta:1, comentario:"Avanços legais são essenciais, mas não bastam sem transformação cultural."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Lutas por igualdade e políticas afirmativas"], {
+  quadro: "• Populações marginalizadas: negros, indígenas, mulheres, PcD, LGBTQIA+ — exclusão por estruturas históricas de poder\n• Igualdade formal (art. 5º CF/88: 'todos são iguais perante a lei') x igualdade material (tratar desigualmente quem é desigual)\n• Políticas afirmativas: medidas temporárias pra compensar desvantagens históricas, não privilégios\n• Movimento negro: Frente Negra Brasileira (1931), Teatro Experimental do Negro (1944), MNU (1978)\n• Lei de Cotas (12.711/2012): vagas em universidades federais para pretos, pardos, indígenas e PcD\n• Lei 12.990/2014: 20% das vagas em concursos públicos federais para negros e pardos\n• Voto feminino conquistado em 1932; Lei Maria da Penha (2006) e Lei do Feminicídio (2015)\n• Povos indígenas: mais de 300 etnias, direito à diferença (art. 231, CF/88), etnocídio histórico\n• LGBTQIA+: avanços por decisão judicial (2011, 2013, 2018), mas sem lei federal específica ainda",
+  slides: [
+    {titulo:"Igualdade formal x igualdade material", topicos:["Art. 5º da CF/88: todos iguais perante a lei","Políticas afirmativas compensam desigualdades históricas"]},
+    {titulo:"Movimento negro e cotas raciais", topicos:["Frente Negra Brasileira (1931) ao MNU (1978)","Lei de Cotas (2012) e Lei 12.990/2014 (concursos)"]},
+    {titulo:"Mulheres e proteção contra a violência", topicos:["Voto feminino conquistado em 1932","Lei Maria da Penha (2006), Lei do Feminicídio (2015)"]},
+    {titulo:"Povos indígenas e o direito à diferença", topicos:["Mais de 300 etnias, art. 231 da Constituição","Etnocídio histórico e luta pela demarcação de terras"]},
+    {titulo:"População LGBTQIA+", topicos:["Avanços por decisão judicial: 2011, 2013, 2018","Ainda sem lei federal específica de proteção"]}
+  ],
+  mapaMental: "-   Lutas por igualdade e políticas afirmativas\n    -   Igualdade formal x material: base das ações afirmativas\n    -   Movimento negro: Frente Negra (1931) → MNU (1978) → Lei de Cotas (2012)\n    -   Mulheres: voto (1932), Lei Maria da Penha (2006), feminicídio (2015)\n    -   Povos indígenas: 300+ etnias, art. 231, demarcação de terras\n    -   LGBTQIA+: avanços judiciais (2011-2018), sem lei federal ainda",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Qual a diferença entre igualdade formal e igualdade material?"},
+      {enunciado:"O que são políticas afirmativas e qual seu objetivo principal?"},
+      {enunciado:"Cite duas organizações históricas do movimento negro brasileiro citadas no texto."},
+      {enunciado:"O que a Constituição de 1988 garantiu aos povos indígenas em seu artigo 231?"},
+      {enunciado:"Por que ainda não existe, no Brasil, uma lei federal específica de proteção à população LGBTQIA+?"}
+    ],
+    flashcards: [
+      {frente:"O que diz o artigo 5º da Constituição sobre igualdade?", verso:"'Todos são iguais perante a lei' (igualdade formal)"},
+      {frente:"Em que ano foi fundada a Frente Negra Brasileira?", verso:"1931"},
+      {frente:"Quem fundou o Teatro Experimental do Negro, em 1944?", verso:"Abdias do Nascimento"},
+      {frente:"Qual lei reserva vagas em concursos públicos federais a negros e pardos?", verso:"Lei nº 12.990/2014"},
+      {frente:"Em que ano as mulheres conquistaram o voto no Brasil?", verso:"1932"},
+      {frente:"Quantas etnias indígenas existem hoje no Brasil, aproximadamente?", verso:"Mais de 300"},
+      {frente:"O que significa 'etnocídio'?", verso:"Extermínio ou apagamento forçado de uma cultura/identidade étnica"},
+      {frente:"Em que ano o CNJ determinou que cartórios celebrassem casamento entre pessoas do mesmo sexo?", verso:"2013"}
+    ],
+    gabarito: [
+      {resposta:"Igualdade formal é a lei tratar todos da mesma forma; igualdade material reconhece que é preciso tratar diferentemente quem está em situação historicamente desigual, pra alcançar igualdade real.", comentario:"Usar a metáfora da corrida com largada desigual, do texto."},
+      {resposta:"São medidas temporárias, públicas ou privadas, destinadas a corrigir desigualdades históricas e incluir grupos que sofreram discriminação sistemática — não é privilégio, é compensação.", comentario:"Reforçar o caráter temporário e reparador dessas políticas."},
+      {resposta:"Frente Negra Brasileira (1931), Teatro Experimental do Negro (1944) ou Movimento Negro Unificado (1978) — aceitar quaisquer duas.", comentario:"Todas colocaram o racismo como questão política central."},
+      {resposta:"Garantiu aos indígenas o direito à sua organização social, costumes, línguas, crenças e tradições, e os direitos originários sobre as terras que tradicionalmente ocupam.", comentario:"Mencionar que esse reconhecimento resultou da mobilização indígena na Constituinte."},
+      {resposta:"Porque, apesar de avanços por decisões judiciais do STF e do CNJ, o Congresso Nacional nunca aprovou uma legislação federal específica sobre o tema.", comentario:"Destacar que os avanços vieram principalmente do Judiciário, não do Legislativo."}
+    ],
+    questoes: [
+      {enunciado:"A diferença entre igualdade formal e igualdade material está em que a segunda:", alternativas:["Trata todos exatamente da mesma forma, sem exceções","Reconhece a necessidade de tratar diferentemente quem está em desvantagem histórica","É menos importante que a primeira","Não está prevista na Constituição de 1988"], correta:1, comentario:"A igualdade material fundamenta as políticas afirmativas."},
+      {enunciado:"As políticas afirmativas, como as cotas, têm como objetivo principal:", alternativas:["Privilegiar grupos sem nenhuma justificativa histórica","Compensar desvantagens construídas ao longo de séculos de discriminação","Substituir permanentemente o mérito individual","Beneficiar apenas um grupo social específico para sempre"], correta:1, comentario:"São medidas de caráter temporário e reparador."},
+      {enunciado:"O artigo 231 da Constituição de 1988 garante aos povos indígenas:", alternativas:["Apenas o direito ao voto","O direito à organização social, costumes e às terras tradicionalmente ocupadas","A obrigatoriedade de assimilação cultural","Nenhum direito específico"], correta:1, comentario:"Foi resultado direto da mobilização indígena durante a Constituinte."},
+      {enunciado:"Em relação à população LGBTQIA+, o texto destaca que os principais avanços jurídicos no Brasil vieram:", alternativas:["De uma lei federal aprovada pelo Congresso","De decisões do Supremo Tribunal Federal e do CNJ","De um plebiscito popular","De tratados internacionais obrigatórios"], correta:1, comentario:"O Congresso ainda não aprovou legislação federal específica sobre o tema."},
+      {enunciado:"A Lei nº 12.711/2012 (Lei de Cotas) é significativa porque:", alternativas:["Aboliu completamente o vestibular","Reservou vagas em universidades federais para estudantes de escolas públicas, negros, pardos e indígenas","Extinguiu as universidades privadas","Não teve nenhum efeito prático comprovado"], correta:1, comentario:"Estudos mostraram desempenho acadêmico equivalente ou superior dos cotistas."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Ações de redução das desigualdades sociais"], {
+  quadro: "• Desigualdades brasileiras vêm de séculos de escravidão, expropriação indígena e exclusão sistemática\n• Constituição de 1988 ('Cidadã'): direitos indígenas e, no ADCT art. 68, titulação de terras quilombolas\n• Lei de Cotas (12.711/2012): vagas para escolas públicas, pretos, pardos e indígenas nas federais\n• Ações afirmativas partem do princípio: tratar todos igual no presente não corrige desigualdade histórica\n• IBGE: população preta/parda é maioria na pobreza extrema e no trabalho precarizado\n• Demarcação de terras indígenas: condição básica pra sobrevivência física e cultural desses povos\n• FUNAI conduz demarcações, mas enfrenta pressão do agronegócio e da mineração\n• SESAI (saúde indígena) e educação escolar indígena valorizam línguas e saberes próprios\n• Lei 10.639/2003 (história/cultura afro) e Lei 11.645/2008 (história/cultura indígena): ensino obrigatório\n• Redução da desigualdade é processo de longo prazo — precisa de políticas + engajamento social",
+  slides: [
+    {titulo:"Raízes históricas da desigualdade", topicos:["Escravidão, expropriação de terras indígenas, exclusão sistemática","Constituição de 1988 como marco de reconhecimento de direitos"]},
+    {titulo:"Ações afirmativas e cotas", topicos:["Lei de Cotas (2012): escolas públicas, pretos, pardos, indígenas","Correção de desvantagens acumuladas, não tratamento idêntico"]},
+    {titulo:"Povos indígenas: terra e saúde", topicos:["Demarcação como condição de sobrevivência física e cultural","FUNAI, SESAI e educação escolar indígena"]},
+    {titulo:"Reconhecimento cultural e educacional", topicos:["Lei 10.639/2003: história e cultura afro-brasileira","Lei 11.645/2008: inclui também a história indígena"]},
+    {titulo:"Um processo de longo prazo", topicos:["IBGE e IPEA mostram avanços, mas desigualdades persistem","Exige políticas consistentes e engajamento da sociedade"]}
+  ],
+  mapaMental: "-   Ações de redução das desigualdades sociais\n    -   Raízes: escravidão, expropriação indígena, exclusão histórica\n    -   Constituição de 1988: direitos indígenas, terras quilombolas (ADCT art. 68)\n    -   Cotas (Lei 12.711/2012): correção de desvantagem histórica\n    -   Povos indígenas: demarcação de terras, SESAI, educação escolar\n    -   Reconhecimento cultural: Leis 10.639/2003 e 11.645/2008\n    -   Processo de longo prazo: políticas + engajamento social",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Segundo o texto, de onde vêm as desigualdades sociais no Brasil?"},
+      {enunciado:"O que estabeleceu o artigo 68 do ADCT da Constituição de 1988?"},
+      {enunciado:"Por que a demarcação de terras é considerada condição básica para a sobrevivência dos povos indígenas?"},
+      {enunciado:"O que determinam as Leis nº 10.639/2003 e nº 11.645/2008?"},
+      {enunciado:"Por que a redução das desigualdades sociais é descrita no texto como um 'processo de longo prazo'?"}
+    ],
+    flashcards: [
+      {frente:"O que reconheceu o artigo 68 do ADCT da Constituição de 1988?", verso:"O direito dos remanescentes de quilombos à titulação de suas terras"},
+      {frente:"Qual lei estabeleceu a Lei de Cotas?", verso:"Lei nº 12.711/2012"},
+      {frente:"Qual órgão federal conduz a demarcação de terras indígenas?", verso:"FUNAI"},
+      {frente:"O que é a SESAI?", verso:"Secretaria Especial de Saúde Indígena"},
+      {frente:"O que tornou obrigatório o ensino de história afro-brasileira nas escolas?", verso:"Lei nº 10.639/2003"},
+      {frente:"O que a Lei nº 11.645/2008 acrescentou ao currículo escolar?", verso:"História e cultura indígena"},
+      {frente:"Quais instituições monitoram indicadores de desigualdade no Brasil, segundo o texto?", verso:"IBGE e IPEA"},
+      {frente:"Segundo o texto, quem concentra a maior parte da pobreza extrema no Brasil?", verso:"A população preta e parda"}
+    ],
+    gabarito: [
+      {resposta:"Vêm de séculos de escravidão, expropriação de terras indígenas, discriminação racial e exclusão sistemática de determinados grupos da vida política e econômica.", comentario:"Reforçar que não são desigualdades naturais, mas produzidas historicamente."},
+      {resposta:"Reconheceu o direito dos remanescentes de quilombos à titulação de suas terras.", comentario:"Complementa o reconhecimento de direitos indígenas do artigo 231."},
+      {resposta:"Porque, sem o território, não há reprodução dos modos de vida, línguas, práticas espirituais e sistemas de conhecimento que constituem as identidades indígenas.", comentario:"A terra é condição de sobrevivência física e cultural, não só econômica."},
+      {resposta:"Tornaram obrigatório o ensino de história e cultura africana/afro-brasileira (2003) e indígena (2008) na educação básica.", comentario:"Mostram que a desigualdade também se combate no campo simbólico e educacional."},
+      {resposta:"Porque, apesar de avanços em indicadores de acesso à educação e redução da pobreza, as desigualdades estruturais permanecem profundas, exigindo políticas consistentes e engajamento contínuo da sociedade.", comentario:"Aceitar qualquer resposta que reconheça a persistência da desigualdade apesar dos avanços."}
+    ],
+    questoes: [
+      {enunciado:"O artigo 68 do ADCT, da Constituição de 1988, garantiu:", alternativas:["O direito ao voto para todos os brasileiros","O direito dos remanescentes de quilombos à titulação de suas terras","A criação da FUNAI","O fim da escravidão no Brasil"], correta:1, comentario:"Complementa o artigo 231, que trata dos direitos indígenas."},
+      {enunciado:"A Lei de Cotas (12.711/2012) parte do princípio de que:", alternativas:["Todos devem ser tratados de forma idêntica, independentemente da história","É necessário compensar desvantagens acumuladas ao longo de gerações","O ensino superior deve ser exclusivo para grupos privilegiados","As cotas prejudicam o desempenho acadêmico dos estudantes"], correta:1, comentario:"Estudos do IBGE e IPEA mostram avanços concretos, mas desigualdades persistentes."},
+      {enunciado:"A demarcação de terras indígenas é considerada essencial porque:", alternativas:["Gera lucro imediato para o Estado","É condição básica para a sobrevivência física e cultural dos povos indígenas","Não tem relação com a preservação de línguas e saberes","É uma exigência apenas do agronegócio"], correta:1, comentario:"Sem o território, não há reprodução dos modos de vida indígenas."},
+      {enunciado:"As Leis nº 10.639/2003 e nº 11.645/2008 têm em comum o fato de:", alternativas:["Proibirem o ensino de história do Brasil","Tornarem obrigatório o ensino de história e cultura afro-brasileira e indígena","Criarem cotas em concursos públicos","Extinguirem escolas públicas"], correta:1, comentario:"Reconhecem que a desigualdade também se expressa na invisibilização cultural."},
+      {enunciado:"Segundo o texto, a redução das desigualdades sociais no Brasil é um processo que:", alternativas:["Já foi completamente concluído","Depende de políticas públicas consistentes e do engajamento da sociedade, a longo prazo","Não depende de nenhuma política pública","Pode ser resolvido apenas com uma única lei"], correta:1, comentario:"IBGE e IPEA apontam avanços, mas também desigualdades estruturais persistentes."}
+    ]
+  }
+});
+
+Object.assign(PREBUILT_OBJ["Anistia de 1979"], {
+  quadro: "• Fim dos anos 1970: forte pressão social por lei de anistia — sindicatos, estudantes, familiares de presos políticos\n• Lei nº 6.683/1979 (28/08/1979), sancionada por João Baptista Figueiredo\n• Anistia cobre crimes políticos entre 02/09/1961 e 15/08/1979; permite retorno de exilados (Brizola, Arraes)\n• Ambiguidade proposital: 'crimes conexos' interpretado como incluindo agentes do Estado (torturadores)\n• Movimento Feminino pela Anistia (Terezinha Zerbini, 1975) e Comitê Brasileiro pela Anistia pressionaram pela lei\n• Proposta popular era anistia 'ampla, geral e irrestrita' — texto final excluiu presos da luta armada\n• Política de conciliação: transição negociada 'pelo alto', sem julgamento dos responsáveis por violações\n• Diferente de Argentina e Chile, que julgaram e condenaram torturadores e ditadores\n• Comissão Nacional da Verdade (2012-2014): 434 mortos e desaparecidos identificados, sem poder punitivo\n• STF (ADPF 153, 2010) manteve a autoanistia; Corte Interamericana condenou o Brasil no caso Guerrilha do Araguaia",
+  slides: [
+    {titulo:"O contexto da abertura política", topicos:["Pressão de sindicatos, estudantes e familiares de presos políticos","AI-5 (1968) como instrumento de perseguição a opositores"]},
+    {titulo:"A Lei nº 6.683/1979", topicos:["Sancionada por João Baptista Figueiredo em 28/08/1979","Permite retorno de exilados como Brizola e Arraes"]},
+    {titulo:"A ambiguidade da autoanistia", topicos:["'Crimes conexos' interpretado como incluindo torturadores","Anistia 'ampla, geral e irrestrita' não foi o texto aprovado"]},
+    {titulo:"Política de conciliação", topicos:["Transição negociada 'pelo alto', sem julgamento dos responsáveis","Diferente da Argentina e do Chile, que julgaram torturadores"]},
+    {titulo:"A Anistia nos debates atuais", topicos:["Comissão Nacional da Verdade (2012-2014): 434 mortos/desaparecidos","STF mantém a lei (2010); Corte Interamericana condena o Brasil"]}
+  ],
+  mapaMental: "-   Anistia de 1979\n    -   Contexto: pressão social pelo fim da perseguição política\n    -   Lei nº 6.683/1979: anistia para crimes políticos (1961-1979)\n    -   Ambiguidade: 'crimes conexos' inclui agentes do Estado\n    -   Exclusão: presos da luta armada ficaram de fora\n    -   Política de conciliação: sem julgamento dos responsáveis\n    -   Legado: Comissão Nacional da Verdade (2012-2014)\n    -   Debate atual: STF (2010) x Corte Interamericana (Guerrilha do Araguaia)",
+  avaliacao: {
+    atividade: [
+      {enunciado:"Quem pressionou pela aprovação da Lei de Anistia e o que essa mobilização pedia?"},
+      {enunciado:"Por que a expressão 'crimes conexos' tornou a Lei de Anistia ambígua e controversa?"},
+      {enunciado:"O que a proposta de anistia 'ampla, geral e irrestrita' pedia, e por que ela não foi integralmente atendida?"},
+      {enunciado:"O que foi a Comissão Nacional da Verdade e quais foram seus limites?"},
+      {enunciado:"Compare a posição do STF (ADPF 153, 2010) e da Corte Interamericana de Direitos Humanos sobre a Lei de Anistia."}
+    ],
+    flashcards: [
+      {frente:"Qual é o número da Lei de Anistia e em que ano foi sancionada?", verso:"Lei nº 6.683, em 1979"},
+      {frente:"Quem sancionou a Lei de Anistia?", verso:"João Baptista Figueiredo"},
+      {frente:"Quem fundou o Movimento Feminino pela Anistia, em 1975?", verso:"Terezinha Zerbini"},
+      {frente:"Cite dois exilados que puderam retornar ao Brasil com a Anistia.", verso:"Leonel Brizola e Miguel Arraes"},
+      {frente:"Quando foi instalada a Comissão Nacional da Verdade?", verso:"2012 (encerrada em 2014)"},
+      {frente:"Quantos mortos e desaparecidos políticos o relatório da Comissão identificou?", verso:"434"},
+      {frente:"Qual ação do STF, julgada em 2010, manteve a Lei de Anistia?", verso:"ADPF 153"},
+      {frente:"Em que caso a Corte Interamericana condenou o Brasil por causa da Lei de Anistia?", verso:"Caso Gomes Lund (Guerrilha do Araguaia)"}
+    ],
+    gabarito: [
+      {resposta:"Sindicatos, movimentos estudantis, intelectuais, familiares de presos políticos e exilados, organizados em torno do Movimento Feminino pela Anistia e do Comitê Brasileiro pela Anistia, pediam o retorno dos perseguidos políticos.", comentario:"Destacar o papel de Terezinha Zerbini na mobilização."},
+      {resposta:"Porque a expressão foi interpretada como estendendo a anistia também aos agentes do Estado que cometeram tortura e desaparecimentos, transformando a lei numa autoanistia.", comentario:"Explicar que essa interpretação é contestada até hoje."},
+      {resposta:"Pedia anistia para todos, incluindo os militantes da luta armada; o texto final excluiu os condenados por crimes como terrorismo, assalto e sequestro.", comentario:"Mostrar que a lei aprovada foi mais restrita que a demanda popular."},
+      {resposta:"Foi uma comissão (2012-2014) que investigou graves violações de direitos humanos entre 1946 e 1988, identificando 434 mortos e desaparecidos, mas sem poder para punir os responsáveis, já que a Lei de Anistia seguia em vigor.", comentario:"Relacionar a ausência de poder punitivo à manutenção da Lei de Anistia."},
+      {resposta:"O STF considerou a Lei de Anistia constitucional em 2010, mantendo a interpretação que impede julgar torturadores; no mesmo ano, a Corte Interamericana condenou o Brasil por essa mesma lei impedir a investigação de crimes contra a humanidade.", comentario:"Evidenciar o impasse entre as duas decisões, ainda não resolvido."}
+    ],
+    questoes: [
+      {enunciado:"A Lei de Anistia (Lei nº 6.683/1979) foi sancionada por:", alternativas:["Ernesto Geisel","João Baptista Figueiredo","Castelo Branco","Tancredo Neves"], correta:1, comentario:"Foi promulgada em 28 de agosto de 1979."},
+      {enunciado:"A expressão 'crimes conexos', presente na Lei de Anistia, tornou-se controversa porque foi interpretada como:", alternativas:["Excluindo qualquer possibilidade de anistia","Incluindo também os agentes do Estado responsáveis por tortura e mortes","Anistiar apenas os exilados políticos","Não ter nenhum efeito prático"], correta:1, comentario:"Essa interpretação transformou a lei em uma autoanistia, contestada até hoje."},
+      {enunciado:"A proposta de anistia 'ampla, geral e irrestrita', defendida pelos movimentos populares, não foi integralmente atendida porque:", alternativas:["O texto final excluiu presos condenados por crimes da luta armada","Todos os presos políticos foram libertados sem exceção","A lei nunca foi aprovada","Os militares se opuseram a qualquer anistia"], correta:0, comentario:"O texto aprovado deixou de fora condenados por terrorismo, assalto e sequestro."},
+      {enunciado:"A Comissão Nacional da Verdade (2012-2014) teve como principal limitação:", alternativas:["Não identificar nenhuma vítima da ditadura","Não ter poder punitivo, já que a Lei de Anistia permaneceu em vigor","Investigar apenas crimes ocorridos após 1988","Ser dirigida por militares da ditadura"], correta:1, comentario:"Identificou 434 mortos e desaparecidos, mas sem poder para punir responsáveis."},
+      {enunciado:"Em relação à Lei de Anistia, existe atualmente um impasse entre:", alternativas:["O STF e o Congresso Nacional, apenas","A decisão do STF (2010) e a condenação do Brasil pela Corte Interamericana de Direitos Humanos","O Brasil e a Argentina, exclusivamente","Não existe nenhum impasse hoje"], correta:1, comentario:"A Corte Interamericana considera leis de autoanistia incompatíveis com direitos humanos."}
+    ]
+  }
+});
