@@ -55,7 +55,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .notas-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
 .notas-toolbar h3{font-family:var(--serif);font-size:17px;flex:1;margin:0}
 .notas-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
-.notas-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:13px}
+.notas-table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-size:13px}
 .notas-table th{background:var(--surface);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;font-weight:600;position:sticky;top:0;z-index:2;overflow:hidden;text-overflow:ellipsis}
 .notas-table th.aluno-col{position:sticky;left:0;z-index:3;background:var(--surface)}
 .notas-table td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis}
@@ -77,6 +77,9 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .notas-progresso .prog-titulo{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .prog-barra-wrap{background:var(--surface);border-radius:20px;height:8px;margin-bottom:8px;overflow:hidden}
 .prog-barra{height:8px;border-radius:20px;background:var(--green);transition:.4s}
+.prog-titulo-sm{font-size:11px;font-weight:400;color:var(--muted,#8a8f98);margin-bottom:3px}
+.prog-barra-wrap-sm{height:4px;margin-bottom:8px}
+.prog-barra-wrap-sm .prog-barra{height:4px}
 .prog-objetos{display:flex;flex-wrap:wrap;gap:6px}
 .prog-obj{font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--border)}
 .prog-obj.feito{background:var(--green);color:#fff;border-color:var(--green)}
@@ -1946,21 +1949,36 @@ const LIVRO_PAGINAS_LINHAS=[
   {cods:['EM13CHS502'], pag:'442-443', tema:'Crise Climática e Agenda 2030'},
   {cods:['EM13CHS302','EM13CHS502'], pag:'450-452', tema:'Mundo Pós-Guerra Fria e Desafios do Século XXI'},
 ];
-function paginasDoLivro(dcgo){
+/* Um código DC-GO/BNCC aparece em VÁRIAS linhas do mapeamento (o mesmo
+   código cobre trechos diferentes do livro, em capítulos diferentes) — só
+   filtrar por código junta páginas de temas completamente diferentes numa
+   aula só. Desempata pela proximidade de texto entre o nome do tema e o
+   "tema" de cada linha do mapeamento; se não achar nenhuma linha com
+   palavra em comum, não mostra selo (melhor nada do que página errada). */
+function paginasDoLivro(dcgo, nomeTema){
   if(!dcgo) return null;
   const code=dcgo.trim().toUpperCase();
   const linhas=LIVRO_PAGINAS_LINHAS.filter(l=>l.cods.includes(code));
   if(!linhas.length) return null;
-  return linhas.map(l=>l.pag).join(', ');
+  if(linhas.length===1) return linhas[0].pag;
+  const palavrasTema=new Set(_normBuscaTexto(nomeTema||'').split(/\s+/).filter(p=>p.length>=4));
+  const pontuadas=linhas.map(l=>{
+    const palavrasLinha=_normBuscaTexto(l.tema||'').split(/\s+/).filter(Boolean);
+    const score=palavrasLinha.filter(p=>palavrasTema.has(p)).length;
+    return {l, score};
+  }).sort((a,b)=>b.score-a.score);
+  if(pontuadas[0].score===0) return null; // ambíguo — várias páginas, nenhuma bate com o nome do tema
+  const melhor=pontuadas[0].score;
+  return pontuadas.filter(p=>p.score===melhor).map(p=>p.l.pag).join(', ');
 }
 function deverCasaSeloHtml(t){
-  const pags=paginasDoLivro(t.dcgo);
+  const pags=paginasDoLivro(t.dcgo, t.tituloExibicao||t.nome);
   if(!pags) return '';
   return '<span class="selo casa" title="Clique pra criar a coluna de dever de casa em Notas, com estas páginas" onclick="event.stopPropagation();acrescentarDeverDeCasa(\''+t.id+'\')">🏠 pág. '+esc(pags)+'</span>';
 }
 function acrescentarDeverDeCasa(temaId){
   const t=temas[temaId]; if(!t) return;
-  const pags=paginasDoLivro(t.dcgo);
+  const pags=paginasDoLivro(t.dcgo, t.tituloExibicao||t.nome);
   if(!pags){ toast('Sem página mapeada pro código "'+(t.dcgo||'(sem código)')+'".','err'); return; }
   const turmaId=t.turmaId||scope.turma;
   if(!turmaId){ toast('Turma não encontrada pra esse tema.','err'); return; }
@@ -3236,6 +3254,16 @@ function addPlanejamento(){
   const obs=(document.getElementById('cronObs')||{}).value.trim();
   if(!data){ toast('Escolha uma data.','err'); return; }
   if(!temaId){ toast('Este conteúdo ainda não tem tema pra planejar.','err'); return; }
+  const turmaCont=turmas[cont.turmaId];
+  if(turmaCont){
+    const grade=gradeDe(turmaCont);
+    const wd=new Date(data+'T00:00:00').getDay();
+    if(!grade[wd]){
+      const diaEscolhido=WD_NOMES[wd]||wd;
+      const diasTurma=Object.keys(grade).map(k=>WD_NOMES[k]||k).join(', ')||'(sem horário configurado)';
+      if(!confirm('Essa turma não tem aula em '+diaEscolhido+' — o horário configurado é '+diasTurma+'. Adicionar mesmo assim?')) return;
+    }
+  }
   if(!cont.planejamento) cont.planejamento=[];
   cont.planejamento.push({id:uid(),data,temaId,objeto,obs});
   persistConteudo(cont);
@@ -4056,7 +4084,7 @@ async function enviarChat(){
   const useWeb=(document.getElementById('chatWeb')||{}).checked;
   const contexto = editing ? ('O usuário está atualmente com o tema "'+editing.nome+'" ('+editing.disciplina+', '+editing.serie+') aberto no app Leciona. Se a pergunta parecer relacionada, considere esse contexto — mas responda livremente qualquer outra pergunta também.') : '';
   const hoje='Hoje é '+isoLocal(new Date())+' ('+DIAS_LONGO[new Date().getDay()]+').';
-  const sys='Você é o assistente pessoal de uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista — isso descreve quem ela é, não um limite do que você pode responder. Ajude com QUALQUER pergunta que ela fizer, mesmo sem relação óbvia com essas disciplinas ou com o Leciona (dúvida pessoal, outra matéria, assunto administrativo da escola, o que for) — nunca recuse ou diga que algo "foge do escopo"; se não tiver certeza, ajude com o que souber e seja honesta sobre a incerteza, ou busque na web se a busca estiver disponível. '+hoje+' '+contexto+' Você pode usar ferramentas pra: mexer na Agenda do Leciona (criar/editar/apagar compromissos, criar/mover/apagar/marcar-executada aula avulsa, consultar tudo isso por período — inclui aulas avulsas agora); anexar uma anotação a um tema de aula ou ao bloco de notas geral da Agenda; consultar o progresso do bimestre de uma turma (aulas previstas x dadas, temas aplicados) via listar_progresso_bimestre; sugerir o que dar a seguir via sugerir_conteudos_pendentes (conteúdos da matriz com material pronto que ainda não viraram tema); e criar um tema a partir de um desses conteúdos sugeridos via criar_tema (só funciona com nome/dcgo exatos vindos de sugerir_conteudos_pendentes — nunca invente um tema do zero). Quando a usuária anexar uma foto ou PDF (ex.: calendário de atividades da escola, foto de aviso, planilha impressa), leia com atenção e, se houver datas/eventos claros, liste o que você identificou e use a ferramenta certa pra cada um (compromisso, aula avulsa etc.) — a interface já pede confirmação da usuária antes de qualquer ferramenta de escrita executar de verdade, então pode propor com confiança. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
+  const sys='Você é o assistente pessoal de uma professora de História/Filosofia/Sociologia na educação básica brasileira (SEDUC-GO), com lente decolonial e pan-africanista — isso descreve quem ela é, não um limite do que você pode responder. Ajude com QUALQUER pergunta que ela fizer, mesmo sem relação óbvia com essas disciplinas ou com o Leciona (dúvida pessoal, outra matéria, assunto administrativo da escola, o que for) — nunca recuse ou diga que algo "foge do escopo"; se não tiver certeza, ajude com o que souber e seja honesta sobre a incerteza, ou busque na web se a busca estiver disponível. '+hoje+' '+contexto+' Você pode usar ferramentas pra: mexer na Agenda do Leciona (criar/editar/apagar compromissos, criar/mover/apagar/marcar-executada aula avulsa, consultar tudo isso por período — inclui aulas avulsas agora); anexar uma anotação a um tema de aula ou ao bloco de notas geral da Agenda; consultar o progresso do bimestre de uma turma (aulas previstas x dadas, temas aplicados) via listar_progresso_bimestre; sugerir o que dar a seguir via sugerir_conteudos_pendentes (conteúdos da matriz com material pronto que ainda não viraram tema); e criar um tema a partir de um desses conteúdos sugeridos via criar_tema (só funciona com nome/dcgo exatos vindos de sugerir_conteudos_pendentes — não invente nome/dcgo pra essa ferramenta). Quando ela pedir um tema que NÃO vem da matriz oficial — projeto, atividade especial, aula fora do currículo padrão, qualquer coisa que ela descrever livremente — use criar_tema_livre em vez de criar_tema; essa ferramenta existe exatamente pra criar um tema original do zero, com o nome e resumo que ela descrever. Quando a usuária anexar uma foto ou PDF (ex.: calendário de atividades da escola, foto de aviso, planilha impressa), leia com atenção e, se houver datas/eventos claros, liste o que você identificou e use a ferramenta certa pra cada um (compromisso, aula avulsa etc.) — a interface já pede confirmação da usuária antes de qualquer ferramenta de escrita executar de verdade, então pode propor com confiança. Só chame uma ferramenta quando o pedido realmente exigir a ação — pra perguntas e conversa normal, responda só em texto. Seja direto, útil e não invente referências bibliográficas ou dados que não tenha certeza.';
   try{
     let iter=0; const MAX_ITER=6; let respostaFinal='';
     while(iter<MAX_ITER){
@@ -5968,10 +5996,8 @@ function renderProgressoBar(){
   const dadasBim=aulasDadas(tu,scope.bim);
   const pctBim=contBim.total>0?Math.min(100,Math.round(dadasBim/contBim.total*100)):0;
   const bimBarHtml = contBim.total>0 ?
-    '<div class="notas-progresso">'+
-      '<div class="prog-titulo"><span>Progresso do bimestre · Aula '+dadasBim+'/'+contBim.total+' ('+pctBim+'%)</span></div>'+
-      '<div class="prog-barra-wrap"><div class="prog-barra" style="width:'+pctBim+'%;background:#6a8fbf"></div></div>'+
-    '</div>' : '';
+    '<div class="prog-titulo prog-titulo-sm"><span>Aula '+dadasBim+'/'+contBim.total+' ('+pctBim+'%)</span></div>'+
+    '<div class="prog-barra-wrap prog-barra-wrap-sm"><div class="prog-barra" style="width:'+pctBim+'%;background:#6a8fbf"></div></div>' : '';
   const notasFixadas=Object.values(notasGerais).filter(n=>n&&Array.isArray(n.turmaIds)&&n.turmaIds.includes(scope.turma)).sort((a,b)=>(b._ts||0)-(a._ts||0));
   const notasFixadasHtml = notasFixadas.length ?
     '<div class="notas-progresso">'+
@@ -5991,19 +6017,20 @@ function renderProgressoBar(){
       regsT.forEach(r=>(r.objetos||[]).forEach(k=>{ if(k in objContadores) objContadores[k]++; }));
     });
   });
-  if(!totalTemas){ box.innerHTML=avisoAtraso+bimBarHtml+notasFixadasHtml; return; }
+  if(!totalTemas){ box.innerHTML=avisoAtraso+(bimBarHtml?'<div class="notas-progresso">'+bimBarHtml+'</div>':'')+notasFixadasHtml; return; }
   const pct=Math.round(temasComReg/totalTemas*100);
   const objDots=PROJ_ORDER.map(k=>{
     const label=OBJ_DEFS.find(o=>o.k===k)?.label||k;
     const n=objContadores[k];
     return '<span class="prog-obj'+(n>0?' feito':'')+'" title="'+label+(n?' — '+n+'x':'')+'">'+label+(n?' ×'+n:'')+'</span>';
   }).join('');
-  box.innerHTML=avisoAtraso+bimBarHtml+notasFixadasHtml+'<div class="notas-progresso">'+
+  box.innerHTML=avisoAtraso+notasFixadasHtml+'<div class="notas-progresso">'+
     '<div class="prog-titulo">'+
       '<span>'+esc(turmaNome(tu))+' · '+esc(scope.bim)+' · '+temasComReg+'/'+totalTemas+' temas aplicados</span>'+
       '<button class="btn ghost sm" onclick="abrirRelatorioTurma()">📈 Relatório</button>'+
     '</div>'+
     '<div class="prog-barra-wrap"><div class="prog-barra" style="width:'+pct+'%"></div></div>'+
+    bimBarHtml+
     '<div class="prog-objetos">'+objDots+'</div>'+
   '</div>';
 }
@@ -6864,15 +6891,19 @@ function renderRanking(){
     });
   });
   geralEscola.sort((a,b)=>b.media-a.media);
-  geralEscola=calcularPosicoes(geralEscola,(a,b)=>a.media===b.media).slice(0,30);
-  const geralHtml = geralEscola.length ? geralEscola.map(r=>
-    '<div class="rk-row'+(r.pos<=3?' rk-top':'')+'"><span class="rk-pos">'+medalha(r.pos)+'</span><span class="rk-nome">'+esc(r.aluno.nome)+' <small style="opacity:.6">· '+esc(turmaNomeCompleto(r.turma))+'</small></span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
-  ).join('') : '<p style="opacity:.6">Sem dados suficientes ainda.</p>';
+  function top30Html(pool){
+    let lista=calcularPosicoes(pool.slice().sort((a,b)=>b.media-a.media),(a,b)=>a.media===b.media).slice(0,30);
+    return lista.length ? lista.map(r=>
+      '<div class="rk-row'+(r.pos<=3?' rk-top':'')+'"><span class="rk-pos">'+medalha(r.pos)+'</span><span class="rk-nome">'+esc(r.aluno.nome)+' <small style="opacity:.6">· '+esc(turmaNomeCompleto(r.turma))+'</small></span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>'
+    ).join('') : '<p style="opacity:.6">Sem dados suficientes ainda.</p>';
+  }
+  const unidadesEscola=[...new Set(Object.values(turmas).filter(Boolean).map(t=>t.unidade).filter(Boolean))];
 
   document.getElementById('rankingBody').innerHTML =
     '<div class="rk-section"><h3>Ranking da turma</h3>'+alunosHtml+'</div>'+
     '<div class="rk-section"><h3>Turmas</h3>'+toggle+turmasHtml+'</div>'+
-    '<div class="rk-section"><h3>🏆 Ranking geral da escola — top 30</h3><p style="opacity:.6;font-size:12px;margin-bottom:8px">Todos os alunos de todas as turmas, por média — pra você premiar os melhores desempenhos.</p>'+geralHtml+'</div>';
+    '<div class="rk-section"><h3>🏆 Ranking geral — top 30</h3><p style="opacity:.6;font-size:12px;margin-bottom:8px">Todos os alunos de todas as turmas, por média — pra você premiar os melhores desempenhos.</p>'+top30Html(geralEscola)+'</div>'+
+    unidadesEscola.map(u=>'<div class="rk-section"><h3>🏆 '+esc(u)+' — top 30</h3>'+top30Html(geralEscola.filter(r=>r.turma.unidade===u))+'</div>').join('');
 }
 
 // ── Render principal ──────────────────────────────────────────────────────
@@ -7621,6 +7652,35 @@ function adaptSourceText(t,baseK){
   return '';
 }
 
+/* Mesmo tema (mesmo código DC-GO, mesma disciplina+série) já adaptado em
+   turma irmã (outra letra/unidade) — a adaptação é sobre o CONTEÚDO, não
+   sobre a turma, então dá pra copiar sem gastar crédito de IA de novo.
+   Sem isso, gerar adaptação numa turma nunca aparecia nas outras seções do
+   mesmo ano/disciplina, mesmo sendo exatamente o mesmo tema. */
+function adaptacoesIrmasDisponiveis(t){
+  if(!t || !t.dcgo) return [];
+  const tu=turmas[t.turmaId]; if(!tu) return [];
+  const code=t.dcgo.trim().toUpperCase();
+  const jaTem=new Set(Object.keys(t.adaptado||{}).filter(k=>t.adaptado[k]&&Object.keys(t.adaptado[k]).length>0));
+  const out=[];
+  Object.values(temas).forEach(x=>{
+    if(!x||x.id===t.id||!x.dcgo||x.dcgo.trim().toUpperCase()!==code||!x.adaptado) return;
+    const xTu=turmas[x.turmaId]; if(!xTu||xTu.disciplina!==tu.disciplina||xTu.serie!==tu.serie) return;
+    Object.keys(x.adaptado).forEach(pk=>{
+      const v=x.adaptado[pk]; if(!v||!Object.keys(v).length||jaTem.has(pk)) return;
+      if(!out.some(o=>o.perfil===pk)) out.push({perfil:pk, temaId:x.id, turmaNome:turmaNome(xTu)+' '+(xTu.unidade||'')});
+    });
+  });
+  return out;
+}
+function copiarAdaptadoDeIrma(temaIdOrigem, perfil){
+  const origem=temas[temaIdOrigem]; if(!origem||!origem.adaptado||!origem.adaptado[perfil]) return;
+  if(!editing.adaptado) editing.adaptado={};
+  editing.adaptado[perfil]=JSON.parse(JSON.stringify(origem.adaptado[perfil]));
+  collectMeta(); persistTema(editing);
+  closeModal(); openAdaptar();
+  toast('Adaptação copiada, sem gastar crédito de IA.','ok');
+}
 function openAdaptar(){
   if(!editing){ toast('Abra um tema primeiro.','err'); return; }
   collectMeta();
@@ -7641,8 +7701,16 @@ function openAdaptar(){
       '<button class="btn ghost sm" onclick="verAdaptado(\''+pk+'\')">ver</button>'+
       '<button class="btn ghost sm" onclick="removerAdaptado(\''+pk+'\')">excluir</button></div>';
   }).join('')+'</div>' : '';
+  const irmas=adaptacoesIrmasDisponiveis(editing);
+  const copiaHtml=irmas.length? '<div class="field" style="background:rgba(47,107,94,.08);border-radius:8px;padding:8px 10px"><label>Já adaptado noutra turma — copiar sem gastar crédito</label>'+
+    irmas.map(o=>{
+      const pl=(ADAPT_PERFIS.find(pf=>pf.k===o.perfil)||{}).label||o.perfil;
+      return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0"><span style="flex:1;font-size:12.5px">'+esc(pl)+' <span style="color:var(--muted,#8a8f98)">— de '+esc(o.turmaNome)+'</span></span>'+
+        '<button class="btn ghost sm" onclick="copiarAdaptadoDeIrma(\''+o.temaId+'\',\''+o.perfil+'\')">copiar</button></div>';
+    }).join('')+'</div>' : '';
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Material adaptado (inclusão)</h3></div>'+
     '<div class="modal-b"><small>Gera uma versão acessível do conteúdo deste tema, <b>mantendo o objetivo e a habilidade da matriz</b> — muda só o acesso. Cada perfil sai numa folha própria (neutra, sem rótulo do perfil) para imprimir e entregar ao aluno.</small>'+
+    copiaHtml+
     '<div class="field" style="margin-top:10px"><label>Perfis</label><div class="gt-checks">'+perfChecks+'</div></div>'+
     '<div class="field"><label>Adaptar a partir de</label><div class="gt-checks" id="adBases">'+baseChecks+'</div></div>'+
     cards+
