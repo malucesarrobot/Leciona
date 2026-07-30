@@ -6428,6 +6428,59 @@ function removerAluno(id){
   renderNotas();
   toast('Aluno removido.','ok');
 }
+/* Outros registros de aluno (um por turma) que são a MESMA pessoa —
+   ligados pela matrícula do SIAP, agora confiável depois da recuperação
+   de 29-30/07/2026. Sem matrícula, o aluno só existe nesta turma mesmo. */
+function alunosMesmaMatricula(matricula, excludeId){
+  if(!matricula) return [];
+  return Object.values(alunos).filter(a=>a && a.matricula===matricula && a.id!==excludeId && a.ativo!==false);
+}
+function atividadeFeita(alunoId, av){
+  const n=notaDoAluno(alunoId, av.id);
+  if(av.checklist===true) return !!(n && n.valor>0);
+  return !!(n && n.valor!=null);
+}
+/* Boletim individual — clique no nome em Notas. Junta editar dados (que já
+   existia) com a visão de todas as turmas em que o aluno está matriculado
+   e o que já foi feito/falta em cada uma — pedido dela, espelhando o
+   boletim do sistema antigo de controle de notas. */
+function abrirBoletimAluno(id){
+  const al=alunos[id]; if(!al) return;
+  const irmaos=alunosMesmaMatricula(al.matricula, id);
+  const todos=[al, ...irmaos];
+  const turmasHtml=todos.map(a=>{
+    const tu=turmas[a.turmaId]||{};
+    const atvs=atividadesDaTurma(a.turmaId);
+    const med=mediaAluno(a.id,atvs,a.turmaId);
+    const medCls=med==null?'':(med>=6?'aprovado':'reprovado');
+    const feitas=atvs.filter(av=>atividadeFeita(a.id,av));
+    const faltando=atvs.filter(av=>!atividadeFeita(a.id,av));
+    return '<div class="meta-block">'+
+      '<h4>'+esc(turmaNomeCompleto(tu))+'</h4>'+
+      '<div style="display:flex;gap:14px;align-items:baseline;margin-bottom:8px">'+
+        '<span class="nota-media '+medCls+'" style="font-size:15px">'+(med!=null?med.toFixed(1):'-')+'</span>'+
+        '<span style="font-size:11.5px;color:var(--muted)">qualitativa '+notaQualitativa(a.id,a.turmaId).toFixed(1)+'</span>'+
+      '</div>'+
+      (atvs.length ? (
+        '<div style="font-size:12.5px;color:var(--green);margin-bottom:3px">✓ '+feitas.length+' feita(s)'+(feitas.length?': '+esc(feitas.map(av=>av.nome).join(', ')):'')+'</div>'+
+        '<div style="font-size:12.5px;color:var(--ochre)">○ '+faltando.length+' faltando'+(faltando.length?': '+esc(faltando.map(av=>av.nome).join(', ')):'')+'</div>'
+      ) : '<p style="color:var(--muted);font-size:12.5px;margin:0">Nenhuma atividade lançada nesta turma ainda.</p>')+
+    '</div>';
+  }).join('');
+  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:520px;max-height:82vh;overflow:auto">'+
+    '<div class="modal-h"><h3>📋 Boletim — '+esc(al.nome)+'</h3></div>'+
+    '<div class="modal-b">'+
+      '<div class="field"><label>Nome completo</label><input id="alunoEdNome" value="'+esc(al.nome||'')+'" autofocus></div>'+
+      '<div class="field"><label>Número (opcional)</label><input id="alunoEdNum" type="number" value="'+esc(al.numero!=null?String(al.numero):'')+'" placeholder="ex.: 1"></div>'+
+      (al.matricula?'<p style="font-size:11px;color:var(--muted);margin:-4px 0 14px">Matrícula '+esc(al.matricula)+' · matriculado em '+todos.length+' turma(s)</p>':'<p style="font-size:11px;color:var(--muted);margin:-4px 0 14px">Sem matrícula vinculada — não é possível ver outras turmas dele automaticamente.</p>')+
+      '<div class="sep"></div>'+
+      '<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px">Turmas e desempenho</div>'+
+      turmasHtml+
+    '</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button>'+
+    '<button class="btn primary" onclick="salvarEdicaoAluno(\''+id+'\')">Salvar dados</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+}
 function abrirEditarAluno(id){
   const al=alunos[id]; if(!al) return;
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
@@ -6996,7 +7049,7 @@ function renderNotas(){
     const med=mediaAluno(al.id,atvs,turmaId);
     const medStr=med!=null?med.toFixed(1):'-';
     const medCls=med==null?'':(med>=6?'aprovado':'reprovado');
-    h+='<tr><td class="aluno-nome" style="cursor:pointer" onclick="abrirEditarAluno(\''+al.id+'\')" title="'+esc(al.nome)+' — clique para editar nome/número">'+
+    h+='<tr><td class="aluno-nome" style="cursor:pointer" onclick="abrirBoletimAluno(\''+al.id+'\')" title="'+esc(al.nome)+' — clique para ver o boletim (turmas, notas, editar dados)">'+
       (al.numero?'<span style="color:var(--muted);font-size:11px;margin-right:4px">'+al.numero+'</span>':'')+
       esc(nomesCurtos ? nomeSobrenome(al.nome) : al.nome)+
     '</td>'+
