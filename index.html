@@ -1863,6 +1863,21 @@ function selosHtml(d,s,b,code){
   if(!h) h='<span class="statusdot" style="font-size:10px">sem material nos instrumentos</span>';
   return h;
 }
+/* Selo pra material adaptado (inclusão) JÁ GERADO neste tema de verdade —
+   diferente do selo "Adaptado" de renderPreProntosDoScope(), que só mostra
+   o catálogo estático (PREBUILT_ADAPT) pra temas que ainda nem existem.
+   Antes desse selo, uma adaptação gerada (t.adaptado[perfil], custou
+   crédito de IA de verdade) não aparecia em lugar nenhum da lista de
+   Gestão — só dentro do editor, tema por tema. */
+function adaptSeloHtml(t){
+  if(!t || !t.adaptado) return '';
+  const perfis=ADAPT_PERFIS.filter(pf=>{
+    const ad=t.adaptado[pf.k];
+    return ad && (typeof ad==='object' ? Object.keys(ad).length>0 : String(ad).trim());
+  });
+  if(!perfis.length) return '';
+  return '<span class="selo adapt" title="Material adaptado já gerado: '+esc(perfis.map(p=>p.label).join(', '))+'">🧩 '+esc(perfis.map(p=>p.label).join(', '))+'</span>';
+}
 function selosConteudo(c){
   const ts=temasDoConteudo(c.id);
   let r=false,s=false,g=false,any=false;
@@ -1985,7 +2000,7 @@ function renderThemes(){
             '</div>'+
             '<div class="tmeta">'+
               '<div><span class="tcode">'+esc(t.dcgo||'')+'</span><span class="tname">'+esc(t.tituloExibicao||t.nome)+'</span>'+(t.revisaGoias?'<span class="selo-revisa" title="Este conteúdo aparece no Revisa Goiás deste bimestre">📘 Revisa Goiás</span>':'')+'</div>'+
-              '<div class="tsub">'+selosHtml(t.disciplina,t.serie,t.bimestre,t.dcgo)+statusResumo(t)+'</div>'+
+              '<div class="tsub">'+selosHtml(t.disciplina,t.serie,t.bimestre,t.dcgo)+adaptSeloHtml(t)+statusResumo(t)+'</div>'+
             '</div>'+
             objStatusHtml(t.id, scope.turma)+
             '<button class="btn ghost sm" onclick="event.stopPropagation();openExportTema(\''+t.id+'\')" title="Copiar esta aula para outra turma">→</button>'+
