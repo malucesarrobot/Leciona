@@ -1969,7 +1969,7 @@ function acrescentarDeverDeCasa(temaId){
   if(jaExiste){
     toast('Essa coluna de dever de casa já existe em Notas.','');
   } else {
-    persistAtivCtrl({id:uid(), nome, tipo:'casa', data:isoLocal(new Date()), peso:0, valorMax:10, checklist:true, turmaIds:[turmaId]});
+    persistAtivCtrl({id:uid(), nome, tipo:'casa', data:isoLocal(new Date()), peso:1, valorMax:10, checklist:true, turmaIds:[turmaId], casa:true});
     toast('Coluna "Dever de casa" criada em Notas — pág. '+pags+'.','ok');
   }
   trocarTurmaNotas(turmaId);
@@ -3055,8 +3055,7 @@ function abrirMarcarAplicado(){
   const st=t.status||{};
   const aplicado=st.estado==='aplicado';
   const tu=turmas[t.turmaId]||{};
-  const jaFeitos=new Set(registrosDoTema(t.id).filter(r=>r.turmaId===t.turmaId).flatMap(r=>r.objetos||[]));
-  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjEd" value="'+o.k+'" '+((jaFeitos.has(o.k)||isFilled(t,o.k))?'checked':'')+'>'+o.label+'</label>').join('');
+  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjEd" value="'+o.k+'">'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const hoje=isoLocal(new Date());
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
@@ -4377,7 +4376,7 @@ let _regCardTemaId=null;
 function abrirModalRegistroCard(temaId){
   const t=temas[temaId]; if(!t){ toast('Tema não encontrado.','err'); return; }
   _regCardTemaId=temaId;
-  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'" '+(isFilled(t,o.k)?'checked':'')+'>'+o.label+'</label>').join('');
+  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'">'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const tu=turmas[t.turmaId]||{};
   const hoje=isoLocal(new Date());
@@ -6745,7 +6744,7 @@ function setMediaModo(turmaId,modo){
 }
 function mediaAluno(alunoId,atvs,turmaId){
   const modo = getMediaModo(turmaId || (atvs[0]&&atvs[0].turmaIds&&atvs[0].turmaIds[0]));
-  const pares=atvs.filter(av=>av.tipo!=='casa').map(av=>{
+  const pares=atvs.map(av=>{
     const n=notaDoAluno(alunoId,av.id);
     let notaEm10;
     if(av.checklist===true){
@@ -7131,7 +7130,9 @@ function renderNotas(){
     atvs.map(av=>{
       const tp=ATIV_TIPOS[av.tipo]||{label:av.tipo,cor:'#888',bg:'#f5f5f5'};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
-      return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+' — '+esc(tp.label||av.tipo)+(isCheck?' (checklist)':' (nota)')+'" data-avid="'+av.id+'">'+
+      const ehCasa=av.tipo==='casa'||av.casa===true;
+      return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+' — '+esc(tp.label||av.tipo)+(isCheck?' (checklist)':' (nota)')+(ehCasa?' · também dever de casa':'')+'" data-avid="'+av.id+'">'+
+        (ehCasa?'<span title="Também atribuída como dever de casa">🏠</span> ':'')+
         '<span class="atv-col-header">'+esc(av.nome)+'</span>'+
         (av.recorrente?'<button class="atv-dup-btn" onclick="event.stopPropagation();abrirDuplicarAtividade(\''+av.id+'\')" title="Duplicar pra outra turma/data, sem redigitar">⧉</button>':'')+
         '<button class="atv-del-btn" onclick="event.stopPropagation();removerAtividade(\''+av.id+'\')" title="Remover esta atividade (e as notas lançadas)">✕</button>'+
@@ -7287,6 +7288,7 @@ function abrirAddAtividade(){
       '<div class="field"><label>Peso</label><input id="atvPeso" type="number" value="1" min="0.1" max="10" step="0.1"></div>'+
       '<div class="field"><label>Valor máximo</label><input id="atvMax" type="number" value="10" min="1" max="100" step="0.5"></div>'+
       '<div class="field"><label>Modo</label><div class="gt-checks"><label class="check"><input type="radio" name="atvModo" value="nota" checked> Nota 0–10</label><label class="check"><input type="radio" name="atvModo" value="check"> Checklist ✓/○</label></div></div>'+
+      '<div class="field"><label class="check"><input type="checkbox" id="atvCasa"> 🏠 Também atribuída como dever de casa</label></div>'+
       '<div class="field"><label class="check"><input type="checkbox" id="atvRecorrente" onchange="document.getElementById(\'atvPeriodicidadeWrap\').style.display=this.checked?\'\':\'none\'"> Atividade recorrente</label>'+
         '<small style="color:var(--muted)">Marque se esse tipo de atividade se repete (ex.: quiz semanal) — habilita duplicar pra outras turmas/datas sem redigitar.</small></div>'+
       '<div class="field" id="atvPeriodicidadeWrap" style="display:none"><label>Repetir automaticamente</label><select id="atvPeriodicidade">'+
@@ -7312,9 +7314,10 @@ function salvarAtividade(){
   if(!nome){ toast('Digite o nome da atividade.','err'); return; }
   if(!turmaIds.length){ toast('Selecione pelo menos uma turma.','err'); return; }
   const modoEl=document.querySelector('input[name=atvModo]:checked'); const checklist=modoEl?.value==='check';
+  const casa=(document.getElementById('atvCasa')||{}).checked||false;
   const recorrente=(document.getElementById('atvRecorrente')||{}).checked||false;
   const passoDias=parseInt((document.getElementById('atvPeriodicidade')||{}).value,10)||0;
-  const av={id:uid(),nome,tipo,data,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente};
+  const av={id:uid(),nome,tipo,data,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente,casa};
   persistAtivCtrl(av);
   let geradas=0;
   if(recorrente&&passoDias){
@@ -7326,7 +7329,7 @@ function salvarAtividade(){
       const iso=isoLocal(cur);
       if(iso>fimBim) break;
       if(FERIADOS_2026.has(iso)) continue;
-      persistAtivCtrl({id:uid(),nome,tipo,data:iso,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente:true});
+      persistAtivCtrl({id:uid(),nome,tipo,data:iso,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente:true,casa});
       geradas++;
     }
   }
