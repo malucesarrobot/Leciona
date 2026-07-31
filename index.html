@@ -1348,7 +1348,7 @@ function initFirebase(){
     _escutar('leciona/registros', s=>{
       registros=s.val()||{};
       lsSet(LS_REG, JSON.stringify(registros));
-      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
     });
     _escutar('leciona/turmas', s=>{
       const m=mergeRemote(turmas, s.val()); turmas=m.merged; lsSet(LS_TURMAS, JSON.stringify(turmas));
@@ -1359,7 +1359,7 @@ function initFirebase(){
     _escutar('leciona/ocorrencias', s=>{
       ocorrencias=s.val()||{};
       lsSet(LS_OCORR, JSON.stringify(ocorrencias));
-      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+      if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
       if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
     });
     _escutar('leciona/chamadas', s=>{
@@ -1378,7 +1378,6 @@ function initFirebase(){
     _escutar('leciona/aulas_avulsas', s=>{
       aulasAvulsas=s.val()||{};
       lsSet(LS_AULASAVULSAS, JSON.stringify(aulasAvulsas));
-      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
       if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
     });
     _escutar('leciona/notas_gerais', s=>{
@@ -2751,7 +2750,7 @@ function apagarDados3Bim(){
     toast('Dados de teste do 3º bimestre apagados localmente.','ok');
   }
   _auditoria3BimAtual=null;
-  renderThemes(); renderHoje();
+  renderThemes(); if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 function abrirPopularSeletivo(){
   if(typeof PREBUILT_OBJ==='undefined'){ toast('O conteúdo pré-pronto ainda está carregando. Aguarde e tente de novo.','err'); return; }
@@ -3106,7 +3105,7 @@ function salvarMarcarAplicado(){
   renderStatusEditor(); renderObjTabs();
   if(!DB) renderThemes();
   toast('Aula marcada como aplicada.','ok');
-  if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+  if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 function desmarcarAplicado(){
   if(!editing) return;
@@ -3874,7 +3873,6 @@ function executarFerramentaAssistente(nome, input){
       if(!input.titulo||!input.data) return {erro:'faltam titulo/data'};
       const a={id:uid(), turmaId:tu.id, titulo:String(input.titulo).slice(0,120), tipo:input.tipo||'explicacao', observacoes:input.observacoes||'', data:input.data, status:'planejada'};
       persistAulaAvulsa(a);
-      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
       if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
       return {ok:true, id:a.id};
     }
@@ -3884,14 +3882,12 @@ function executarFerramentaAssistente(nome, input){
         delete aulasAvulsas[input.id];
         lsSet(LS_AULASAVULSAS, JSON.stringify(aulasAvulsas));
         if(DB) DB.ref('leciona/aulas_avulsas/'+input.id).remove().catch(()=>{});
-        if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
         if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
         return {ok:true, apagado:true};
       }
       ['titulo','tipo','data','observacoes'].forEach(k=>{ if(input[k]!=null) a[k]=input[k]; });
       if(input.marcar_executada) a.status='executada';
       persistAulaAvulsa(a);
-      if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
       if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
       return {ok:true};
     }
@@ -4271,7 +4267,7 @@ function abrirOcorrenciaHoje(turmaId){
     ? '<div class="field"><label>Já registrado(s), sem resolver</label>'+
       abertas.map(o=>'<div class="turma-row"><span class="tn" style="flex:1;font-size:12px">'+esc(o.data)+' · '+esc(OCORR_CATEGORIAS[o.categoria]||o.categoria)+(o.observacao?(' — '+esc(o.observacao)):'')+'</span>'+
         '<button class="btn ghost sm" onclick="editarOcorrenciaHoje(\''+o.id+'\')">editar</button>'+
-        '<button class="btn ghost sm" onclick="resolverOcorrencia(\''+o.id+'\');closeModal();renderHoje();toast(\'Marcado como resolvido.\',\'ok\')">resolver</button>'+
+        '<button class="btn ghost sm" onclick="resolverOcorrencia(\''+o.id+'\');closeModal();if(!document.getElementById(\'viewAgenda\').classList.contains(\'hidden\'))renderAgendaDia();toast(\'Marcado como resolvido.\',\'ok\')">resolver</button>'+
         '<button class="btn ghost sm danger" onclick="removerOcorrencia(\''+o.id+'\');abrirOcorrenciaHoje(\''+turmaId+'\')">remover</button></div>').join('')+
       '</div>' : '';
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
@@ -4301,13 +4297,13 @@ function salvarOcorrenciaHoje(turmaId, categoria){
     persistOcorrencia(o);
     _editandoOcorrenciaId=null;
     closeModal();
-    renderHoje();
+    if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
     toast('Ocorrência atualizada.','ok');
     return;
   }
   registrarOcorrencia(turmaId, categoria, obs);
   closeModal();
-  renderHoje();
+  if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
   toast('Registrado: '+turmaNome(turmas[turmaId])+' — '+OCORR_CATEGORIAS[categoria]+'. Marcada como atrasada até você resolver.','ok');
 }
 
@@ -4346,7 +4342,7 @@ function salvarRegistro(){
   persistRegistro(r);
   closeModal();
   toast('Aplicação registrada — '+esc(turmaNome(turmas[proj.tema.turmaId]||{}))+'.','ok');
-  if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+  if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 /* Renderiza aba Registro dentro do editor de tema */
 function renderAbaRegistro(){
@@ -4397,7 +4393,7 @@ function salvarRegistroEditor(){
   closeModal();
   renderAbaRegistro();
   toast('Registro salvo.','ok');
-  if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+  if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 /* Registrar aplicação direto do card na Gestão, sem entrar na projeção. */
 let _regCardTemaId=null;
@@ -4434,7 +4430,7 @@ function salvarRegistroCard(){
   _regCardTemaId=null;
   renderThemes();
   toast('Aplicação registrada — '+esc(turmaNome(turmas[t.turmaId]||{}))+'.','ok');
-  if(!document.getElementById('viewHoje').classList.contains('hidden')) renderHoje();
+  if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 function fecharProjecao(){
   document.getElementById('viewProjecao').classList.add('hidden');
@@ -5602,7 +5598,7 @@ function removerAulaAvulsa(id){
   delete aulasAvulsas[id];
   lsSet(LS_AULASAVULSAS,JSON.stringify(aulasAvulsas));
   if(DB) DB.ref('leciona/aulas_avulsas/'+id).remove().catch(e=>toast('⚠ Removida localmente, mas falhou ao remover no Firebase: '+e.message,'err'));
-  renderHoje(); renderAgenda();
+  renderAgenda();
 }
 function aulasAvulsasDoDia(turmaId,dataISO){ return Object.values(aulasAvulsas).filter(a=>a&&a.turmaId===turmaId&&a.data===dataISO); }
 function aulasAvulsasDoDiaGlobal(dataISO){ return Object.values(aulasAvulsas).filter(a=>a&&a.data===dataISO); }
@@ -5611,7 +5607,7 @@ function marcarAulaAvulsaExecutada(id,dataReal){
   a.status='executada';
   if(dataReal) a.data=dataReal;
   persistAulaAvulsa(a);
-  renderHoje(); renderAgenda();
+  renderAgenda();
 }
 let _editandoAulaAvulsaId=null;
 function abrirNovaAulaAvulsa(dataISO){
@@ -5659,11 +5655,13 @@ function confirmarNovaAulaAvulsa(){
   closeModal();
   _editandoAulaAvulsaId=null;
   toast(existente?'Aula avulsa atualizada.':'Aula avulsa salva.','ok');
-  renderHoje(); renderAgenda();
+  renderAgenda();
 }
 let _agendaMes=null;     // Date do 1º dia do mês em exibição
 let _agendaDiaSel=null;  // ISO do dia selecionado no painel
 let _agendaOrigin='hoje';
+let _agendaGradeAberta=false; // calendário do mês vem recolhido por padrão (ex-tela Hoje)
+function toggleAgendaGrade(){ _agendaGradeAberta=!_agendaGradeAberta; renderAgenda(); }
 function mudarMesAgenda(delta){
   if(!_agendaMes) _agendaMes=new Date();
   _agendaMes=new Date(_agendaMes.getFullYear(), _agendaMes.getMonth()+delta, 1);
@@ -5685,15 +5683,16 @@ function renderAgenda(){
   const box=document.getElementById('agendaBody'); if(!box) return;
   if(!_agendaMes) _agendaMes=new Date();
   if(!_agendaDiaSel) _agendaDiaSel=isoLocal(new Date());
-  const voltarLabel = _agendaOrigin==='notas'?'Notas':_agendaOrigin==='gestao'?'Gestão':'Hoje';
+  const voltarLabel = _agendaOrigin==='notas'?'Notas':_agendaOrigin==='gestao'?'Gestão':'';
   box.innerHTML =
-    '<button class="btn ghost sm" style="margin-bottom:10px" onclick="setView(\''+_agendaOrigin+'\')">← Voltar pra '+voltarLabel+'</button>'+
+    (voltarLabel?'<button class="btn ghost sm" style="margin-bottom:10px" onclick="setView(\''+_agendaOrigin+'\')">← Voltar pra '+voltarLabel+'</button>':'')+
     '<div class="agenda-layout">'+
       '<div class="agenda-card"><div class="agenda-mes-nav">'+
         '<button class="btn ghost sm" onclick="mudarMesAgenda(-1)">◀</button>'+
         '<div class="agenda-mes-label" id="agendaMesLabel"></div>'+
         '<button class="btn ghost sm" onclick="mudarMesAgenda(1)">▶</button>'+
-      '</div><div id="agendaGrade" class="agenda-grade"></div></div>'+
+        '<button class="btn ghost sm" style="margin-left:auto" onclick="toggleAgendaGrade()">'+(_agendaGradeAberta?'recolher ▲':'ver mês ▾')+'</button>'+
+      '</div><div id="agendaGrade" class="agenda-grade'+(_agendaGradeAberta?'':' hidden')+'"></div></div>'+
       '<div class="agenda-card" id="agendaDiaCard"></div>'+
     '</div>'+
     '<div class="agenda-card" id="notasGeraisCard" style="margin-top:16px"></div>';
@@ -5725,45 +5724,80 @@ function renderAgendaGrade(){
   grade.innerHTML=html;
 }
 function selecionarDiaAgenda(iso){ _agendaDiaSel=iso; renderAgendaGrade(); renderAgendaDia(); }
+/* Mudar o dia selecionado ±1, sem sair da Agenda — substitui o antigo
+   hojeMudarDia() da tela Hoje (suprimida; virou a própria Agenda no dia). */
+function agendaMudarDia(delta){
+  const d=new Date(_agendaDiaSel+'T00:00:00');
+  d.setDate(d.getDate()+delta);
+  const iso=isoLocal(d);
+  if(d.getMonth()!==_agendaMes.getMonth()||d.getFullYear()!==_agendaMes.getFullYear()){ _agendaMes=new Date(d.getFullYear(),d.getMonth(),1); renderAgendaGrade(); }
+  selecionarDiaAgenda(iso);
+}
 function renderAgendaDia(){
   const box=document.getElementById('agendaDiaCard'); if(!box) return;
   const iso=_agendaDiaSel;
   const d=new Date(iso+'T00:00:00');
+  const ehHoje=iso===isoLocal(new Date());
   const aulas=aulasDoDiaISO(iso);
   const cron=planejamentosDoDia(iso);
   const comp=compromissosDoDia(iso);
   const avulsas=aulasAvulsasDoDiaGlobal(iso);
-  let html='<h4 style="font-family:var(--serif);font-size:15px;margin:0 0 12px">'+esc(DIAS_LONGO[d.getDay()])+' · '+d.toLocaleDateString('pt-BR')+'</h4>';
-  if(aulas.length){
-    html+='<div class="agenda-secao-tit">Aulas</div>';
-    aulas.forEach(x=>{
-      const serie=SERIE_NUM[x.serie]; const u=unidadeDoDia(x.dia);
-      html+='<div class="hoje-row"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
-        '<div class="hoje-info"><b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+'</b><span>'+esc(u)+'</span></div>'+
-        (x.disc==='Estudo Orientado'?'':'<div class="hoje-acoes"><button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button></div>')+
-        '</div>';
-    });
-  }
+  const bimDia=bimAtivoAgora(iso);
+  let html='<div class="hoje-nav" style="margin-bottom:8px">'+
+    '<button class="btn ghost sm" onclick="agendaMudarDia(-1)">‹ dia anterior</button>'+
+    (ehHoje?'':'<button class="btn ghost sm" onclick="_agendaMes=new Date();renderAgendaGrade();selecionarDiaAgenda(\''+isoLocal(new Date())+'\')">hoje</button>')+
+    '<button class="btn ghost sm" onclick="agendaMudarDia(1)">próximo dia ›</button>'+
+  '</div>'+
+  '<h4 style="font-family:var(--serif);font-size:15px;margin:0 0 12px">'+(ehHoje?'Hoje, ':'')+esc(DIAS_LONGO[d.getDay()])+' · '+d.toLocaleDateString('pt-BR')+(bimDia?'':' · Recesso / sem bimestre ativo')+'</h4>';
   if(cron.length){
-    html+='<div class="agenda-secao-tit">Cronograma de conteúdo</div>';
+    html+='<div class="agenda-secao-tit">📅 Cronograma de conteúdo</div>';
     cron.forEach(({conteudo,entry,tema})=>{
       const tu=turmas[conteudo.turmaId]||{};
       const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
-      html+='<div class="hoje-row"><div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span></div>'+
-        '<div class="hoje-acoes"><button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button></div></div>';
+      const nRegs=registrosDoTema(tema.id).filter(r=>r.turmaId===tu.id).length;
+      html+='<div class="hoje-row"><div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
+        '<div class="hoje-acoes">'+
+          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+conteudo.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+          '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+conteudo.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
+          '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
+          '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
+          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula — pode repetir quantas vezes quiser">✓ Registrar</button>'+
+        '</div></div>';
     });
   }
   if(avulsas.length){
-    html+='<div class="agenda-secao-tit">Aulas avulsas</div>';
+    html+='<div class="agenda-secao-tit">✎ Aulas avulsas</div>';
     avulsas.forEach(a=>{
       const tu=turmas[a.turmaId]||{};
       const cor=a.status==='executada'?'#2f6b5e':'#a06a2e';
       html+='<div class="hoje-row"><div class="hoje-info"><b style="color:'+cor+'">Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+'</b><span>'+esc(turmaNome(tu))+' · '+esc(a.titulo)+' · '+(a.status==='executada'?'executada':'planejada')+(a.observacoes?(' · '+esc(a.observacoes)):'')+'</span></div>'+
         '<div class="hoje-acoes">'+
+          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+a.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+          '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+a.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
           (a.status!=='executada'?'<button class="btn ghost sm" onclick="marcarAulaAvulsaExecutada(\''+a.id+'\')">marcar executada</button>':'')+
           '<button class="btn ghost sm" onclick="editarAulaAvulsa(\''+a.id+'\')">editar</button>'+
           '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">✕</button>'+
         '</div></div>';
+    });
+  }
+  if(aulas.length){
+    html+='<div class="agenda-secao-tit">Aulas do horário normal</div>';
+    aulas.forEach(x=>{
+      const serie=SERIE_NUM[x.serie]; const u=unidadeDoDia(x.dia);
+      const tuDia=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
+      const regDia=tuDia?Object.values(registros).filter(r=>r.turmaId===tuDia.id&&r.data===iso):[];
+      const badgeReg=regDia.length?'<span class="reg-badge" title="'+regDia.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
+      const badgeAtraso=(tuDia&&turmaAtrasada(tuDia.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
+      html+='<div class="hoje-row'+(regDia.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
+        '<div class="hoje-info"><b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+'</b><span>'+esc(u)+'</span>'+badgeReg+badgeAtraso+'</div>'+
+        (x.disc==='Estudo Orientado'?'<span class="statusdot">sem planejamento</span>':'<div class="hoje-acoes">'+
+          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+          '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
+          '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
+          '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
+          (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
+        '</div>')+
+        '</div>';
     });
   }
   html+='<div class="agenda-secao-tit">Compromissos</div>';
@@ -5851,16 +5885,23 @@ function projetarAula(disc,uni,serie,letra){
   if(primeiro) projetarTemaId(primeiro.id);
   else { setView('gestao'); toast('Sem temas nesta turma ainda — crie ou use "Partir da matriz".',''); }
 }
+/* A antiga aba "Hoje" foi suprimida (pedido da Malu) — v==='hoje' agora é
+   só um sinônimo de "Agenda, aberta no dia de hoje", pra não ter que caçar
+   toda chamada interna de setView('hoje')/_agendaOrigin='hoje' espalhada
+   pelo código. viewHoje/renderHoje() ficam sem uso (não removidos agora,
+   por segurança — várias chamadas ainda os referenciam indiretamente). */
 function setView(v){
   fecharProjecao();
+  const viewId = (v==='hoje') ? 'viewAgenda' : ('view'+v.charAt(0).toUpperCase()+v.slice(1));
   ['viewHoje','viewPainel','viewAcervo','viewAgenda','viewNotas','viewGestao','viewLinhaTempo'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.classList.toggle('hidden', id!=='view'+v.charAt(0).toUpperCase()+v.slice(1));
+    const el=document.getElementById(id); if(el) el.classList.toggle('hidden', id!==viewId);
   });
+  const tabId = (v==='hoje') ? 'tabHoje' : ('tab'+v.charAt(0).toUpperCase()+v.slice(1));
   ['tabHoje','tabPainel','tabAcervo','tabAgenda','tabNotas','tabGestao'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.classList.toggle('active', id==='tab'+v.charAt(0).toUpperCase()+v.slice(1));
+    const el=document.getElementById(id); if(el) el.classList.toggle('active', id===tabId);
   });
   try{ localStorage.setItem('leciona_lastview', v); }catch(e){}
-  if(v==='hoje') renderHoje();
+  if(v==='hoje'){ _agendaMes=new Date(); _agendaDiaSel=isoLocal(new Date()); _agendaGradeAberta=false; renderAgenda(); }
   if(v==='painel') renderPainel();
   if(v==='acervo') renderAcervo();
   if(v==='agenda') renderAgenda();
