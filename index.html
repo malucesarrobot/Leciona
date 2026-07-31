@@ -2008,18 +2008,45 @@ const SUBTEMAS_EXTRA={
     {s:'Padronização, consumo e alienação: cinema, música e redes sociais hoje',a:1},
     {s:'Existe resistência possível à indústria cultural?',a:1},
   ],
-  'EM13CHS605':[
+  /* EM13CHS605 e GO-EMCHS605B são códigos de "Direitos Humanos" que a
+     matriz repete em Filosofia, História e Sociologia (cada disciplina
+     com seu próprio tema real) — chaveado por "código|disciplina" pra
+     cada uma seguir seu próprio paradigma (subsDoCodigoPlano cai pra
+     chave genérica só se a disciplina específica não tiver recorte). */
+  'EM13CHS605|Filosofia':[
     {s:'A Declaração Universal dos Direitos Humanos (1948): justiça, igualdade, fraternidade',a:1},
     {s:'Direitos Humanos como conquista histórica, não dado natural',a:1},
+  ],
+  'EM13CHS605|Sociologia':[
+    {s:'DUDH (1948): origem, princípios e o contexto do pós-guerra/Holocausto',a:1},
+    {s:'Crise migratória global: refugiados e o direito de asilo na prática',a:1},
+    {s:'Era digital: vigilância, algoritmos e discriminação (reconhecimento facial)',a:1},
+    {s:'Desigualdade global: direitos sociais básicos ainda não garantidos',a:1},
+    {s:'O caso brasileiro: avanço formal x efetivação real (sistema carcerário, LGBTQIA+, povos indígenas)',a:1},
   ],
   'GO-EMCHS605A':[
     {s:'Locke: direitos naturais à vida, liberdade e propriedade',a:1},
     {s:'Rousseau: contrato social e a ideia de igualdade',a:1},
   ],
-  'GO-EMCHS605B':[
+  'GO-EMCHS605B|Filosofia':[
     {s:'Progressos: conquistas de direitos no século XX (mulheres, negros, LGBTQIA+)',a:1},
     {s:'Entraves: desigualdade social no mundo contemporâneo',a:1},
     {s:'Estudo de caso: um entrave concreto no Brasil ou em Goiás hoje',a:1},
+  ],
+  'GO-EMCHS605B|História':[
+    {s:'AI-5 (1968) e a institucionalização da repressão: censura, tortura, exílio',a:1},
+    {s:'Uma violência desigual: repressão política somada à violência estrutural contra negros e pobres',a:1},
+    {s:'Resistência possível: UNE, imprensa alternativa, Comunidades Eclesiais de Base',a:1},
+    {s:'Anistia de 1979: avanço e ambiguidade (perdão a opositores e a torturadores)',a:1},
+    {s:'Diretas Já, redemocratização e a Constituição de 1988',a:1},
+    {s:'Comissão Nacional da Verdade (2012-2014): o reconhecimento tardio',a:1},
+  ],
+  'GO-EMCHS605B|Sociologia':[
+    {s:'Democracia representativa x participativa: votar não basta',a:1},
+    {s:'O que é um movimento social (organização, estratégia, liderança — não "bagunça")',a:1},
+    {s:'Panorama dos movimentos sociais brasileiros: negro, sindical, feminista, LGBTQIA+, indígena, moradia (MST/MTST)',a:1},
+    {s:'De movimento a lei: Maria da Penha, cotas raciais e o debate do Marco Temporal',a:1},
+    {s:'Por que restringir a liberdade de organização é restringir a própria democracia',a:1},
   ],
   'EM13CHS104':[
     {s:'O que é cultura material? Objetos, vestígios e fontes históricas',a:1},
@@ -4971,9 +4998,22 @@ function aulasDadas(t, bim){
    conteudo.planejamento[]. Só usa temas que JÁ EXISTEM (não inventa tema
    novo) — junto com o subtema (SUBTEMAS/SUBTEMAS_EXTRA) quando houver, pra
    cada aula ter um recorte específico, não só "o tema inteiro de novo". */
-function subsDoCodigoPlano(code){ return (typeof SUBTEMAS!=='undefined'&&SUBTEMAS[code]) || SUBTEMAS_EXTRA[code] || null; }
-function riquezaCodigoPlano(code, serieNove){
-  const subs=subsDoCodigoPlano(code);
+/* Um código de matriz pode ser compartilhado por mais de uma disciplina
+   (ex.: GO-EMCHS605B aparece em Filosofia, História e Sociologia, cada
+   uma com um tema real diferente — cada disciplina trata o mesmo código
+   segundo seu próprio paradigma). Por isso a busca tenta primeiro a chave
+   "código|disciplina"; só cai pra chave genérica (código sozinho) se não
+   houver recorte específico daquela disciplina ainda. */
+function subsDoCodigoPlano(code, disciplina){
+  if(disciplina){
+    const chaveDisc=code+'|'+disciplina;
+    if(typeof SUBTEMAS!=='undefined'&&SUBTEMAS[chaveDisc]) return SUBTEMAS[chaveDisc];
+    if(SUBTEMAS_EXTRA[chaveDisc]) return SUBTEMAS_EXTRA[chaveDisc];
+  }
+  return (typeof SUBTEMAS!=='undefined'&&SUBTEMAS[code]) || SUBTEMAS_EXTRA[code] || null;
+}
+function riquezaCodigoPlano(code, serieNove, disciplina){
+  const subs=subsDoCodigoPlano(code, disciplina);
   if(subs&&subs.length) return subs.reduce((s,x)=>s+(x.a||1),0);
   return serieNove?2:1;
 }
@@ -5025,8 +5065,8 @@ function gerarSequenciaAutomatica(turmaId, bim){
     const code=m.c.trim().toUpperCase();
     const tema=temasBim.find(t=>t.dcgo&&t.dcgo.trim().toUpperCase()===code);
     if(!tema) return null;
-    const subs=subsDoCodigoPlano(code);
-    return {tema, dcgo:m.c, riqueza:riquezaCodigoPlano(code, tu.serie==='9º ano'), subs};
+    const subs=subsDoCodigoPlano(code, tu.disciplina);
+    return {tema, dcgo:m.c, riqueza:riquezaCodigoPlano(code, tu.serie==='9º ano', tu.disciplina), subs};
   }).filter(Boolean).sort((a,b)=>a.dcgo.localeCompare(b.dcgo,'pt-BR',{numeric:true,sensitivity:'base'}));
   const extras=temasBim.filter(t=>!t.dcgo||!codigosMatriz.has(t.dcgo.trim().toUpperCase())).map(t=>({tema:t, riqueza:1, subs:null}));
   if(!obrigatorios.length && !extras.length){ toast('Nenhum tema encontrado nesta turma/bimestre pra sequenciar.','err'); return; }
