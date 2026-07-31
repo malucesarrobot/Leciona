@@ -5105,6 +5105,7 @@ function planejamentoSectionHtml(tu, bim, hoje){
   entradas.sort((a,b)=>a.p.data.localeCompare(b.p.data));
   let h='<div class="lt-planejamento"><div class="lt-plan-head"><h3>Planejamento (a partir de hoje)</h3>'+
     '<div><button class="btn ghost sm" onclick="recuperarSequencia(\''+tu.id+'\',\''+esc(bim)+'\')" title="Remapeia aulas planejadas que ficaram sem acontecer pras próximas datas disponíveis">🔁 recuperar</button> '+
+    '<button class="btn ghost sm" onclick="imprimirPlanejamentoBimestre(\''+tu.id+'\',\''+esc(bim)+'\')" title="Abre o planejamento em papel timbrado, pronto pra imprimir/salvar em PDF">🖨 imprimir planejamento</button> '+
     '<button class="btn sm" onclick="gerarSequenciaAutomatica(\''+tu.id+'\',\''+esc(bim)+'\')">🪄 gerar sequência automática</button></div>'+
   '</div>';
   if(!entradas.length){ h+='<p style="color:var(--muted);font-size:13px">Nenhuma aula planejada a partir de hoje ainda — use "gerar sequência automática".</p></div>'; return h; }
@@ -5140,6 +5141,39 @@ function removerPlanejamentoLT(conteudoId, planejamentoId){
   c.planejamento=c.planejamento.filter(p=>p.id!==planejamentoId);
   persistConteudo(c);
   renderLinhaDoTempo();
+}
+const DIAS_SEMANA_CURTO={0:'dom',1:'seg',2:'ter',3:'qua',4:'qui',5:'sex',6:'sáb'};
+/* Papel timbrado do planejamento — mesmo timbre SEDUC do relatório de
+   conteúdo (relatorioShell), mas com o corpo sendo a sequência de aulas
+   do bimestre (data + tema + recorte da semana), não o conteúdo em si. */
+function planejamentoRelatorioHtml(tu, bim){
+  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===tu.id&&c.bimestre===bim).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+  const entradas=[];
+  conts.forEach(c=>(c.planejamento||[]).forEach(p=>entradas.push(p)));
+  entradas.sort((a,b)=>a.data.localeCompare(b.data));
+  if(!entradas.length) return '<p>Nenhuma aula planejada ainda nesta turma para o '+esc(bim)+' — use "gerar sequência automática" antes de imprimir.</p>';
+  let h='<h2 class="cont">'+esc(bim)+' — '+esc(turmaNomeCompleto(tu))+'</h2>';
+  entradas.forEach(p=>{
+    const t=temas[p.temaId]||{};
+    const dObj=new Date(p.data+'T00:00:00');
+    const dataFmt=p.data.split('-').reverse().join('/')+' ('+DIAS_SEMANA_CURTO[dObj.getDay()]+')';
+    h+='<div class="tema"><h3>'+esc(dataFmt)+' — '+esc(t.tituloExibicao||t.nome||'(tema removido)')+'</h3>';
+    let meta=[]; if(t.dcgo) meta.push(t.dcgo);
+    if(t.habilidade) meta.push(t.habilidade);
+    if(meta.length) h+='<div class="meta">'+esc(meta.join('  ·  '))+'</div>';
+    if(p.obs) h+='<p>Recorte da aula: '+esc(p.obs)+'</p>';
+    h+='</div>';
+  });
+  return h;
+}
+function imprimirPlanejamentoBimestre(turmaId, bim){
+  const tu=turmas[turmaId]; if(!tu) return;
+  const body=planejamentoRelatorioHtml(tu, bim);
+  const titulo='Leciona — Planejamento · '+tu.disciplina+' · '+turmaNomeCompleto(tu)+' · '+bim;
+  const win=window.open('','_blank');
+  win.document.write(relatorioShell(titulo, body, true, tu));
+  win.document.close();
+  setTimeout(()=>{ try{win.focus();win.print();}catch(e){} },400);
 }
 /* ── Linha do tempo da turma — visão geral separada da Gestão, pedida
    depois que "aula livre" virou só um widget pequeno no canto. Não edita
