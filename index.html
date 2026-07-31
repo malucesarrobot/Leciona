@@ -6722,14 +6722,21 @@ function salvarEdicaoAluno(id){
   renderNotas();
   toast('Aluno atualizado.','ok');
 }
-/* Perfis de adaptação que essa turma precisa garantir em TODO tema — união
-   dos perfis marcados nos alunos ativos dela. Base pro aviso "falta
-   adaptação" no card de Gestão, pedido repetido dela: se a turma tem aluno
-   inclusivo, o material tem que estar sempre disponível, não só "se sobrar
-   tempo de gerar". */
+/* Perfis de adaptação que essa turma precisa garantir em TODO tema.
+   Fonte principal: os perfis JÁ GERADOS em qualquer tema desta turma —
+   isso já foi decidido e feito numa sessão anterior, cruzando com o SIAP,
+   então é evidência real de necessidade, sem pedir pra ela marcar de novo.
+   O checkbox no boletim do aluno é só um reforço/atalho pra quando um
+   aluno novo chegar e ainda não tiver nenhuma adaptação gerada pra ele. */
 function perfisNecessariosDaTurma(turmaId){
   const set=new Set();
   alunosDaTurma(turmaId).forEach(a=>(a.perfisAdaptacao||[]).forEach(p=>set.add(p)));
+  Object.values(temas).filter(t=>t&&t.turmaId===turmaId&&t.adaptado).forEach(t=>{
+    Object.keys(t.adaptado).forEach(k=>{
+      const v=t.adaptado[k];
+      if(v&&Object.keys(v).length>0) set.add(k);
+    });
+  });
   return [...set];
 }
 
