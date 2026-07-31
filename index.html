@@ -1902,30 +1902,25 @@ function adaptSeloHtml(t){
   if(faltando.length) h+='<span class="selo adapt-falta" title="Turma tem aluno(s) que precisam desta adaptação, e este tema ainda não tem — clique em Material adaptado no editor" onclick="event.stopPropagation();abrirEditor(\''+t.id+'\');openAdaptar()">⚠ falta '+esc(faltando.map(p=>p.label).join(', '))+'</span>';
   return h;
 }
-/* Mapeamento código BNCC/DC-GO → página(s) do livro didático (Moderna Plus),
-   extraído dos documentos "Mapeamento de Atividades e Seções de Filosofia
-   Moderna Plus" e "Mapeamento Unificado de Atividades e Seções: Filosofia
-   e História (Moderna Plus)" (Google Drive, 30/07/2026). O doc "Unificado"
-   tem o cabeçalho rotulado "Filosofia" mas o corpo (códigos EM13CHS,
-   Feudalismo→Pós-Guerra Fria) é claramente História — tratado como tal aqui. */
+/* Mapeamento página(s) do livro didático por tema. Filosofia vem do doc
+   "eixos temáticos filosofia" (Google Drive, 30/07/2026) — esse é o
+   documento certo: mapeia direto pelo NOME do tema como cadastrado no
+   Leciona (coluna "Tema Curricular (Leciona)"), não só pelo código —
+   por isso usa nomeChave (trecho do nome real do tema) pra casar, em vez
+   de depender só do código BNCC (que às vezes é nacional, diferente do
+   código DC-GO estadual que o tema tem cadastrado). Metade das linhas do
+   doc não tem página específica (diz só "Livro Texto"/"Seções Integradas")
+   — essas ficam de fora daqui, não dá selo errado por falta de dado.
+   História vem do "Mapeamento Unificado de Atividades e Seções" (mesma
+   pasta) — apesar do cabeçalho dizer "Filosofia", o corpo (EM13CHS,
+   Feudalismo→Pós-Guerra Fria) é História; casa por código, como antes. */
 const LIVRO_PAGINAS_LINHAS=[
-  // Filosofia Moderna Plus
-  {cods:['GO-EMCHS101A'], pag:'18', tema:'Parmênides e a Teoria do Conhecimento'},
-  {cods:['GO-EMCHS104D'], pag:'25', tema:'Robert Grosseteste e o nascimento da mentalidade científica'},
-  {cods:['GO-EMCHS101A','GO-EMCHS104D'], pag:'35', tema:'Transição Antiguidade-Medieval e Pré-socráticos'},
-  {cods:['GO-EMCHS201C'], pag:'43', tema:'Descartes e o racionalismo (Cogito, ergo sum)'},
-  {cods:['GO-EMCHS501A'], pag:'49', tema:'Espinosa e a Teoria dos Afetos'},
-  {cods:['EM13CHS502'], pag:'58-59', tema:'Escola de Frankfurt, Razão Instrumental e Impacto Tecnológico'},
-  {cods:['EM13CHS502'], pag:'63-65', tema:'Cosmopolítica Indígena (Davi Kopenawa) e Ecologia'},
-  {cods:['GO-EMCHS201C'], pag:'69', tema:'Epistemologia Moderna, Bacon e Descartes'},
-  {cods:['GO-EMCHS402A'], pag:'74', tema:'Condição do Trabalhador e Origem Histórica (Tripalium)'},
-  {cods:['GO-EMCHS402A'], pag:'78-79', tema:'John Locke (Propriedade) e Karl Marx (Materialismo Histórico)'},
-  {cods:['GO-EMCHS403B'], pag:'84-88', tema:'Automação, Robótica e Capitalismo 24/7 (Sociedade do Cansaço)'},
-  {cods:['GO-EMCHS403B'], pag:'91-95', tema:'Trabalho, Care, Alienação e Arte (Edvard Munch)'},
-  {cods:['GO-EMCHS201C'], pag:'97-99', tema:'Cooperação Científica Global, Patentes e Experimento de Torricelli'},
-  {cods:['GO-EMCHS201C'], pag:'105-108', tema:'Pierre Duhem (Epistemologia) e Métodos nas Ciências Humanas'},
-  {cods:['GO-EMCHS201C'], pag:'112', tema:'Behaviorismo, Skinner e Condicionamento Operante'},
-  {cods:['GO-EMCHS201C'], pag:'122', tema:'Filosofia da Ciência, John Searle, Psicanálise e Cientificidade'},
+  // Filosofia Moderna Plus — doc "eixos temáticos filosofia"
+  {nomeChave:'pré-socráticos', cods:['GO-EMCHS101A','GO-EMCHS104D'], pag:'18, 35', tema:'Pré-socráticos e Origem da Filosofia'},
+  {nomeChave:'ética e moral na antiguidade', cods:['GO-EMCHS501A'], pag:'49', tema:'Ética e Moral na Antiguidade'},
+  {nomeChave:'maquiavel', cods:['GO-EMCHS104D','GO-EMCHS106B'], pag:'25', tema:'Filosofia Política Medieval / Maquiavel e Hobbes'},
+  {nomeChave:'iluminismo', cods:['GO-EMCHS201C'], pag:'97-99, 122', tema:'Iluminismo'},
+  {nomeChave:'indústria cultural', cods:['EM13CHS502','GO-EMCHS205D'], pag:'58-59', tema:'Indústria Cultural (Escola de Frankfurt)'},
   // História Moderna Plus
   {cods:['EM13CHS101','EM13CHS102'], pag:'16-17', tema:'Crise do Feudalismo e Monarquias Nacionais'},
   {cods:['EM13CHS101'], pag:'26-27', tema:'Centralização do Poder Político'},
@@ -1971,6 +1966,17 @@ const LIVRO_PAGINAS_LINHAS=[
    "tema" de cada linha do mapeamento; se não achar nenhuma linha com
    palavra em comum, não mostra selo (melhor nada do que página errada). */
 function paginasDoLivro(dcgo, nomeTema){
+  // 1ª tentativa: nomeChave — vem de um doc que já mapeia direto pelo nome
+  // real do tema no Leciona (não pelo código), então é a fonte mais confiável
+  // quando existe.
+  const nomeNorm=_normBuscaTexto(nomeTema||'');
+  if(nomeNorm){
+    // startsWith, não includes: "Iluminismo" não pode casar com "Direitos
+    // naturais (Iluminismo)" só porque a palavra aparece dentro — são temas
+    // (e páginas) diferentes, mesmo mencionando o mesmo movimento filosófico.
+    const porNome=LIVRO_PAGINAS_LINHAS.find(l=>l.nomeChave && nomeNorm.startsWith(_normBuscaTexto(l.nomeChave)));
+    if(porNome) return porNome.pag;
+  }
   if(!dcgo) return null;
   const code=dcgo.trim().toUpperCase();
   const linhas=LIVRO_PAGINAS_LINHAS.filter(l=>l.cods.includes(code));
