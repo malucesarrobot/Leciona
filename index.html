@@ -116,6 +116,15 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .lt-dot.lt-hoje{background:#7fa8de}
 .lt-dot.lt-buraco{background:#e0ab6b}
 .lt-dot.lt-futuro{background:var(--line)}
+.lt-planejamento{margin-top:18px}
+.lt-plan-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.lt-plan-head h3{font-size:14px;margin:0}
+.lt-plan-list{display:flex;flex-direction:column;gap:4px}
+.lt-plan-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:8px;font-size:12.5px}
+.lt-plan-data{flex:0 0 44px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
+.lt-plan-tema{flex:1;cursor:pointer;font-weight:500}
+.lt-plan-tema:hover{text-decoration:underline}
+.lt-plan-obj{color:var(--muted);flex:0 0 auto;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lt-pendencias{margin-top:18px}
 .lt-pendencias h3{font-size:14px;margin-bottom:8px}
 .lt-pend-item{padding:8px 10px;background:var(--surface);border-radius:8px;margin-bottom:5px;font-size:13px;cursor:pointer}
@@ -548,6 +557,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
 .busca-turma-item:last-child{border-bottom:0}
 .busca-turma-item:hover{background:var(--surface)}
 .busca-turma-item small{display:block;color:var(--muted);font-size:11px;margin-top:1px}
+.busca-tipo{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);background:var(--surface);border-radius:4px;padding:1px 5px;margin-right:6px;vertical-align:1px}
 </style>
 </head>
 <body>
@@ -587,7 +597,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <aside class="scope">
       <div class="field busca-turma-wrap">
         <label>Busca rápida de turma</label>
-        <input id="buscaTurmaRapida" type="search" placeholder="🔍 digite pra pular direto…" oninput="buscarTurmaRapida(this.value)" onblur="setTimeout(fecharBuscaTurmaRapida,150)" autocomplete="off">
+        <input id="buscaTurmaRapida" type="search" placeholder="🔍 turma, tema, aluno, conteúdo…" oninput="buscarTurmaRapida(this.value)" onblur="setTimeout(fecharBuscaTurmaRapida,150)" autocomplete="off">
         <div id="buscaTurmaResultados" class="busca-turma-resultados hidden"></div>
       </div>
       <div class="field"><label class="lbl-row">Turma <button class="btn ghost sm" onclick="openTurmas()">+ turmas</button></label><select id="selTurmaUnica" onchange="trocarTurmaGestao(this.value)"></select></div>
@@ -1060,6 +1070,10 @@ const OBJ_DEFS = [
   {k:'mapaMental', label:'Mapa mental', tipo:'mapa',      hint:'Hierarquia em tópicos (markdown). Na projeção vira mapa interativo.'},
   {k:'avaliacao',  label:'Avaliação',   tipo:'avaliacao', hint:'Questões, flashcards e atividades organizados em abas.'},
 ];
+// Ícone rápido por tipo de objeto — pra reconhecer o tipo de aula batendo o
+// olho no card, sem precisar ler o texto todo (pedido dela).
+const OBJ_ICONS = {quadro:'📋', estudo:'📖', slides:'🖼️', mapaMental:'🗺️', avaliacao:'🏫'};
+function objIconHtml(objKey){ return objKey&&OBJ_ICONS[objKey] ? '<span title="'+esc((OBJ_DEFS.find(o=>o.k===objKey)||{}).label||objKey)+'">'+OBJ_ICONS[objKey]+'</span> ' : ''; }
 /* Subabas dentro de Avaliação */
 const AVAL_TABS = [
   {k:'questoes',  label:'Questões'},
@@ -1959,6 +1973,65 @@ const LIVRO_PAGINAS_LINHAS=[
   {cods:['EM13CHS502'], pag:'442-443', tema:'Crise Climática e Agenda 2030'},
   {cods:['EM13CHS302','EM13CHS502'], pag:'450-452', tema:'Mundo Pós-Guerra Fria e Desafios do Século XXI'},
 ];
+/* Desdobramentos semana-a-semana pra códigos do EM (Filosofia/História) que
+   não têm subtema no catalog.js — escritos a partir do texto oficial da
+   habilidade, mesmo formato de SUBTEMAS ({s:recorte, a:aulas sugeridas}).
+   Alimenta gerarSequenciaAutomatica() (Linha do tempo) igual o catalog.js
+   alimenta a matriz pros temas que já têm subtema oficial. */
+const SUBTEMAS_EXTRA={
+  'EM13CHS502':[
+    {s:'O que são Direitos Humanos: da Declaração de 1948 aos dias de hoje',a:1},
+    {s:'Desigualdade social e racial no Brasil: quem tem dignidade garantida?',a:1},
+    {s:'Ações e movimentos que promovem Direitos Humanos (ONGs, coletivos, políticas públicas)',a:1},
+    {s:'Debate: dignidade humana é universal ou depende do contexto?',a:1},
+  ],
+  'GO-EMCHS502C':[
+    {s:'Sofistas x Sócrates: retórica, verdade e o direito de opinar',a:1},
+    {s:'Liberdade dos antigos x liberdade dos modernos (Benjamin Constant)',a:1},
+    {s:'Liberdade de expressão hoje: redes sociais, discurso de ódio e censura',a:1},
+  ],
+  'EM13CHS205':[
+    {s:'O que é cultura? Popular, erudita e de massa',a:1},
+    {s:'Cultura como campo de disputa e poder (Gramsci e a hegemonia cultural)',a:1},
+    {s:'Culturas afro-brasileiras e indígenas: resistência e protagonismo cultural',a:1},
+  ],
+  'GO-EMCHS205D':[
+    {s:'Escola de Frankfurt: Adorno, Horkheimer e o conceito de indústria cultural',a:1},
+    {s:'Padronização, consumo e alienação: cinema, música e redes sociais hoje',a:1},
+    {s:'Existe resistência possível à indústria cultural?',a:1},
+  ],
+  'EM13CHS605':[
+    {s:'A Declaração Universal dos Direitos Humanos (1948): justiça, igualdade, fraternidade',a:1},
+    {s:'Direitos Humanos como conquista histórica, não dado natural',a:1},
+  ],
+  'GO-EMCHS605A':[
+    {s:'Locke: direitos naturais à vida, liberdade e propriedade',a:1},
+    {s:'Rousseau: contrato social e a ideia de igualdade',a:1},
+  ],
+  'GO-EMCHS605B':[
+    {s:'Progressos: conquistas de direitos no século XX (mulheres, negros, LGBTQIA+)',a:1},
+    {s:'Entraves: desigualdade social no mundo contemporâneo',a:1},
+    {s:'Estudo de caso: um entrave concreto no Brasil ou em Goiás hoje',a:1},
+  ],
+  'EM13CHS104':[
+    {s:'O que é cultura material? Objetos, vestígios e fontes históricas',a:1},
+    {s:'Cultura material medieval: castelos, feudos, relíquias religiosas',a:1},
+    {s:'Identidade e cultura material afro-brasileira e indígena: o que resta e o que resiste',a:1},
+  ],
+  'EM13CHS402':[
+    {s:'Origens do feudalismo: crise do Império Romano e invasões bárbaras',a:1},
+    {s:'Suserania e vassalagem: as relações de poder no feudo',a:1},
+    {s:'Servos, Igreja e sociedade estamental: quem sustentava o sistema',a:1},
+  ],
+  'EM13CHS601':[
+    {s:'Panorama: quem são os protagonistas indígenas e afrodescendentes no Brasil hoje',a:1},
+    {s:'Estudos de caso: lideranças e movimentos contemporâneos',a:1},
+  ],
+  'GO-EMCHS601D':[
+    {s:'Políticas públicas e ações afirmativas de redução da desigualdade',a:1},
+    {s:'Produção dos alunos: proposta de ação/campanha na escola ou comunidade',a:1},
+  ],
+};
 /* Um código DC-GO/BNCC aparece em VÁRIAS linhas do mapeamento (o mesmo
    código cobre trechos diferentes do livro, em capítulos diferentes) — só
    filtrar por código junta páginas de temas completamente diferentes numa
@@ -3251,7 +3324,7 @@ function renderCronograma(){
     const objLabel=(OBJ_DEFS.find(o=>o.k===p.objeto)||{}).label||p.objeto||'—';
     const dataFmt=p.data?new Date(p.data+'T00:00:00').toLocaleDateString('pt-BR'):'—';
     return '<div class="turma-row"><span class="tn" style="flex:0 0 76px">'+esc(dataFmt)+'</span>'+
-      '<span style="flex:1;font-size:12px">'+esc(tm?tm.nome:'(tema removido)')+' · '+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
+      '<span style="flex:1;font-size:12px">'+objIconHtml(p.objeto)+esc(tm?tm.nome:'(tema removido)')+' · '+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
       '<button class="btn ghost sm" onclick="remPlanejamento(\''+p.id+'\')" title="Remover">✕</button></div>';
   }).join('') : '<p class="statusdot" style="font-size:12px">Nenhuma aula planejada ainda.</p>';
   box.innerHTML = lista+
@@ -4862,6 +4935,193 @@ function aulasDadas(t, bim){
   return total;
 }
 
+/* ── Planejamento automático ─────────────────────────────────────────────
+   Substitui o cronograma manual (1 data de cada vez): monta a sequência
+   de aulas restantes do bimestre pra uma turma, priorizando os códigos da
+   matriz em ordem cronológica, reservando revisão+recomposição no fim —
+   mesma lógica usada no documento de planejamento que já foi entregue,
+   agora rodando dentro do próprio app e gravando de verdade em
+   conteudo.planejamento[]. Só usa temas que JÁ EXISTEM (não inventa tema
+   novo) — junto com o subtema (SUBTEMAS/SUBTEMAS_EXTRA) quando houver, pra
+   cada aula ter um recorte específico, não só "o tema inteiro de novo". */
+function subsDoCodigoPlano(code){ return (typeof SUBTEMAS!=='undefined'&&SUBTEMAS[code]) || SUBTEMAS_EXTRA[code] || null; }
+function riquezaCodigoPlano(code, serieNove){
+  const subs=subsDoCodigoPlano(code);
+  if(subs&&subs.length) return subs.reduce((s,x)=>s+(x.a||1),0);
+  return serieNove?2:1;
+}
+function montarSlotsPlano(obrigatorios, extras, contentSlots){
+  const nReq=obrigatorios.length, nExtra=extras.length, nTotal=nReq+nExtra;
+  const slots=[];
+  if(contentSlots<=0) return {slots, aviso:'Sem aulas de conteúdo disponíveis — só sobra espaço pra revisão/recomposição.'};
+  if(contentSlots>=nTotal){
+    [...obrigatorios,...extras].forEach(it=>{
+      const baseline=it.subs?Math.min(it.subs.length,4):1;
+      slots.push({item:it, aulas:baseline});
+    });
+    let soma=slots.reduce((s,x)=>s+x.aulas,0);
+    while(soma>contentSlots){ const maior=slots.reduce((m,s)=>s.aulas>(m?m.aulas:0)?s:m,null); if(!maior||maior.aulas<=1) break; maior.aulas--; soma--; }
+    let leftover=contentSlots-soma;
+    for(const s of slots){ if(leftover<=0) break; if(!s.item.subs && s.item.riqueza>=2 && s.aulas===1){ s.aulas=2; leftover--; } }
+    const nAvals=Math.max(0,Math.floor(leftover));
+    for(let i=0;i<nAvals;i++){
+      const pos=Math.max(1,Math.min(slots.length,Math.round(slots.length*(i+1)/(nAvals+1))));
+      slots.splice(pos,0,{item:{avaliacao:true,nome:'Atividade avaliativa — revisão do conteúdo até aqui'}, aulas:1});
+    }
+    return {slots, aviso: nAvals?(nAvals+' aula(s) avaliativa(s) inserida(s) pelo excedente de aulas.'):null};
+  }
+  if(contentSlots>=nReq){
+    obrigatorios.forEach(it=>slots.push({item:it, aulas:1}));
+    const sobra=contentSlots-nReq;
+    if(sobra>0 && nExtra>0){
+      const porBucket=Math.ceil(nExtra/sobra);
+      for(let i=0;i<nExtra;i+=porBucket) slots.push({item:{agrupado:true, itens:extras.slice(i,i+porBucket)}, aulas:1});
+    }
+    return {slots, aviso: nExtra>sobra?(nExtra+' tema(s) extra(s) da turma precisaram se juntar em aulas compartilhadas.'):null};
+  }
+  const nBuckets=contentSlots, base=Math.floor(nReq/nBuckets), resto=nReq%nBuckets;
+  let idx=0;
+  for(let b=0;b<nBuckets;b++){
+    const tam=base+(b<resto?1:0);
+    const grupo=obrigatorios.slice(idx,idx+tam); idx+=tam;
+    slots.push({item: grupo.length>1?{agrupado:true,itens:grupo}:grupo[0], aulas:1});
+  }
+  return {slots, aviso:'Mais conteúdo obrigatório da matriz ('+nReq+') do que aulas disponíveis ('+contentSlots+') — vários códigos foram agrupados na mesma aula.'};
+}
+function gerarSequenciaAutomatica(turmaId, bim){
+  const tu=turmas[turmaId]; if(!tu) return;
+  const matriz=(MATRIZ[matrizKey(tu.disciplina,tu.serie,bim)]||[]);
+  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===turmaId&&c.bimestre===bim);
+  const temasBim=[]; conts.forEach(c=>temasDoConteudo(c.id).forEach(t=>temasBim.push(t)));
+  const codigosMatriz=new Set(matriz.map(m=>m.c.trim().toUpperCase()));
+  const obrigatorios=matriz.map(m=>{
+    const code=m.c.trim().toUpperCase();
+    const tema=temasBim.find(t=>t.dcgo&&t.dcgo.trim().toUpperCase()===code);
+    if(!tema) return null;
+    const subs=subsDoCodigoPlano(code);
+    return {tema, dcgo:m.c, riqueza:riquezaCodigoPlano(code, tu.serie==='9º ano'), subs};
+  }).filter(Boolean).sort((a,b)=>a.dcgo.localeCompare(b.dcgo,'pt-BR',{numeric:true,sensitivity:'base'}));
+  const extras=temasBim.filter(t=>!t.dcgo||!codigosMatriz.has(t.dcgo.trim().toUpperCase())).map(t=>({tema:t, riqueza:1, subs:null}));
+  if(!obrigatorios.length && !extras.length){ toast('Nenhum tema encontrado nesta turma/bimestre pra sequenciar.','err'); return; }
+
+  const hoje=isoLocal(new Date());
+  const datasFuturas=datasDoBimestre(tu,bim).filter(d=>d>=hoje);
+  if(!datasFuturas.length){ toast('Não há mais aulas futuras neste bimestre pra essa turma.','err'); return; }
+  const total=datasFuturas.length;
+  const endReserved=total>=4?2:(total>=2?1:0);
+  const contentSlots=total-endReserved;
+  const {slots, aviso}=montarSlotsPlano(obrigatorios, extras, contentSlots);
+
+  const jaExistentes=[]; conts.forEach(c=>(c.planejamento||[]).forEach(p=>{ if(p.data>=hoje) jaExistentes.push({c,p}); }));
+  if(jaExistentes.length && !confirm('Isso vai substituir '+jaExistentes.length+' entrada(s) de planejamento futuras já existentes nesta turma por uma sequência nova. Continuar?')) return;
+  jaExistentes.forEach(({c,p})=>{ c.planejamento=c.planejamento.filter(x=>x.id!==p.id); });
+
+  const novasEntradas=[]; // {conteudoId, entry}
+  let di=0;
+  slots.forEach(s=>{
+    for(let k=0;k<s.aulas;k++){
+      const data=datasFuturas[di]; di++;
+      if(!data) return;
+      if(s.item.avaliacao){ /* aula avaliativa não vira planejamento de conteúdo — fica só no aviso */ continue; }
+      if(s.item.agrupado){
+        s.item.itens.forEach(it=>{
+          novasEntradas.push({conteudoId:it.tema.conteudoId, entry:{id:uid(), data, temaId:it.tema.id, objeto:'estudo', obs:'agrupado nesta aula'}});
+        });
+        continue;
+      }
+      const it=s.item;
+      const label=(it.subs && it.subs[k]) ? it.subs[k].s : '';
+      novasEntradas.push({conteudoId:it.tema.conteudoId, entry:{id:uid(), data, temaId:it.tema.id, objeto:'estudo', obs:label}});
+    }
+  });
+  if(endReserved>=1 && datasFuturas[di]) di++; // revisão — sem tema associado, só ocupa a data
+  if(endReserved>=2 && datasFuturas[di]) di++; // recomposição
+
+  const porConteudo={};
+  novasEntradas.forEach(({conteudoId,entry})=>{ (porConteudo[conteudoId]||(porConteudo[conteudoId]=[])).push(entry); });
+  Object.entries(porConteudo).forEach(([cid,entries])=>{
+    const c=conteudos[cid]; if(!c) return;
+    if(!c.planejamento) c.planejamento=[];
+    c.planejamento.push(...entries);
+    persistConteudo(c);
+  });
+  toast(novasEntradas.length+' aula(s) sequenciada(s)'+(aviso?' — '+aviso:'')+'.', 'ok');
+  renderLinhaDoTempo();
+}
+/* Recuperação: entradas de planejamento no passado sem chamada/registro
+   (não aconteceram de verdade) voltam pra fila, junto com as futuras, e
+   tudo é remapeado nas próximas datas disponíveis — fecha o buraco sem
+   ela ter que reorganizar manualmente uma por uma. */
+function recuperarSequencia(turmaId, bim){
+  const tu=turmas[turmaId]; if(!tu) return;
+  const hoje=isoLocal(new Date());
+  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===turmaId&&c.bimestre===bim);
+  const pendentes=[]; // {c,p} em ordem de data
+  conts.forEach(c=>(c.planejamento||[]).forEach(p=>{
+    if(p.data>=hoje){ pendentes.push({c,p}); return; }
+    const feito=Object.values(registros).some(r=>r&&r.turmaId===turmaId&&r.temaId===p.temaId&&r.data===p.data) || !!chamadaDoDia(turmaId,p.data);
+    if(!feito) pendentes.push({c,p});
+  }));
+  if(!pendentes.length){ toast('Nada pendente pra recuperar — o planejamento desta turma está em dia.','ok'); return; }
+  pendentes.sort((a,b)=>a.p.data.localeCompare(b.p.data));
+  const datasFuturas=datasDoBimestre(tu,bim).filter(d=>d>=hoje);
+  if(!confirm(pendentes.length+' aula(s) planejada(s) ficaram sem acontecer — remapear pras próximas '+Math.min(pendentes.length,datasFuturas.length)+' data(s) disponíveis?')) return;
+  pendentes.forEach(({c,p})=>{ c.planejamento=c.planejamento.filter(x=>x.id!==p.id); });
+  let sobraram=0;
+  pendentes.forEach(({c,p},i)=>{
+    const novaData=datasFuturas[i];
+    if(!novaData){ sobraram++; return; }
+    if(!c.planejamento) c.planejamento=[];
+    c.planejamento.push({...p, data:novaData});
+  });
+  Object.values(conteudos).filter(c=>c&&c.turmaId===turmaId&&c.bimestre===bim).forEach(c=>persistConteudo(c));
+  toast('Sequência remapeada.'+(sobraram?(' '+sobraram+' aula(s) ficaram sem data — faltam aulas disponíveis no bimestre.'):''), sobraram?'':'ok');
+  renderLinhaDoTempo();
+}
+
+function planejamentoSectionHtml(tu, bim, hoje){
+  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===tu.id&&c.bimestre===bim);
+  const entradas=[];
+  conts.forEach(c=>(c.planejamento||[]).forEach(p=>{ if(p.data>=hoje) entradas.push({c,p}); }));
+  entradas.sort((a,b)=>a.p.data.localeCompare(b.p.data));
+  let h='<div class="lt-planejamento"><div class="lt-plan-head"><h3>Planejamento (a partir de hoje)</h3>'+
+    '<div><button class="btn ghost sm" onclick="recuperarSequencia(\''+tu.id+'\',\''+esc(bim)+'\')" title="Remapeia aulas planejadas que ficaram sem acontecer pras próximas datas disponíveis">🔁 recuperar</button> '+
+    '<button class="btn sm" onclick="gerarSequenciaAutomatica(\''+tu.id+'\',\''+esc(bim)+'\')">🪄 gerar sequência automática</button></div>'+
+  '</div>';
+  if(!entradas.length){ h+='<p style="color:var(--muted);font-size:13px">Nenhuma aula planejada a partir de hoje ainda — use "gerar sequência automática".</p></div>'; return h; }
+  h+='<div class="lt-plan-list">'+entradas.map(({c,p},i)=>{
+    const t=temas[p.temaId]||{};
+    const objLabel=(OBJ_DEFS.find(o=>o.k===p.objeto)||{}).label||p.objeto||'—';
+    return '<div class="lt-plan-row">'+
+      '<span class="lt-plan-data">'+p.data.split('-').reverse().join('/')+'</span>'+
+      '<span class="lt-plan-tema" onclick="abrirEditor(\''+p.temaId+'\')" title="Abrir tema">'+esc(t.tituloExibicao||t.nome||'(tema removido)')+'</span>'+
+      '<span class="lt-plan-obj">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
+      '<button class="btn ghost sm" onclick="moverPlanejamentoLT(\''+tu.id+'\',\''+esc(bim)+'\','+i+',-1)"'+(i===0?' disabled':'')+'>▲</button>'+
+      '<button class="btn ghost sm" onclick="moverPlanejamentoLT(\''+tu.id+'\',\''+esc(bim)+'\','+i+',1)"'+(i===entradas.length-1?' disabled':'')+'>▼</button>'+
+      '<button class="btn ghost sm danger" onclick="removerPlanejamentoLT(\''+c.id+'\',\''+p.id+'\')">✕</button>'+
+    '</div>';
+  }).join('')+'</div></div>';
+  return h;
+}
+function moverPlanejamentoLT(turmaId, bim, index, delta){
+  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===turmaId&&c.bimestre===bim);
+  const hoje=isoLocal(new Date());
+  const entradas=[]; conts.forEach(c=>(c.planejamento||[]).forEach(p=>{ if(p.data>=hoje) entradas.push({c,p}); }));
+  entradas.sort((a,b)=>a.p.data.localeCompare(b.p.data));
+  const j=index+delta;
+  if(j<0||j>=entradas.length) return;
+  const dataA=entradas[index].p.data, dataB=entradas[j].p.data;
+  entradas[index].p.data=dataB; entradas[j].p.data=dataA;
+  persistConteudo(entradas[index].c);
+  if(entradas[j].c.id!==entradas[index].c.id) persistConteudo(entradas[j].c);
+  renderLinhaDoTempo();
+}
+function removerPlanejamentoLT(conteudoId, planejamentoId){
+  const c=conteudos[conteudoId]; if(!c||!c.planejamento) return;
+  c.planejamento=c.planejamento.filter(p=>p.id!==planejamentoId);
+  persistConteudo(c);
+  renderLinhaDoTempo();
+}
 /* ── Linha do tempo da turma — visão geral separada da Gestão, pedida
    depois que "aula livre" virou só um widget pequeno no canto. Não edita
    nada aqui: cada clique manda pra abrirEditor/editarAulaAvulsa/
@@ -4915,6 +5175,7 @@ function renderLinhaDoTempo(){
   });
   html+='</div></div>';
   html+='<div class="lt-legenda"><span class="lt-dot lt-dado"></span> dado <span class="lt-dot lt-hoje"></span> hoje <span class="lt-dot lt-buraco"></span> sem registro <span class="lt-dot lt-futuro"></span> futuro</div>';
+  html+=planejamentoSectionHtml(tu, _ltBim, hoje);
   const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===tu.id&&c.bimestre===_ltBim);
   let pendentes=[];
   conts.forEach(c=>temasDoConteudo(c.id).forEach(t=>{ if(!registrosDoTema(t.id).some(r=>r.turmaId===tu.id)) pendentes.push(t); }));
@@ -5777,7 +6038,7 @@ function renderAgendaDia(){
       const tu=turmas[conteudo.turmaId]||{};
       const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
       const nRegs=registrosDoTema(tema.id).filter(r=>r.turmaId===tu.id).length;
-      html+='<div class="hoje-row"><div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
+      html+='<div class="hoje-row"><div class="hoje-info"><b>'+objIconHtml(entry.objeto)+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
         '<div class="hoje-acoes">'+
           '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+conteudo.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
           '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+conteudo.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
@@ -6298,27 +6559,43 @@ function irParaTurma(turmaId, bimOverride){
 }
 function abrirTurmaNoPainel(turmaId){ irParaTurma(turmaId, _painelBim); }
 function _normBusca(s){ return (s||'').toLowerCase().replace(/[ºª°\s]/g,''); }
+/* Busca geral — turmas, temas, alunos e conteúdos num campo só, pedido dela
+   ("o botão busca podia buscar de tudo dentro do app"). Cada tipo abre no
+   lugar certo, reaproveitando navegação que já existe (nada de rota nova). */
 function buscarTurmaRapida(termo){
   const box=document.getElementById('buscaTurmaResultados'); if(!box) return;
   termo=(termo||'').trim().toLowerCase();
   if(!termo){ box.classList.add('hidden'); box.innerHTML=''; return; }
   const termoNorm=_normBusca(termo);
-  const results=Object.values(turmas).filter(t=>t &&
+
+  const turmasR=Object.values(turmas).filter(t=>t &&
     (_normBusca(turmaNome(t)).includes(termoNorm) || (t.disciplina||'').toLowerCase().includes(termo) || (t.unidade||'').toLowerCase().includes(termo))
-  ).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b))).slice(0,10);
+  ).slice(0,5).map(t=>({tipo:'turma', label:turmaNome(t), sub:(t.disciplina||'')+' · '+(t.unidade||''), acao:'selecionarTurmaRapida(\''+t.id+'\')'}));
+
+  const temasR=Object.values(temas).filter(t=>t &&
+    (_normBusca(t.nome||'').includes(termoNorm) || _normBusca(t.tituloExibicao||'').includes(termoNorm) || _normBusca(t.dcgo||'').includes(termoNorm))
+  ).slice(0,5).map(t=>{ const tu=turmas[t.turmaId]||{}; return {tipo:'tema', label:t.tituloExibicao||t.nome, sub:turmaNome(tu)+(t.dcgo?(' · '+t.dcgo):''), acao:'abrirTemaRapido(\''+t.id+'\')'}; });
+
+  const alunosR=Object.values(alunos).filter(a=>a && a.ativo!==false && _normBusca(a.nome||'').includes(termoNorm))
+    .slice(0,5).map(a=>{ const tu=turmas[a.turmaId]||{}; return {tipo:'aluno', label:a.nome, sub:turmaNome(tu), acao:'abrirAlunoRapido(\''+a.id+'\')'}; });
+
+  const conteudosR=Object.values(conteudos).filter(c=>c && _normBusca(c.nome||'').includes(termoNorm))
+    .slice(0,5).map(c=>{ const tu=turmas[c.turmaId]||{}; return {tipo:'conteúdo', label:c.nome, sub:turmaNome(tu)+' · '+(c.bimestre||''), acao:'irParaTurmaRapido(\''+c.turmaId+'\',\''+esc(c.bimestre||'')+'\')'}; });
+
+  const results=[...turmasR,...temasR,...alunosR,...conteudosR].slice(0,15);
   box.innerHTML = results.length
-    ? results.map(t=>'<div class="busca-turma-item" onmousedown="selecionarTurmaRapida(\''+t.id+'\')">'+esc(turmaNome(t))+'<small>'+esc(t.disciplina||'')+' · '+esc(t.unidade||'')+'</small></div>').join('')
+    ? results.map(r=>'<div class="busca-turma-item" onmousedown="'+r.acao+'"><span class="busca-tipo">'+esc(r.tipo)+'</span>'+esc(r.label)+'<small>'+esc(r.sub)+'</small></div>').join('')
     : '<div class="busca-turma-item" style="cursor:default;opacity:.6">Nada encontrado.</div>';
   box.classList.remove('hidden');
 }
 function fecharBuscaTurmaRapida(){
   const box=document.getElementById('buscaTurmaResultados'); if(box) box.classList.add('hidden');
 }
-function selecionarTurmaRapida(turmaId){
-  const inp=document.getElementById('buscaTurmaRapida'); if(inp) inp.value='';
-  fecharBuscaTurmaRapida();
-  irParaTurma(turmaId);
-}
+function _limparBuscaRapida(){ const inp=document.getElementById('buscaTurmaRapida'); if(inp) inp.value=''; fecharBuscaTurmaRapida(); }
+function selecionarTurmaRapida(turmaId){ _limparBuscaRapida(); irParaTurma(turmaId); }
+function abrirTemaRapido(temaId){ _limparBuscaRapida(); abrirTemaDoDia(temaId); }
+function abrirAlunoRapido(alunoId){ _limparBuscaRapida(); abrirBoletimAluno(alunoId); }
+function irParaTurmaRapido(turmaId,bim){ _limparBuscaRapida(); irParaTurma(turmaId,bim); }
 
 function renderAcervo(){
   const box=document.getElementById('acervoBody'); if(!box) return;
