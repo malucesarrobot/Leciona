@@ -5146,18 +5146,19 @@ const DIAS_SEMANA_CURTO={0:'dom',1:'seg',2:'ter',3:'qua',4:'qui',5:'sex',6:'sáb
 /* Papel timbrado do planejamento — mesmo timbre SEDUC do relatório de
    conteúdo (relatorioShell), mas com o corpo sendo a sequência de aulas
    do bimestre (data + tema + recorte da semana), não o conteúdo em si. */
-function planejamentoRelatorioHtml(tu, bim){
+function planejamentoRelatorioHtml(tu, bim, porSemana){
   const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===tu.id&&c.bimestre===bim).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
   const entradas=[];
   conts.forEach(c=>(c.planejamento||[]).forEach(p=>entradas.push(p)));
   entradas.sort((a,b)=>a.data.localeCompare(b.data));
   if(!entradas.length) return '<p>Nenhuma aula planejada ainda nesta turma para o '+esc(bim)+' — use "gerar sequência automática" antes de imprimir.</p>';
   let h='<h2 class="cont">'+esc(bim)+' — '+esc(turmaNomeCompleto(tu))+'</h2>';
-  entradas.forEach(p=>{
+  entradas.forEach((p,i)=>{
     const t=temas[p.temaId]||{};
-    const dObj=new Date(p.data+'T00:00:00');
-    const dataFmt=p.data.split('-').reverse().join('/')+' ('+DIAS_SEMANA_CURTO[dObj.getDay()]+')';
-    h+='<div class="tema"><h3>'+esc(dataFmt)+' — '+esc(t.tituloExibicao||t.nome||'(tema removido)')+'</h3>';
+    let rotulo;
+    if(porSemana){ rotulo='Semana '+(i+1); }
+    else{ const dObj=new Date(p.data+'T00:00:00'); rotulo=p.data.split('-').reverse().join('/')+' ('+DIAS_SEMANA_CURTO[dObj.getDay()]+')'; }
+    h+='<div class="tema"><h3>'+esc(rotulo)+' — '+esc(t.tituloExibicao||t.nome||'(tema removido)')+'</h3>';
     let meta=[]; if(t.dcgo) meta.push(t.dcgo);
     if(t.habilidade) meta.push(t.habilidade);
     if(meta.length) h+='<div class="meta">'+esc(meta.join('  ·  '))+'</div>';
@@ -5168,7 +5169,7 @@ function planejamentoRelatorioHtml(tu, bim){
 }
 function imprimirPlanejamentoBimestre(turmaId, bim){
   const tu=turmas[turmaId]; if(!tu) return;
-  const body=planejamentoRelatorioHtml(tu, bim);
+  const body=planejamentoRelatorioHtml(tu, bim, !!tu.gradeProvisoria);
   const titulo='Leciona — Planejamento · '+tu.disciplina+' · '+turmaNomeCompleto(tu)+' · '+bim;
   const win=window.open('','_blank');
   win.document.write(relatorioShell(titulo, body, true, tu));
