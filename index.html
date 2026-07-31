@@ -1842,7 +1842,7 @@ function refreshTurmas(preferId){
   const sel=document.getElementById('selTurma'); if(!sel) return;
   const d=document.getElementById('selDisc').value, s=document.getElementById('selSerie').value;
   const u=(document.getElementById('selUnidade')||{}).value || scope.unidade;
-  const list=Object.values(turmas).filter(t=>t.disciplina===d && t.serie===s && (t.unidade? t.unidade===u : true)).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b)));
+  const list=turmasAtivas().filter(t=>t.disciplina===d && t.serie===s && (t.unidade? t.unidade===u : true)).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b)));
   sel.innerHTML='';
   if(!list.length){ sel.add(new Option('— sem turma (cadastre em + turmas) —','')); }
   list.forEach(t=>sel.add(new Option(turmaNome(t),t.id)));
@@ -4777,9 +4777,24 @@ function imgAddSelected(){
 function toggleMaisOpcoesGestao(){
   document.getElementById('maisOpcoesGestao').classList.toggle('hidden');
 }
+/* Turmas "inativas" (t.ativo===false) somem dos seletores do dia a dia
+   (turmasAtivas()), mas continuam aqui em "Minhas turmas" pra reativar —
+   nada é apagado, só deixa de aparecer no fluxo normal. */
+function turmasAtivas(){ return Object.values(turmas).filter(t=>t&&t.ativo!==false); }
+function toggleTurmaAtiva(id){
+  const t=turmas[id]; if(!t) return;
+  t.ativo = t.ativo===false ? true : false;
+  persistTurma(t);
+  openTurmas();
+}
 function openTurmas(){
   const list=Object.values(turmas).sort((a,b)=>((a.unidade||'')+a.disciplina+a.serie+(a.letra||'')).localeCompare((b.unidade||'')+b.disciplina+b.serie+(b.letra||'')));
-  const rows=list.length?list.map(t=>'<div class="tl"><b>'+esc(turmaNome(t))+'</b><span>'+esc(t.disciplina)+' · '+esc(t.unidade||'—')+'</span><button class="btn ghost sm danger" onclick="excluirTurma(\''+t.id+'\')">excluir</button></div>').join(''):'<div class="statusdot">Nenhuma turma cadastrada ainda.</div>';
+  const rows=list.length?list.map(t=>{
+    const inativa=t.ativo===false;
+    return '<div class="tl" style="'+(inativa?'opacity:.55':'')+'"><b>'+esc(turmaNome(t))+(inativa?' <span style="font-size:10px;color:var(--muted)">(inativa)</span>':'')+'</b><span>'+esc(t.disciplina)+' · '+esc(t.unidade||'—')+'</span>'+
+      '<button class="btn ghost sm" onclick="toggleTurmaAtiva(\''+t.id+'\')">'+(inativa?'reativar':'desativar')+'</button>'+
+      '<button class="btn ghost sm danger" onclick="excluirTurma(\''+t.id+'\')">excluir</button></div>';
+  }).join(''):'<div class="statusdot">Nenhuma turma cadastrada ainda.</div>';
   const discOpts=Object.keys(SERIES_BY_DISC).map(d=>'<option value="'+d+'">'+d+'</option>').join('');
   const uniOpts=UNIDADES.map(u=>'<option value="'+u+'">'+u+'</option>').join('');
   const letraOpts='<option value="">—</option>'+LETRAS.map(l=>'<option value="'+l+'">'+l+'</option>').join('');
@@ -6481,10 +6496,10 @@ function painelRosterHtml(turmaId){
 function renderPainel(){
   const box=document.getElementById('painelBody'); if(!box) return;
   if(_painelBim==null) _painelBim = bimAtual();
-  const discs=[...new Set(Object.values(turmas).map(t=>t.disciplina).filter(Boolean))].sort();
+  const discs=[...new Set(turmasAtivas().map(t=>t.disciplina).filter(Boolean))].sort();
 
-  const linhas = Object.values(turmas)
-    .filter(t=>t && (!_painelDisc || t.disciplina===_painelDisc))
+  const linhas = turmasAtivas()
+    .filter(t=>!_painelDisc || t.disciplina===_painelDisc)
     .map(t=>{
       const conts = Object.values(conteudos).filter(c=>c.turmaId===t.id && c.bimestre===_painelBim);
       let total=0, comReg=0;
@@ -6572,7 +6587,7 @@ function buscarTurmaRapida(termo){
   if(!termo){ box.classList.add('hidden'); box.innerHTML=''; return; }
   const termoNorm=_normBusca(termo);
 
-  const turmasR=Object.values(turmas).filter(t=>t &&
+  const turmasR=turmasAtivas().filter(t=>
     (_normBusca(turmaNome(t)).includes(termoNorm) || (t.disciplina||'').toLowerCase().includes(termo) || (t.unidade||'').toLowerCase().includes(termo))
   ).slice(0,5).map(t=>({tipo:'turma', label:turmaNome(t), sub:(t.disciplina||'')+' · '+(t.unidade||''), acao:'selecionarTurmaRapida(\''+t.id+'\')'}));
 
@@ -7249,7 +7264,7 @@ function renderRanking(){
   // disciplina) e Por disciplina (uma classificação própria pra cada
   // matéria — a mesma turma pode ser 1ª numa e última noutra, de propósito).
   const linha=(r,destacar)=>'<div class="rk-row'+(r.pos<=3?' rk-top':'')+(r.turma.id===turmaId?' rk-atual':'')+'"><span class="rk-pos">'+medalha(r.pos)+'</span><span class="rk-nome">'+esc(turmaNome(r.turma))+(destacar?'':' <small style="opacity:.6">· '+esc(r.turma.disciplina||'')+'</small>')+(r.turma.id===turmaId?' — vocês!':'')+'</span><span class="rk-nota">'+r.media.toFixed(1)+'</span></div>';
-  const comMedia=Object.values(turmas).map(t=>({turma:t, media:mediaGeralTurma(t.id)})).filter(r=>r.media!=null);
+  const comMedia=turmasAtivas().map(t=>({turma:t, media:mediaGeralTurma(t.id)})).filter(r=>r.media!=null);
 
   const toggle='<div class="aval-tabs" style="justify-content:center">'+
     '<button class="aval-tab'+(_rankingModoTurmas==='geral'?' active':'')+'" onclick="_rankingModoTurmas=\'geral\';renderRanking()">Geral</button>'+
@@ -7278,7 +7293,7 @@ function renderRanking(){
   // gigante). Cada aluno aparece uma vez por turma/disciplina em que estuda
   // com ela (não tenta unificar a mesma pessoa entre disciplinas).
   let geralEscola=[];
-  Object.values(turmas).filter(Boolean).forEach(t=>{
+  turmasAtivas().forEach(t=>{
     const atvsT=atividadesDaTurma(t.id);
     if(!atvsT.length) return;
     alunosDaTurma(t.id).forEach(a=>{
