@@ -5163,7 +5163,7 @@ function planejamentoSectionHtml(tu, bim, hoje){
     return '<div class="lt-plan-row">'+
       '<span class="lt-plan-data">'+p.data.split('-').reverse().join('/')+'</span>'+
       '<span class="lt-plan-tema" onclick="abrirEditor(\''+p.temaId+'\')" title="Abrir tema">'+esc(t.tituloExibicao||t.nome||'(tema removido)')+'</span>'+
-      '<span class="lt-plan-obj">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
+      '<span class="lt-plan-obj">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+(p.metodologia?(' · 🎯 '+esc(p.metodologia)):'')+'</span>'+
       '<button class="btn ghost sm" onclick="moverPlanejamentoLT(\''+tu.id+'\',\''+esc(bim)+'\','+i+',-1)"'+(i===0?' disabled':'')+'>▲</button>'+
       '<button class="btn ghost sm" onclick="moverPlanejamentoLT(\''+tu.id+'\',\''+esc(bim)+'\','+i+',1)"'+(i===entradas.length-1?' disabled':'')+'>▼</button>'+
       '<button class="btn ghost sm danger" onclick="removerPlanejamentoLT(\''+c.id+'\',\''+p.id+'\')">✕</button>'+
@@ -5210,6 +5210,7 @@ function planejamentoRelatorioHtml(tu, bim, porSemana){
     let meta=[]; if(t.dcgo) meta.push(t.dcgo);
     if(t.habilidade) meta.push(t.habilidade);
     if(meta.length) h+='<div class="meta">'+esc(meta.join('  ·  '))+'</div>';
+    if(p.metodologia) h+='<p><b>Metodologia:</b> '+esc(p.metodologia)+'</p>';
     if(p.obs) h+='<p>Recorte da aula: '+esc(p.obs)+'</p>';
     h+='</div>';
   });
