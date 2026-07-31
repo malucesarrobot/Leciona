@@ -242,6 +242,8 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .selo.adapt{background:#e7efe9;color:#2f6b5e}
 .selo.casa{background:#f5ecdc;color:#7a5a2e;text-transform:none;cursor:pointer}
 .selo.casa:hover{background:#eee0c5}
+.selo.adapt-falta{background:#fdecea;color:#a8442f;text-transform:none;cursor:pointer;font-weight:700}
+.selo.adapt-falta:hover{background:#f9d9d5}
 
 .tlist{display:grid;gap:8px}
 .tcard{border:1px solid var(--line);background:#fff;border-radius:9px;padding:11px 13px 11px 17px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.12s;position:relative;overflow:hidden}
@@ -331,6 +333,14 @@ textarea.big{width:100%;min-height:320px;padding:14px;border:1px solid var(--lin
 .mini-card textarea{resize:vertical;min-height:48px}
 .mini-card .num{font-family:var(--serif);font-weight:700;color:var(--green);font-size:14px;flex:0 0 auto}
 .mini-card label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;display:block;margin:6px 0 3px}
+.painel-roster{border-top:1px solid var(--line);margin-top:8px;padding-top:2px}
+.painel-al-row{display:flex;align-items:center;gap:8px;padding:4px 2px;cursor:pointer;font-size:12.5px;border-radius:5px}
+.painel-al-row:hover{background:var(--surface,#f4f2ea)}
+.painel-al-nome{flex:1}
+.painel-al-atv{color:var(--muted);font-size:11.5px}
+.painel-al-med{font-weight:700;min-width:32px;text-align:right;color:var(--muted)}
+.painel-al-med.ok{color:var(--green,#2f6b5e)}
+.painel-al-med.baixa{color:#a8442f}
 
 /* Projeção */
 html.modo-projecao-popup header{display:none}
@@ -556,7 +566,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button id="tabNotas" onclick="setView('notas')">📊 Notas</button>
       <button id="tabGestao" onclick="setView('gestao')">Gestão</button>
       <button id="tabProjecao" onclick="abrirProjecaoAtual()">Projetar</button>
-      <button id="tabPainel" class="hidden" onclick="setView('painel')">📈 Painel</button>
+      <button id="tabPainel" onclick="setView('painel')">📊 Painel</button>
       <button id="tabAcervo" class="hidden" onclick="setView('acervo')">📚 Acervo</button>
       <button id="tabAgenda" onclick="_agendaOrigin='hoje';setView('agenda')">📅 Agenda</button>
     </nav>
@@ -595,6 +605,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button class="btn full" onclick="_painelOrigin='gestao';_painelBim=scope.bim;setView('painel')">&#128200; Painel geral — progresso de todas as turmas</button>
       <button class="btn full" onclick="_agendaOrigin='gestao';setView('agenda')">&#128197; Agenda</button>
       <button class="btn full" onclick="_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">&#128197; Linha do tempo desta turma</button>
+      <button class="btn full" onclick="abrirAdaptacoesTurma()">&#129513; Adaptações desta turma</button>
       <div class="sep"></div>
       <button class="btn ghost full" onclick="toggleMaisOpcoesGestao()" id="btnMaisOpcoesGestao">&#8943; mais opções</button>
       <div class="hidden" id="maisOpcoesGestao">
@@ -1878,13 +1889,18 @@ function selosHtml(d,s,b,code){
    crédito de IA de verdade) não aparecia em lugar nenhum da lista de
    Gestão — só dentro do editor, tema por tema. */
 function adaptSeloHtml(t){
-  if(!t || !t.adaptado) return '';
-  const perfis=ADAPT_PERFIS.filter(pf=>{
-    const ad=t.adaptado[pf.k];
-    return ad && (typeof ad==='object' ? Object.keys(ad).length>0 : String(ad).trim());
+  if(!t) return '';
+  const ad=t.adaptado||{};
+  const gerados=ADAPT_PERFIS.filter(pf=>{
+    const v=ad[pf.k];
+    return v && (typeof v==='object' ? Object.keys(v).length>0 : String(v).trim());
   });
-  if(!perfis.length) return '';
-  return '<span class="selo adapt" title="Material adaptado já gerado: '+esc(perfis.map(p=>p.label).join(', '))+'">🧩 '+esc(perfis.map(p=>p.label).join(', '))+'</span>';
+  const necessarios=perfisNecessariosDaTurma(t.turmaId);
+  const faltando=ADAPT_PERFIS.filter(pf=>necessarios.includes(pf.k) && !gerados.some(g=>g.k===pf.k));
+  let h='';
+  if(gerados.length) h+='<span class="selo adapt" title="Material adaptado já gerado: '+esc(gerados.map(p=>p.label).join(', '))+'">🧩 '+esc(gerados.map(p=>p.label).join(', '))+'</span>';
+  if(faltando.length) h+='<span class="selo adapt-falta" title="Turma tem aluno(s) que precisam desta adaptação, e este tema ainda não tem — clique em Material adaptado no editor" onclick="event.stopPropagation();abrirEditor(\''+t.id+'\');openAdaptar()">⚠ falta '+esc(faltando.map(p=>p.label).join(', '))+'</span>';
+  return h;
 }
 /* Mapeamento código BNCC/DC-GO → página(s) do livro didático (Moderna Plus),
    extraído dos documentos "Mapeamento de Atividades e Seções de Filosofia
@@ -6163,6 +6179,34 @@ let _acervoBusca='', _acervoDisc='', _acervoSerie='', _acervoBim='';
    turma num bimestre, destaca quem está atrasada (ocorrência sem resolver)
    e dá um atalho direto pra abrir aquela turma na Gestão. */
 let _painelBim = null, _painelDisc = '', _painelOrigin = 'gestao';
+let _painelExpandidas = new Set();
+function togglePainelTurma(turmaId){
+  if(_painelExpandidas.has(turmaId)) _painelExpandidas.delete(turmaId); else _painelExpandidas.add(turmaId);
+  renderPainel();
+}
+/* Resumo de alunos+notas de uma turma, pro card expandido do Painel —
+   junta o que já existe em mediaAluno/atividadeFeita sem duplicar lógica,
+   só que numa lista compacta em vez de abrir a tabela inteira de Notas. */
+function painelRosterHtml(turmaId){
+  const als=alunosDaTurma(turmaId);
+  const atvs=atividadesDaTurma(turmaId);
+  if(!als.length) return '<p style="font-size:12.5px;color:var(--muted);margin:8px 0 0">Nenhum aluno cadastrado nesta turma.</p>';
+  const linhasAl=als.map(a=>{
+    const med=mediaAluno(a.id,atvs,turmaId);
+    const feitas=atvs.filter(av=>av.tipo!=='casa'&&atividadeFeita(a.id,av)).length;
+    const totalAtv=atvs.filter(av=>av.tipo!=='casa').length;
+    return '<div class="painel-al-row" onclick="event.stopPropagation();abrirBoletimAluno(\''+a.id+'\')">'+
+      '<span class="painel-al-nome">'+esc(a.nome)+'</span>'+
+      '<span class="painel-al-atv">'+feitas+'/'+totalAtv+' atv.</span>'+
+      '<span class="painel-al-med'+(med==null?'':med>=6?' ok':' baixa')+'">'+(med==null?'—':med.toFixed(1))+'</span>'+
+    '</div>';
+  }).join('');
+  const medGeral=mediaGeralTurma(turmaId);
+  return '<div class="painel-roster" onclick="event.stopPropagation()">'+
+    '<div style="font-size:11.5px;color:var(--muted);margin:8px 0 4px">'+als.length+' aluno(s) · média da turma '+(medGeral!=null?medGeral.toFixed(1):'—')+' · '+atvs.filter(av=>av.tipo!=='casa').length+' atividade(s) lançada(s)</div>'+
+    linhasAl+
+  '</div>';
+}
 function renderPainel(){
   const box=document.getElementById('painelBody'); if(!box) return;
   if(_painelBim==null) _painelBim = bimAtual();
@@ -6213,14 +6257,17 @@ function renderPainel(){
 
   html += '<div class="card-list">'+linhas.map(l=>{
     const cor = l.atrasada ? '#a8442f' : (l.pct==null?'#ccc': l.pct<30?'#c47a3d':'#2f6b5e');
+    const aberta=_painelExpandidas.has(l.t.id);
     return '<div class="mini-card" style="cursor:pointer" onclick="abrirTurmaNoPainel(\''+l.t.id+'\')">'+
       '<div class="row">'+
         '<b style="flex:1">'+esc(turmaNome(l.t))+' <span style="font-weight:400;color:var(--muted);font-size:12px">· '+esc(l.t.disciplina||'')+' · '+esc(l.t.unidade||'—')+'</span></b>'+
         (l.atrasada?'<span class="reg-badge" style="background:#a8442f">⚠ atrasada</span>':'')+
         (l.nAvulsas?'<span class="reg-badge" style="background:#7a4b8a" title="Aulas avulsas (sem tema) neste bimestre">✎ '+l.nAvulsas+' avulsa'+(l.nAvulsas>1?'s':'')+'</span>':'')+
         '<span style="font-size:13px;font-weight:600;min-width:42px;text-align:right">'+(l.pct==null?'—':l.pct+'%')+'</span>'+
+        '<button class="btn ghost sm" style="margin-left:4px" onclick="event.stopPropagation();togglePainelTurma(\''+l.t.id+'\')" title="Ver alunos e notas desta turma">'+(aberta?'👥 ▲':'👥 ▾')+'</button>'+
       '</div>'+
       '<div class="prog-barra-wrap" style="margin:0"><div class="prog-barra" style="width:'+(l.pct||0)+'%;background:'+cor+'"></div></div>'+
+      (aberta?painelRosterHtml(l.t.id):'')+
     '</div>';
   }).join('')+'</div>';
 
@@ -6637,6 +6684,9 @@ function abrirBoletimAluno(id){
     '<div class="modal-b">'+
       '<div class="field"><label>Nome completo</label><input id="alunoEdNome" value="'+esc(al.nome||'')+'" autofocus></div>'+
       '<div class="field"><label>Número (opcional)</label><input id="alunoEdNum" type="number" value="'+esc(al.numero!=null?String(al.numero):'')+'" placeholder="ex.: 1"></div>'+
+      '<div class="field"><label>Adaptação curricular (perfis que este aluno precisa)</label><div class="gt-checks">'+
+        ADAPT_PERFIS.map(pf=>'<label class="check"><input type="checkbox" name="alunoPerf" value="'+pf.k+'"'+((al.perfisAdaptacao||[]).includes(pf.k)?' checked':'')+'> '+esc(pf.label)+'</label>').join('')+
+      '</div><small style="color:var(--muted)">Marcando aqui, os temas dessa turma passam a avisar quando faltar adaptação pra esse perfil.</small></div>'+
       (al.matricula?'<p style="font-size:11px;color:var(--muted);margin:-4px 0 14px">Matrícula '+esc(al.matricula)+' · matriculado em '+todos.length+' turma(s)</p>':'<p style="font-size:11px;color:var(--muted);margin:-4px 0 14px">Sem matrícula vinculada — não é possível ver outras turmas dele automaticamente.</p>')+
       '<div class="sep"></div>'+
       '<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px">Turmas e desempenho</div>'+
@@ -6666,10 +6716,21 @@ function salvarEdicaoAluno(id){
   if(!nome){ toast('Digite o nome do aluno.','err'); return; }
   al.nome=nome;
   al.numero=numStr?parseInt(numStr,10):null;
+  al.perfisAdaptacao=[...document.querySelectorAll('input[name=alunoPerf]:checked')].map(c=>c.value);
   persistAluno(al);
   closeModal();
   renderNotas();
   toast('Aluno atualizado.','ok');
+}
+/* Perfis de adaptação que essa turma precisa garantir em TODO tema — união
+   dos perfis marcados nos alunos ativos dela. Base pro aviso "falta
+   adaptação" no card de Gestão, pedido repetido dela: se a turma tem aluno
+   inclusivo, o material tem que estar sempre disponível, não só "se sobrar
+   tempo de gerar". */
+function perfisNecessariosDaTurma(turmaId){
+  const set=new Set();
+  alunosDaTurma(turmaId).forEach(a=>(a.perfisAdaptacao||[]).forEach(p=>set.add(p)));
+  return [...set];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -7722,6 +7783,77 @@ function copiarAdaptadoDeIrma(temaIdOrigem, perfil){
   closeModal(); openAdaptar();
   toast('Adaptação copiada, sem gastar crédito de IA.','ok');
 }
+/* Checagem em massa: pra cada tema da turma/bimestre atual, quais perfis
+   necessários (perfisNecessariosDaTurma) ainda faltam — e se dá pra copiar
+   de graça de uma turma irmã ou se precisa gerar de verdade na IA. */
+function abrirAdaptacoesTurma(){
+  if(!scope.turma){ toast('Selecione uma turma primeiro.','err'); return; }
+  const necessarios=perfisNecessariosDaTurma(scope.turma);
+  if(!necessarios.length){
+    toast('Nenhum aluno desta turma está marcado com perfil de adaptação — marque em Notas, no boletim do aluno (clique no nome).','');
+    return;
+  }
+  const temasT=[];
+  conteudosDoScope().forEach(c=>temasDoConteudo(c.id).forEach(t=>temasT.push(t)));
+  const itens=[];
+  temasT.forEach(t=>{
+    const gerados=new Set(Object.keys(t.adaptado||{}).filter(k=>{const v=t.adaptado[k];return v&&Object.keys(v).length>0;}));
+    necessarios.forEach(perfK=>{
+      if(gerados.has(perfK)) return;
+      const irmas=adaptacoesIrmasDisponiveis(t).filter(o=>o.perfil===perfK);
+      if(irmas.length) itens.push({tema:t, perfil:perfK, status:'copiavel', origemTemaId:irmas[0].temaId});
+      else itens.push({tema:t, perfil:perfK, status:'gerar'});
+    });
+  });
+  if(!itens.length){ toast('Tudo certo — todos os temas desta turma já têm as adaptações necessárias.','ok'); return; }
+  const copiaveis=itens.filter(i=>i.status==='copiavel');
+  const gerar=itens.filter(i=>i.status==='gerar');
+  const linhaHtml=i=>'<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px;border-bottom:1px solid var(--line,#e5e7eb)"><span style="flex:1">'+esc(i.tema.tituloExibicao||i.tema.nome)+' — '+esc((ADAPT_PERFIS.find(p=>p.k===i.perfil)||{}).label||i.perfil)+'</span><span style="color:'+(i.status==='copiavel'?'var(--green,#2f6b5e)':'var(--ochre,#c47a3d)')+'">'+(i.status==='copiavel'?'copiar — grátis':'gerar — API')+'</span></div>';
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>🧩 Adaptações desta turma</h3></div>'+
+    '<div class="modal-b"><small>Alunos desta turma precisam de: <b>'+esc(necessarios.map(k=>(ADAPT_PERFIS.find(p=>p.k===k)||{}).label||k).join(', '))+'</b>. Faltam '+itens.length+' adaptação(ões) em '+new Set(itens.map(i=>i.tema.id)).size+' tema(s).</small>'+
+    '<div style="max-height:300px;overflow:auto;margin:10px 0">'+itens.map(linhaHtml).join('')+'</div>'+
+    '<div id="adaptTurmaProg" class="statusdot"></div>'+
+    '</div><div class="modal-f">'+
+      '<button class="btn ghost" onclick="closeModal()">Fechar</button>'+
+      (copiaveis.length?'<button class="btn" onclick="executarCopiarTodasAdaptacoes()">Copiar '+copiaveis.length+' — grátis</button>':'')+
+      (gerar.length?'<button class="btn primary" onclick="executarGerarTodasAdaptacoes()">Gerar '+gerar.length+' via IA</button>':'')+
+    '</div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  window.__adaptTurmaItens=itens;
+}
+function executarCopiarTodasAdaptacoes(){
+  const itens=(window.__adaptTurmaItens||[]).filter(i=>i.status==='copiavel');
+  itens.forEach(i=>{
+    const origem=temas[i.origemTemaId]; if(!origem||!origem.adaptado||!origem.adaptado[i.perfil]) return;
+    if(!i.tema.adaptado) i.tema.adaptado={};
+    i.tema.adaptado[i.perfil]=JSON.parse(JSON.stringify(origem.adaptado[i.perfil]));
+    persistTema(i.tema);
+  });
+  closeModal();
+  toast(itens.length+' adaptação(ões) copiada(s), sem gastar crédito.','ok');
+  renderThemes();
+}
+async function executarGerarTodasAdaptacoes(){
+  const itens=(window.__adaptTurmaItens||[]).filter(i=>i.status==='gerar');
+  if(!itens.length) return;
+  if(!confirm('Isto vai gerar até '+itens.length+' adaptação(ões) na API, uma de cada vez — pode levar alguns minutos e consome créditos da sua conta. Continuar?')) return;
+  const prog=document.getElementById('adaptTurmaProg');
+  let ok=0, falha=0;
+  for(let i=0;i<itens.length;i++){
+    const item=itens[i];
+    if(prog) prog.innerHTML='<span class="spin dark"></span> gerando '+(i+1)+'/'+itens.length+'…';
+    const basesComConteudo=ADAPT_BASES.map(b=>b.k).filter(bk=>{ const v=adaptSourceText(item.tema,bk); return !!(v&&v.trim()); });
+    if(!basesComConteudo.length){ falha++; continue; }
+    try{
+      const r=await genAdaptOne(item.perfil, basesComConteudo, item.tema);
+      if(r){ if(!item.tema.adaptado) item.tema.adaptado={}; item.tema.adaptado[item.perfil]=r; persistTema(item.tema); ok++; }
+      else falha++;
+    }catch(e){ falha++; }
+  }
+  closeModal();
+  toast(ok+' adaptação(ões) gerada(s)'+(falha?(', '+falha+' falharam'):'')+'.', falha?'err':'ok');
+  renderThemes();
+}
 function openAdaptar(){
   if(!editing){ toast('Abra um tema primeiro.','err'); return; }
   collectMeta();
@@ -7795,9 +7927,9 @@ async function gerarAdaptado(){
   toast(ok+' adaptação(ões) gerada(s)'+(falha?(', '+falha+' falhou ('+(err||'').slice(0,80)+')'):'')+'.', falha?'err':'ok');
 }
 
-async function genAdaptOne(perfK,bases){
+async function genAdaptOne(perfK,bases,temaObj){
   const pl=(ADAPT_PERFIS.find(pf=>pf.k===perfK)||{}).label||perfK;
-  const t=editing;
+  const t=temaObj||editing;
   const bimNum=(t.bimestre||'').charAt(0);
   const out={}; let any=false;
   if(typeof ensurePrebuiltDiscLoaded!=='undefined') await ensurePrebuiltDiscLoaded(t.disciplina);
