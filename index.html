@@ -5211,6 +5211,7 @@ function planejamentoRelatorioHtml(tu, bim, porSemana){
     if(t.habilidade) meta.push(t.habilidade);
     if(meta.length) h+='<div class="meta">'+esc(meta.join('  ·  '))+'</div>';
     if(p.metodologia) h+='<p><b>Metodologia:</b> '+esc(p.metodologia)+'</p>';
+    if(t.atividadeEmSala) h+='<p><b>Atividade em sala:</b> '+esc(t.atividadeEmSala)+'</p>';
     if(p.obs) h+='<p>Recorte da aula: '+esc(p.obs)+'</p>';
     h+='</div>';
   });
