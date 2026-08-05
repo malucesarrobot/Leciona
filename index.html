@@ -579,6 +579,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button id="tabPainel" onclick="setView('painel')">📊 Painel</button>
       <button id="tabAcervo" class="hidden" onclick="setView('acervo')">📚 Acervo</button>
       <button id="tabAgenda" onclick="_agendaOrigin='hoje';setView('agenda')">📅 Agenda</button>
+      <button id="tabLinhaTempo" onclick="_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">🗓️ Planejamento</button>
     </nav>
     <span class="conn" id="conn" onclick="location.reload()" style="cursor:pointer" title="Toque para recarregar o app"><span class="led"></span><span id="connTxt">Local</span></span>
     <button class="icon-btn" title="Assistente (chat livre com IA)" onclick="openAssistente()">&#128172;</button>
@@ -5103,7 +5104,10 @@ function gerarSequenciaAutomatica(turmaId, bim){
         continue;
       }
       const it=s.item;
-      const label=(it.subs && it.subs[k]) ? it.subs[k].s : '';
+      // Códigos sem decomposição em subtemas (matriz de 1 aula só) não têm it.subs —
+      // sem isso, obs ficava em branco no planejamento. Cai pro resumo/habilidade do
+      // próprio tema, que já é curto o bastante pra servir de recorte da semana.
+      const label=(it.subs && it.subs[k]) ? it.subs[k].s : (it.tema.resumo || it.tema.habilidade || '');
       novasEntradas.push({conteudoId:it.tema.conteudoId, entry:{id:uid(), data, temaId:it.tema.id, objeto:'estudo', obs:label}});
     }
   });
@@ -6289,8 +6293,8 @@ function setView(v){
   ['viewHoje','viewPainel','viewAcervo','viewAgenda','viewNotas','viewGestao','viewLinhaTempo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('hidden', id!==viewId);
   });
-  const tabId = (v==='hoje') ? 'tabHoje' : ('tab'+v.charAt(0).toUpperCase()+v.slice(1));
-  ['tabHoje','tabPainel','tabAcervo','tabAgenda','tabNotas','tabGestao'].forEach(id=>{
+  const tabId = (v==='hoje') ? 'tabHoje' : (v==='linhaTempo') ? 'tabLinhaTempo' : ('tab'+v.charAt(0).toUpperCase()+v.slice(1));
+  ['tabHoje','tabPainel','tabAcervo','tabAgenda','tabNotas','tabGestao','tabLinhaTempo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('active', id===tabId);
   });
   try{ localStorage.setItem('leciona_lastview', v); }catch(e){}
@@ -6299,6 +6303,7 @@ function setView(v){
   if(v==='acervo') renderAcervo();
   if(v==='agenda') renderAgenda();
   if(v==='notas') renderNotas();
+  if(v==='gestao') renderThemes();
   if(v==='linhaTempo') renderLinhaDoTempo();
 }
 
