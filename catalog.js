@@ -273,10 +273,18 @@ const SUBTEMAS = {
     {s:'ONU, OTAN e o início da Guerra Fria',a:1},
     {s:'Descolonização da África e da Ásia no pós-guerra',a:1}
   ],
+  'História|EM13CHS305':[
+    {s:'Estocolmo, PNUMA e a governança ambiental internacional',a:1},
+    {s:'Protocolo de Kyoto, Acordo de Paris e o papel do IPCC',a:1}
+  ],
   'História|GO-EMCHS305A':[
     {s:'Os governos pós-Era Vargas e o desenvolvimentismo',a:1},
     {s:'Políticas ambientais e seus impactos',a:1},
     {s:'Instituições de fiscalização ambiental (IBAMA, ICMBio)',a:1}
+  ],
+  'História|EM13CHS605':[
+    {s:'Origens e princípios da Declaração Universal dos Direitos Humanos (1948)',a:1},
+    {s:'Direitos civis, políticos, sociais e econômicos: progressos e entraves globais',a:1}
   ],
   'História|GO-EMCHS605B':[
     {s:'A Declaração Universal dos Direitos Humanos',a:1},
