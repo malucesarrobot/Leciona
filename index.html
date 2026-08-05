@@ -1078,6 +1078,15 @@ const OBJ_DEFS = [
 // Ícone rápido por tipo de objeto — pra reconhecer o tipo de aula batendo o
 // olho no card, sem precisar ler o texto todo (pedido dela).
 const OBJ_ICONS = {quadro:'📋', estudo:'📖', slides:'🖼️', mapaMental:'🗺️', avaliacao:'🏫'};
+// Categorias extras só pro checklist "o que usou" dos modais de registro —
+// não viram aba de conteúdo editável (diferente de OBJ_DEFS). Cobre aulas
+// com atividade avulsa, filme/vídeo/imagem etc. que não é avaliação nem
+// nenhum dos objetos de conteúdo de cima (pedido dela).
+const REGISTRO_EXTRAS = [
+  {k:'atividade',  label:'Atividade'},
+  {k:'multimidia', label:'Multimídia (filme/vídeo/imagem)'},
+  {k:'outros',     label:'Outros'},
+];
 function objIconHtml(objKey){ return objKey&&OBJ_ICONS[objKey] ? '<span title="'+esc((OBJ_DEFS.find(o=>o.k===objKey)||{}).label||objKey)+'">'+OBJ_ICONS[objKey]+'</span> ' : ''; }
 /* Subabas dentro de Avaliação */
 const AVAL_TABS = [
@@ -3209,7 +3218,7 @@ function abrirMarcarAplicado(){
   const st=t.status||{};
   const aplicado=st.estado==='aplicado';
   const tu=turmas[t.turmaId]||{};
-  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjEd" value="'+o.k+'">'+o.label+'</label>').join('');
+  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>'<label class="check"><input type="checkbox" name="regObjEd" value="'+o.k+'">'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const hoje=isoLocal(new Date());
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
@@ -4451,7 +4460,7 @@ function abrirModalRegistro(){
   const tuAtual=turmas[t.turmaId]||{};
   const objAtual=proj.obj||'';
   const objLabels={quadro:'Quadro',estudo:'Estudo',slides:'Slides',mapaMental:'Mapa mental',avaliacao:'Avaliação'};
-  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObj" value="'+o.k+'" '+(o.k===objAtual?'checked':'')+'>'+o.label+'</label>').join('');
+  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>'<label class="check"><input type="checkbox" name="regObj" value="'+o.k+'" '+(o.k===objAtual?'checked':'')+'>'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const hoje=isoLocal(new Date());
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
@@ -4502,7 +4511,7 @@ function renderAbaRegistro(){
 }
 function abrirModalRegistroEditor(){
   if(!editing) return;
-  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjE" value="'+o.k+'">'+o.label+'</label>').join('');
+  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>'<label class="check"><input type="checkbox" name="regObjE" value="'+o.k+'">'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const tuOpts=Object.values(turmas).filter(t=>t.disciplina===editing.disciplina).map(t=>'<option value="'+t.id+'"'+(t.id===editing.turmaId?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('');
   const hoje=isoLocal(new Date());
@@ -4537,7 +4546,7 @@ let _regCardTemaId=null;
 function abrirModalRegistroCard(temaId){
   const t=temas[temaId]; if(!t){ toast('Tema não encontrado.','err'); return; }
   _regCardTemaId=temaId;
-  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'">'+o.label+'</label>').join('');
+  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>'<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'">'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const tu=turmas[t.turmaId]||{};
   const hoje=isoLocal(new Date());
