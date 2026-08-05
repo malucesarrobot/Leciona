@@ -300,18 +300,37 @@ const SUBTEMAS = {
     {s:'Direitos Humanos e dignidade humana: da desigualdade à ação',a:1}
   ],
   'Filosofia|EM13CHS205':[
-    {s:'Cultura e poder: entre a indústria cultural e as culturas populares',a:1}
+    {s:'Território, fronteiras e poder: uma leitura filosófica da ocupação do espaço',a:1}
   ],
   'Filosofia|EM13CHS605':[
     {s:'Princípios dos Direitos Humanos: justiça, igualdade e fraternidade',a:1}
   ],
   /* ===== SOCIOLOGIA — ENSINO MÉDIO =====
      Primeiras entradas: 1ª série, 3º Bimestre. */
+  'Sociologia|EM13CHS402':[
+    {s:'Trabalho, emprego e renda: indicadores de desigualdade socioeconômica',a:1}
+  ],
   'Sociologia|GO-EMCHS402A':[
     {s:'O modo de produção capitalista: mercadoria, valor e mais-valia',a:1}
   ],
   'Sociologia|GO-EMCHS403A':[
     {s:'Uberização, plataformização e precarização: as novas formas de trabalho',a:1}
+  ],
+  /* --- 2ª série --- */
+  'Sociologia|GO-EMCHS205C':[
+    {s:'Conflito social e capitalismo brasileiro: uma introdução',a:1},
+    {s:'Intolerância religiosa e de gênero no Brasil contemporâneo',a:1},
+    {s:'Racismo estrutural e desigualdade social',a:1},
+    {s:'Movimentos sociais de enfrentamento às intolerâncias',a:1}
+  ],
+  /* --- 3ª série --- */
+  'Sociologia|EM13CHS605':[
+    {s:'A Declaração Universal dos Direitos Humanos: justiça, igualdade e fraternidade',a:1},
+    {s:'Progressos e entraves na efetivação dos Direitos Humanos',a:1}
+  ],
+  'Sociologia|GO-EMCHS605B':[
+    {s:'Os artigos da Declaração dos Direitos Humanos e sua aplicação no século XXI',a:1},
+    {s:'Democracia e movimentos sociais na garantia dos Direitos Humanos',a:1}
   ]
 };
 
