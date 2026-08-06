@@ -4546,15 +4546,24 @@ let _regCardTemaId=null;
 function abrirModalRegistroCard(temaId){
   const t=temas[temaId]; if(!t){ toast('Tema não encontrado.','err'); return; }
   _regCardTemaId=temaId;
-  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>'<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'">'+o.label+'</label>').join('');
+  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>{
+    const toggleAtiv = o.k==='atividade' ? ' onchange="document.getElementById(\'regCAtivWrap\').style.display=this.checked?\'\':\'none\'"' : '';
+    return '<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'"'+toggleAtiv+'>'+o.label+'</label>';
+  }).join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const tu=turmas[t.turmaId]||{};
   const hoje=isoLocal(new Date());
+  const tipoOpts=Object.entries(ATIV_TIPOS).map(([k,v])=>'<option value="'+k+'"'+(k==='atividade'?' selected':'')+' style="background:'+v.bg+'">'+v.label+'</option>').join('');
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>✓ Registrar aplicação — '+esc((t.nome||'').slice(0,40))+'</h3></div>'+
     '<div class="modal-b">'+
     '<div class="field"><label>Turma</label><strong>'+esc(turmaNome(tu))+'</strong></div>'+
     '<div class="field"><label>O que usou</label><div class="gt-checks">'+objChecks+'</div></div>'+
+    '<div id="regCAtivWrap" style="display:none;background:var(--surface,#f6f6f6);border:1px solid var(--line,#e5e7eb);border-radius:8px;padding:10px;margin:8px 0">'+
+      '<div class="field"><label>Qual atividade? — lança direto em Notas, pronta pra você dar nota depois</label><input id="regCAtivNome" placeholder="ex.: Prova 1 — Taylorismo e Fordismo" value="'+esc(t.nome||'')+'"></div>'+
+      '<div class="field"><label>Tipo</label><select id="regCAtivTipo">'+tipoOpts+'</select></div>'+
+      '<div class="field"><label>Modo</label><div class="gt-checks"><label class="check"><input type="radio" name="regCAtivModo" value="nota" checked> Nota 0–10</label><label class="check"><input type="radio" name="regCAtivModo" value="check"> Checklist ✓/○</label></div></div>'+
+    '</div>'+
     '<div class="field"><label>Como foi entregue</label><select id="regCEntrega">'+entOpts+'</select></div>'+
     '<div class="field"><label>Data</label><input type="date" id="regCData" value="'+hoje+'"></div>'+
     '<div class="field"><label>Nota livre (opcional)</label><input id="regCNota" placeholder="ex.: maioria participou, 3 faltaram…"></div>'+
@@ -4572,10 +4581,27 @@ function salvarRegistroCard(){
   const r=novoRegistro(t.id, t.turmaId, objs, entrega, nota);
   r.data=data;
   persistRegistro(r);
+
+  // Se marcou "Atividade" e deu um nome, já lança direto em Notas — sem
+  // precisar sair da Gestão pra abrir a turma em Notas e preencher tudo de
+  // novo (pedido dela: reduzir o caminho de ~12 cliques pra 2-3).
+  let ativCriada=false;
+  if(objs.includes('atividade')){
+    const nome=((document.getElementById('regCAtivNome')||{}).value||'').trim();
+    if(nome){
+      const tipo=(document.getElementById('regCAtivTipo')||{}).value||'atividade';
+      const modoEl=document.querySelector('input[name=regCAtivModo]:checked');
+      const checklist=modoEl?.value==='check';
+      const av={id:uid(),nome,tipo,data,peso:1,valorMax:10,checklist,turmaIds:[t.turmaId],disciplina:(turmas[t.turmaId]||{}).disciplina,bimestre:t.bimestre,recorrente:false,casa:false,extra:(tipo==='extra')};
+      persistAtivCtrl(av);
+      ativCriada=true;
+    }
+  }
+
   closeModal();
   _regCardTemaId=null;
   renderThemes();
-  toast('Aplicação registrada — '+esc(turmaNome(turmas[t.turmaId]||{}))+'.','ok');
+  toast('Aplicação registrada — '+esc(turmaNome(turmas[t.turmaId]||{}))+(ativCriada?' · atividade lançada em Notas':'')+'.','ok');
   if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 function fecharProjecao(){
