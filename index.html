@@ -253,6 +253,8 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .selo.casa:hover{background:#eee0c5}
 .selo.adapt-falta{background:#fdecea;color:#a8442f;text-transform:none;cursor:pointer;font-weight:700}
 .selo.adapt-falta:hover{background:#f9d9d5}
+.selo.met{background:#e3ecf7;color:#2a4d8a;text-transform:none}
+.selo.met-repete{background:#fdecea;color:#a8442f;text-transform:none;font-weight:700}
 
 .tlist{display:grid;gap:8px}
 .tcard{border:1px solid var(--line);background:#fff;border-radius:9px;padding:11px 13px 11px 17px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.12s;position:relative;overflow:hidden}
@@ -5196,6 +5198,21 @@ function planejamentoSectionHtml(tu, bim, hoje){
   const entradas=[];
   conts.forEach(c=>(c.planejamento||[]).forEach(p=>{ if(p.data>=hoje) entradas.push({c,p}); }));
   entradas.sort((a,b)=>a.p.data.localeCompare(b.p.data));
+  // Selo de metodologia por semana — detecta quando a MESMA metodologia se
+  // repete 3x ou mais na mesma semana (segunda a domingo) pra essa turma,
+  // pra evitar empilhar "texto" 3x sem perceber (pedido dela).
+  function semanaKey(iso){
+    const d=new Date(iso+'T00:00:00');
+    const dia=(d.getDay()+6)%7; // 0=segunda
+    d.setDate(d.getDate()-dia);
+    return isoLocal(d);
+  }
+  const contagemSemana={};
+  entradas.forEach(({p})=>{
+    if(!p.metodologia) return;
+    const k=semanaKey(p.data)+'::'+p.metodologia;
+    contagemSemana[k]=(contagemSemana[k]||0)+1;
+  });
   let h='<div class="lt-planejamento"><div class="lt-plan-head"><h3>Planejamento (a partir de hoje)</h3>'+
     '<div><button class="btn ghost sm" onclick="recuperarSequencia(\''+tu.id+'\',\''+esc(bim)+'\')" title="Remapeia aulas planejadas que ficaram sem acontecer pras próximas datas disponíveis">🔁 recuperar</button> '+
     '<button class="btn ghost sm" onclick="imprimirPlanejamentoBimestre(\''+tu.id+'\',\''+esc(bim)+'\')" title="Abre o planejamento em papel timbrado, pronto pra imprimir/salvar em PDF">🖨 imprimir planejamento</button> '+
@@ -5205,10 +5222,15 @@ function planejamentoSectionHtml(tu, bim, hoje){
   h+='<div class="lt-plan-list">'+entradas.map(({c,p},i)=>{
     const t=temas[p.temaId]||{};
     const objLabel=(OBJ_DEFS.find(o=>o.k===p.objeto)||{}).label||p.objeto||'—';
+    const repete = p.metodologia && contagemSemana[semanaKey(p.data)+'::'+p.metodologia]>=3;
+    const metSelo = p.metodologia
+      ? '<span class="selo '+(repete?'met-repete':'met')+'" title="'+(repete?'Essa metodologia já aparece 3x ou mais nesta semana pra essa turma':'Metodologia desta aula')+'">🎯 '+esc(p.metodologia)+(repete?' ⚠':'')+'</span>'
+      : '';
     return '<div class="lt-plan-row">'+
       '<span class="lt-plan-data">'+p.data.split('-').reverse().join('/')+'</span>'+
       '<span class="lt-plan-tema" onclick="abrirEditor(\''+p.temaId+'\')" title="Abrir tema">'+esc(t.tituloExibicao||t.nome||'(tema removido)')+'</span>'+
-      '<span class="lt-plan-obj">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+(p.metodologia?(' · 🎯 '+esc(p.metodologia)):'')+'</span>'+
+      '<span class="lt-plan-obj">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
+      metSelo+
       '<button class="btn ghost sm" onclick="moverPlanejamentoLT(\''+tu.id+'\',\''+esc(bim)+'\','+i+',-1)"'+(i===0?' disabled':'')+'>▲</button>'+
       '<button class="btn ghost sm" onclick="moverPlanejamentoLT(\''+tu.id+'\',\''+esc(bim)+'\','+i+',1)"'+(i===entradas.length-1?' disabled':'')+'>▼</button>'+
       '<button class="btn ghost sm danger" onclick="removerPlanejamentoLT(\''+c.id+'\',\''+p.id+'\')">✕</button>'+
