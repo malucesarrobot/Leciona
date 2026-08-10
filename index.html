@@ -255,6 +255,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .selo.adapt-falta:hover{background:#f9d9d5}
 .selo.met{background:#e3ecf7;color:#2a4d8a;text-transform:none}
 .selo.met-repete{background:#fdecea;color:#a8442f;text-transform:none;font-weight:700}
+.codigo-inline{font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:var(--muted);background:var(--surface,#f0ead9);padding:1px 5px;border-radius:4px}
 
 .tlist{display:grid;gap:8px}
 .tcard{border:1px solid var(--line);background:#fff;border-radius:9px;padding:11px 13px 11px 17px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.12s;position:relative;overflow:hidden}
@@ -6204,19 +6205,65 @@ function renderAgendaDia(){
     '<button class="btn ghost sm" onclick="agendaMudarDia(1)">próximo dia ›</button>'+
   '</div>'+
   '<h4 style="font-family:var(--serif);font-size:15px;margin:0 0 12px">'+(ehHoje?'Hoje, ':'')+esc(DIAS_LONGO[d.getDay()])+' · '+d.toLocaleDateString('pt-BR')+(bimDia?'':' · Recesso / sem bimestre ativo')+'</h4>';
-  if(cron.length){
-    html+='<div class="agenda-secao-tit">📅 Cronograma de conteúdo</div>';
-    cron.forEach(({conteudo,entry,tema})=>{
-      const tu=turmas[conteudo.turmaId]||{};
-      const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
-      const nRegs=registrosDoTema(tema.id).filter(r=>r.turmaId===tu.id).length;
-      html+='<div class="hoje-row"><div class="hoje-info"><b>'+objIconHtml(entry.objeto)+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
-        '<div class="hoje-acoes">'+
+  // Cronograma + horário normal fundidos numa lista só, uma linha por aula
+  // real do dia — antes eram duas seções separadas (até 14 linhas pra 7
+  // aulas), pedido dela pra reduzir pra 7 linhas com tema/código/metodologia
+  // já na linha da aula.
+  const cronPorTurma={};
+  cron.forEach(c=>{ (cronPorTurma[c.conteudo.turmaId]=cronPorTurma[c.conteudo.turmaId]||[]).push(c); });
+  const turmaIdsComAula=new Set();
+  if(aulas.length){
+    html+='<div class="agenda-secao-tit">📅 Aulas do dia</div>';
+    aulas.forEach(x=>{
+      const serie=SERIE_NUM[x.serie]; const u=unidadeDoDia(x.dia);
+      const tuDia=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
+      if(tuDia) turmaIdsComAula.add(tuDia.id);
+      const cronDaAula=tuDia?(cronPorTurma[tuDia.id]||[])[0]:null;
+      const regDia=tuDia?Object.values(registros).filter(r=>r.turmaId===tuDia.id&&r.data===iso):[];
+      const badgeReg=regDia.length?'<span class="reg-badge" title="'+regDia.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
+      const badgeAtraso=(tuDia&&turmaAtrasada(tuDia.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
+      let infoHtml, acoesHtml;
+      if(cronDaAula){
+        const {conteudo,entry,tema}=cronDaAula;
+        const metSelo=entry.metodologia?'<span class="selo met">🎯 '+esc(entry.metodologia)+'</span>':'';
+        infoHtml='<b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+' — '+esc(tema.tituloExibicao||tema.nome||'')+(tema.dcgo?' <span class="codigo-inline">'+esc(tema.dcgo)+'</span>':'')+'</b>'+
+          '<span>'+esc(u)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span>'+metSelo+badgeReg+badgeAtraso;
+        acoesHtml='<div class="hoje-acoes">'+
           '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+conteudo.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
           '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+conteudo.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
+          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula — pode repetir quantas vezes quiser">✓ Registrar</button>'+
           '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
           '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
-          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula — pode repetir quantas vezes quiser">✓ Registrar</button>'+
+          (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
+        '</div>';
+      } else {
+        infoHtml='<b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+'</b><span>'+esc(u)+'</span>'+badgeReg+badgeAtraso;
+        acoesHtml=(x.disc==='Estudo Orientado')?'<span class="statusdot">sem planejamento</span>':('<div class="hoje-acoes">'+
+          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+          '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
+          '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
+          '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
+          (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
+        '</div>');
+      }
+      html+='<div class="hoje-row'+(regDia.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
+        '<div class="hoje-info">'+infoHtml+'</div>'+acoesHtml+
+      '</div>';
+    });
+  }
+  // Conteúdo previsto hoje pra turmas que não bateram com nenhum horário
+  // real do dia (inconsistência SCHEDULE x planejamento) — não esconde,
+  // só não mistura na lista principal.
+  const cronOrfaos=cron.filter(c=>!turmaIdsComAula.has(c.conteudo.turmaId));
+  if(cronOrfaos.length){
+    html+='<div class="agenda-secao-tit">⚠ Conteúdo previsto sem horário cadastrado hoje</div>';
+    cronOrfaos.forEach(({conteudo,entry,tema})=>{
+      const tu=turmas[conteudo.turmaId]||{};
+      const metSelo=entry.metodologia?'<span class="selo met">🎯 '+esc(entry.metodologia)+'</span>':'';
+      html+='<div class="hoje-row"><div class="hoje-info"><b>'+esc(turmaNome(tu))+' — '+esc(tema.tituloExibicao||tema.nome||'')+(tema.dcgo?' <span class="codigo-inline">'+esc(tema.dcgo)+'</span>':'')+'</b><span>'+esc(entry.obs||'')+'</span>'+metSelo+'</div>'+
+        '<div class="hoje-acoes">'+
+          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula">✓ Registrar</button>'+
+          '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
         '</div></div>';
     });
   }
@@ -6233,26 +6280,6 @@ function renderAgendaDia(){
           '<button class="btn ghost sm" onclick="editarAulaAvulsa(\''+a.id+'\')">editar</button>'+
           '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">✕</button>'+
         '</div></div>';
-    });
-  }
-  if(aulas.length){
-    html+='<div class="agenda-secao-tit">Aulas do horário normal</div>';
-    aulas.forEach(x=>{
-      const serie=SERIE_NUM[x.serie]; const u=unidadeDoDia(x.dia);
-      const tuDia=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
-      const regDia=tuDia?Object.values(registros).filter(r=>r.turmaId===tuDia.id&&r.data===iso):[];
-      const badgeReg=regDia.length?'<span class="reg-badge" title="'+regDia.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
-      const badgeAtraso=(tuDia&&turmaAtrasada(tuDia.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
-      html+='<div class="hoje-row'+(regDia.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
-        '<div class="hoje-info"><b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+'</b><span>'+esc(u)+'</span>'+badgeReg+badgeAtraso+'</div>'+
-        (x.disc==='Estudo Orientado'?'<span class="statusdot">sem planejamento</span>':'<div class="hoje-acoes">'+
-          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
-          '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
-          '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
-          '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
-          (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
-        '</div>')+
-        '</div>';
     });
   }
   html+='<div class="agenda-secao-tit">Compromissos</div>';
