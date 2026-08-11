@@ -5949,6 +5949,7 @@ function renderHoje(){
           '<div class="hoje-acoes">'+
             '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+a.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
             '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+a.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
+            '<button class="btn ghost sm" onclick="abrirAula(\''+tu.disciplina+'\',\''+tu.unidade+'\',\''+tu.serie+'\',\''+(tu.letra||'')+'\')">abrir</button>'+
             (a.status!=='executada'?'<button class="btn ghost sm" onclick="marcarAulaAvulsaExecutada(\''+a.id+'\')">marcar executada</button>':'')+
             '<button class="btn ghost sm" onclick="editarAulaAvulsa(\''+a.id+'\')">editar</button>'+
             '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">remover</button>'+
