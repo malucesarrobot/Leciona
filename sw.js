@@ -1,5 +1,5 @@
 /* Leciona — service worker (offline básico) */
-const CACHE = 'leciona-20260818161730';
+const CACHE = 'leciona-20260818180814';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

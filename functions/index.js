@@ -378,6 +378,31 @@ async function importarPlanilhaArlan() {
   return { chamadasCriadas, faltasGravadas, qualitativaCriada, chamadasCorrigidas, alunosAdicionados, pendencias: pendencias.length };
 }
 
+/* Correção pontual de campos — usada quando um dado no Firebase está errado
+   (ex.: código DC-GO de um tema não bate com o assunto real) e a escrita
+   direta via CLI não está confiável. Só aceita caminhos dentro de
+   "leciona/", nunca a raiz nem outro nó do projeto. request.data:
+   { correcoes: [{ path: 'temas/<id>/dcgo', valor: '...' }, ...] } */
+exports.corrigirCampos = onCall(
+  { region: 'southamerica-east1', timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    verificarAcesso(request);
+    const correcoes = (request.data || {}).correcoes;
+    if (!Array.isArray(correcoes) || !correcoes.length) {
+      throw new HttpsError('invalid-argument', 'Envie { correcoes: [{path, valor}, ...] }.');
+    }
+    const updates = {};
+    correcoes.forEach(({ path, valor }) => {
+      if (typeof path !== 'string' || !path.startsWith('leciona/')) {
+        throw new HttpsError('invalid-argument', 'Caminho inválido (precisa começar com "leciona/"): ' + path);
+      }
+      updates[path] = valor;
+    });
+    await rtdb.ref().update(updates);
+    return { aplicadas: Object.keys(updates).length };
+  }
+);
+
 exports.importarPlanilhaAgora = onCall(
   { region: 'southamerica-east1', timeoutSeconds: 120, memory: '256MiB' },
   async (request) => {

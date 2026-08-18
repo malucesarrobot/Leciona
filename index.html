@@ -3868,6 +3868,29 @@ async function importarPlanilhaArlan(){
   }
 }
 
+/* Correção pontual: tema "A Independência do Brasil" (2ª série História)
+   estava com código DC-GO de Renascimento/Humanismo (copiado por engano) —
+   sem código específico na matriz oficial deste bimestre pra esse conteúdo
+   de recomposição, então trocado pelo mais aproximado disponível
+   (GO-EMCHS601A — Escravidão e formação do Brasil), conforme decidido em
+   18/08/2026. */
+async function aplicarCorrecoesPendentes(){
+  const btn=event&&event.target;
+  if(btn){ btn.disabled=true; btn.textContent='Aplicando…'; }
+  try{
+    const fn=firebase.app().functions('southamerica-east1').httpsCallable('corrigirCampos');
+    const r=await fn({correcoes:[
+      {path:'leciona/temas/bb0a8a54-5162-4f43-a161-adf522363913/dcgo', valor:'GO-EMCHS601A'},
+      {path:'leciona/temas/c9c08cf5-be90-419b-a46c-786097b49d0d/dcgo', valor:'GO-EMCHS601A'},
+    ]});
+    toast((r.data||{}).aplicadas+' correção(ões) aplicada(s).','ok');
+  }catch(e){
+    toast('⚠ Falha ao corrigir: '+(e.message||e),'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='🔧 Corrigir código do tema "Independência do Brasil"'; }
+  }
+}
+
 /* =========================================================
    ASSISTENTE — chat com IA, com ferramentas (agenda + anotação em
    tema) e opção de anexar qualquer resposta a um tema aberto.
@@ -5763,6 +5786,8 @@ function openConfig(){
         '<small>Um único botão pra tudo: realinha referências desatualizadas, unifica turmas e conteúdos duplicados, remove temas repetidos e corrige conteúdo trocado por engano — na ordem certa, automaticamente. Não pode ser desfeito. Use quando notar algo estranho (temas repetidos, aula sumida etc.) — na dúvida, não faz mal rodar de novo.</small>'+
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="importarPlanilhaArlan()">📥 Importar frequência/ocorrências (planilha do Arlan)</button>'+
         '<small>Puxa faltas e ocorrências direto da planilha (atualizada diariamente) e lança como chamada e desconto na qualitativa. Também roda sozinho todo dia útil à noite — não precisa clicar sempre. Nomes que não batem com ninguém da turma viram pendência (não é lançado errado).</small>'+
+        '<button class="btn" style="width:100%;margin-top:8px" onclick="aplicarCorrecoesPendentes()">🔧 Corrigir código do tema "Independência do Brasil"</button>'+
+        '<small>Correção pontual (18/08): código DC-GO estava trocado (Renascimento em vez de recomposição de Independência do Brasil).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
         '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
@@ -6520,6 +6545,18 @@ function removerAtividade(id){
   lsSet(LS_NOTAS,JSON.stringify(notasCtrl));
   renderNotas();
   toast('Atividade removida.','ok');
+}
+function editarNomeAtividade(id){
+  const av=atividadesCtrl[id]; if(!av) return;
+  const novo=prompt('Novo nome da atividade:', av.nome);
+  if(novo==null) return;
+  const nome=novo.trim();
+  if(!nome){ toast('Nome não pode ficar vazio.','err'); return; }
+  if(nome===av.nome) return;
+  av.nome=nome;
+  persistAtivCtrl(av);
+  renderNotas();
+  toast('Nome atualizado.','ok');
 }
 
 /* Lançar objeto de aula no controle de notas */
@@ -7847,7 +7884,7 @@ function renderNotas(){
       return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+' — '+esc(tp.label||av.tipo)+(isCheck?' (checklist)':' (nota)')+(ehCasa?' · também dever de casa':'')+(ehExtra?' · extra/bônus, soma décimos e não entra na média':'')+'" data-avid="'+av.id+'">'+
         (ehCasa?'<span title="Também atribuída como dever de casa">🏠</span> ':'')+
         (ehExtra?'<span title="Extra/bônus — soma décimos na média final, não entra no cálculo">⭐</span> ':'')+
-        '<span class="atv-col-header">'+esc(av.nome)+'</span>'+
+        '<span class="atv-col-header" onclick="event.stopPropagation();editarNomeAtividade(\''+av.id+'\')" title="Toque pra renomear" style="cursor:text">'+esc(av.nome)+'</span>'+
         (av.recorrente?'<button class="atv-dup-btn" onclick="event.stopPropagation();abrirDuplicarAtividade(\''+av.id+'\')" title="Duplicar pra outra turma/data, sem redigitar">⧉</button>':'')+
         '<button class="atv-del-btn" onclick="event.stopPropagation();removerAtividade(\''+av.id+'\')" title="Remover esta atividade (e as notas lançadas)">✕</button>'+
         '<span class="atv-tipo">peso '+av.peso+(isCheck?' &middot; &check;':'')+'</span>'+
