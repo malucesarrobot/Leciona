@@ -3921,29 +3921,6 @@ async function importarPlanilhaArlan(){
   }
 }
 
-/* Correção pontual: tema "A Independência do Brasil" (2ª série História)
-   estava com código DC-GO de Renascimento/Humanismo (copiado por engano) —
-   sem código específico na matriz oficial deste bimestre pra esse conteúdo
-   de recomposição, então trocado pelo mais aproximado disponível
-   (GO-EMCHS601A — Escravidão e formação do Brasil), conforme decidido em
-   18/08/2026. */
-async function aplicarCorrecoesPendentes(){
-  const btn=event&&event.target;
-  if(btn){ btn.disabled=true; btn.textContent='Aplicando…'; }
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('corrigirCampos');
-    const r=await fn({correcoes:[
-      {path:'leciona/temas/bb0a8a54-5162-4f43-a161-adf522363913/dcgo', valor:'GO-EMCHS601A'},
-      {path:'leciona/temas/c9c08cf5-be90-419b-a46c-786097b49d0d/dcgo', valor:'GO-EMCHS601A'},
-    ]});
-    toast((r.data||{}).aplicadas+' correção(ões) aplicada(s).','ok');
-  }catch(e){
-    toast('⚠ Falha ao corrigir: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent='🔧 Corrigir código do tema "Independência do Brasil"'; }
-  }
-}
-
 /* Correção pontual: datas do calendário institucional do 3º bimestre pro
    8º/9º ano (arquivo "CRONOGRAMA 3º BIMESTRE 2026.pdf" do Drive) — provas
    SEDUC por área, datas comemorativas, recuperação, prazo do SIGE, conselho
@@ -4035,43 +4012,6 @@ async function adicionarCalendarioMedio(){
     toast((r.data||{}).aplicadas+' compromisso(s) adicionado(s) na Agenda.','ok');
   }catch(e){
     toast('⚠ Falha ao adicionar: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
-  }
-}
-
-async function registrarAulasPassadas(){
-  const btn=event&&event.target;
-  const textoOriginal=btn?btn.textContent:'';
-  if(btn){ btn.disabled=true; btn.textContent='Registrando…'; }
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('registrarAulasPassadasAgora');
-    const r=await fn({});
-    const d=r.data||{};
-    let msg=d.criados+' aula(s) registrada(s) como aplicada(s)';
-    if(d.pendencias) msg+=' · '+d.pendencias+' data(s) de cronograma sem horário correspondente (veja console)';
-    if(d.detalhePendencias&&d.detalhePendencias.length) console.log('[registrar aulas] pendências:', d.detalhePendencias);
-    toast(msg,'ok');
-    if(typeof renderPainel==='function') renderPainel();
-  }catch(e){
-    toast('⚠ Falha ao registrar: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
-  }
-}
-
-async function excluirTurmasObsoletas(){
-  if(!confirm('Apagar a turma "Geral", a "Eletiva" e as 6 turmas de Filosofia inativas do CEPI Marajó — com alunos, conteúdos, temas, registros e qualitativa vinculados? Não pode ser desfeito.')) return;
-  const btn=event&&event.target;
-  const textoOriginal=btn?btn.textContent:'';
-  if(btn){ btn.disabled=true; btn.textContent='Excluindo…'; }
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('excluirTurmasObsoletasAgora');
-    const r=await fn({});
-    const d=r.data||{};
-    toast(d.turmas+' turma(s), '+d.alunos+' aluno(s), '+d.conteudos+' conteúdo(s), '+d.temas+' tema(s), '+d.registros+' registro(s), '+d.qualitativa+' qualitativa excluídos.','ok');
-  }catch(e){
-    toast('⚠ Falha ao excluir: '+(e.message||e),'err');
   }finally{
     if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
   }
@@ -5991,18 +5931,12 @@ function openConfig(){
         '<small>Um único botão pra tudo: realinha referências desatualizadas, unifica turmas e conteúdos duplicados, remove temas repetidos e corrige conteúdo trocado por engano — na ordem certa, automaticamente. Não pode ser desfeito. Use quando notar algo estranho (temas repetidos, aula sumida etc.) — na dúvida, não faz mal rodar de novo.</small>'+
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="importarPlanilhaArlan()">📥 Importar frequência/ocorrências (planilha do Arlan)</button>'+
         '<small>Puxa faltas e ocorrências direto da planilha (atualizada diariamente) e lança como chamada e desconto na qualitativa. Também roda sozinho todo dia útil à noite — não precisa clicar sempre. Nomes que não batem com ninguém da turma viram pendência (não é lançado errado).</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px" onclick="aplicarCorrecoesPendentes()">🔧 Corrigir código do tema "Independência do Brasil"</button>'+
-        '<small>Correção pontual (18/08): código DC-GO estava trocado (Renascimento em vez de recomposição de Independência do Brasil).</small>'+
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="atualizarQualitativaPlanilha()">📊 Atualizar qualitativa na planilha da escola (9ºA/9ºC)</button>'+
         '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioFundamental()">📅 Adicionar calendário do Fundamental (8º/9º) na Agenda</button>'+
         '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE 2026" do 8º/9º ano (avaliações SEDUC, datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Fundamental].</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioMedio()">📅 Adicionar calendário do Médio (EFG) na Agenda</button>'+
         '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE (1)" do Médio (blocos de avaliação — Bloco 2 tem História, Bloco 6 tem Sociologia/Filosofia — datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Médio].</small>'+
-        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="registrarAulasPassadas()">▶ Registrar aulas já dadas (cronograma × horário)</button>'+
-        '<small>Cria o registro de aplicação (o mesmo do botão "✓ Registrar") pra todo tema do cronograma do 3º Bimestre cuja data já passou e bate com o horário atual — é isso que faz a % do Painel subir. Data de cronograma que não bate com nenhum dia de aula do horário atual vira pendência (não registra errado).</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="excluirTurmasObsoletas()">🗑 Excluir turmas obsoletas (Geral, Eletiva, Filosofia CEPI Marajó)</button>'+
-        '<small>Correção pontual (18/08): apaga a turma "Geral" auto-criada, a "Eletiva" do CEPI Marajó e as 6 turmas de Filosofia inativas do CEPI Marajó (confirmado que não são mais suas) — junto com alunos, conteúdos, temas, registros e qualitativa vinculados. Não pode ser desfeito.</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
         '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
