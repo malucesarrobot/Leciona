@@ -3891,6 +3891,49 @@ async function aplicarCorrecoesPendentes(){
   }
 }
 
+/* Correção pontual: datas do calendário institucional do 3º bimestre pro
+   8º/9º ano (arquivo "CRONOGRAMA 3º BIMESTRE 2026.pdf" do Drive) — provas
+   SEDUC por área, datas comemorativas, recuperação, prazo do SIGE, conselho
+   de classe. Criadas como compromissos na Agenda, com [Fundamental] no
+   título e a fonte na descrição, pra não confundir com a agenda do Médio
+   (EFG). Decidido em 18/08/2026. */
+async function adicionarCalendarioFundamental(){
+  const btn=event&&event.target;
+  const textoOriginal=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Adicionando…'; }
+  const fonte='Fonte: CRONOGRAMA 3º BIMESTRE 2026 (8º/9º ano) — calendário SEDUC.';
+  const itens=[
+    ['31eed01d-89ad-417c-b7d8-140619aa6ff5','2026-08-07','Dia da Lei Maria da Penha [Fundamental]','Desenvolver alguma ação voltada para esse tema. '+fonte],
+    ['b4730117-e831-4718-b711-f10cbf43397b','2026-08-11','Dia do Estudante [Fundamental]',fonte],
+    ['5421ef44-2e85-4da6-bdbc-a3a0c7a1e695','2026-08-14','Comemoração ao Dia do Estudante [Fundamental]','Nos dois últimos horários, com participação de todos os professores. Local: quadra. '+fonte],
+    ['44881c94-f1ba-4f9f-a89b-64ddad94ea21','2026-08-25','Dia de conscientização e combate à violência contra a mulher [Fundamental]','Sugestão: roda de conversa. '+fonte],
+    ['ba70a0a2-c3bd-4e87-b820-1cfb05d2f4b0','2026-09-07','Feriado SEDUC [Fundamental]',fonte],
+    ['7f2b0593-66fc-4e7a-9294-066801d6fb0c','2026-09-14','Avaliação SEDUC — Produção de texto [Fundamental]',fonte],
+    ['21b62abf-95b6-42b1-a5b4-aba49ad16b47','2026-09-16','Trabalho coletivo SEDUC [Fundamental]',fonte],
+    ['6ac337e5-1d61-4e73-9398-1f2969c61ad3','2026-09-22','Avaliação SEDUC — Matemática e suas Tecnologias [Fundamental]',fonte],
+    ['23703bf5-7a46-452b-b1bb-c7121b0f5c32','2026-09-23','Avaliação SEDUC — Ciências Humanas e Sociais Aplicadas [Fundamental]','Área da História. '+fonte],
+    ['b1ea92db-626f-4b4b-8f06-e4aa2d4d7e8c','2026-09-24','Avaliação SEDUC — Linguagens e suas Tecnologias [Fundamental]',fonte],
+    ['94a4b78d-90d4-4616-a059-552acc45d491','2026-09-25','Avaliação SEDUC — Ciências da Natureza e suas Tecnologias [Fundamental]',fonte],
+    ['c9494584-3b38-4229-814d-1170c94964a3','2026-09-29','Início: Intensificação e recomposição das aprendizagens — Recuperação [Fundamental]','Período: 29/09 a 02/10. '+fonte],
+    ['4e0d43f3-b10a-4e4a-b120-6646e0a033f7','2026-10-01','Último dia de envio de notas para o SIGE [Fundamental]',fonte],
+    ['cd7d16fd-f330-416a-9d90-21cf11e2339c','2026-10-06','Avaliação diagnóstica [Fundamental]',fonte],
+    ['ecab817f-76ef-4359-ad1f-5ec674b2d3f7','2026-10-07','Conselho de classe [Fundamental]',fonte],
+  ];
+  const correcoes=itens.map(([id,data,titulo,descricao])=>({
+    path:'leciona/compromissos/'+id,
+    valor:{id,data,titulo,descricao,concluido:false,_ts:Date.now()}
+  }));
+  try{
+    const fn=firebase.app().functions('southamerica-east1').httpsCallable('corrigirCampos');
+    const r=await fn({correcoes});
+    toast((r.data||{}).aplicadas+' compromisso(s) adicionado(s) na Agenda.','ok');
+  }catch(e){
+    toast('⚠ Falha ao adicionar: '+(e.message||e),'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
+  }
+}
+
 async function atualizarQualitativaPlanilha(){
   const btn=event&&event.target;
   const textoOriginal=btn?btn.textContent:'';
@@ -5809,6 +5852,8 @@ function openConfig(){
         '<small>Correção pontual (18/08): código DC-GO estava trocado (Renascimento em vez de recomposição de Independência do Brasil).</small>'+
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="atualizarQualitativaPlanilha()">📊 Atualizar qualitativa na planilha da escola (9ºA/9ºC)</button>'+
         '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
+        '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioFundamental()">📅 Adicionar calendário do Fundamental (8º/9º) na Agenda</button>'+
+        '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE 2026" do 8º/9º ano (avaliações SEDUC, datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Fundamental].</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
         '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
