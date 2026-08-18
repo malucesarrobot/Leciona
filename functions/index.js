@@ -815,3 +815,309 @@ exports.excluirTurmasObsoletasAgora = onCall(
 );
 
 
+/* =========================================================
+   Reconstroi temas orfaos: entradas de leciona/conteudos, campo
+   planejamento, cujo temaId nao existe mais em leciona/temas (foram
+   apagados em algum momento, sobrando so a data no cronograma). Recria o
+   tema (nome, codigo DC-GO, habilidade da matriz oficial, foco como obs)
+   usando os dados do "Planejamento Completo" (HTML mandado pela
+   professora em 18/08/2026), casando por serie+disciplina+SEMANA (nao
+   data exata, ja que datas foram corrigidas depois pelo horario oficial)
+   e liga a entrada de volta ao tema novo. So 3 Bimestre. */
+const PLANO_COMPLETO_FULL = [
+  {serie:'1',disc:'Filosofia',data:'2026-08-07',codigo:'EM13CHS502',nome:'Direitos Humanos e dignidade humana: da desigualdade à ação',foco:'O que são Direitos Humanos: da Declaração de 1948 aos dias de hoje',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'1',disc:'Filosofia',data:'2026-08-14',codigo:'EM13CHS502',nome:'Direitos Humanos e dignidade humana: da desigualdade à ação',foco:'Ações e movimentos que promovem Direitos Humanos (ONGs, coletivos, políticas públicas)',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'1',disc:'Filosofia',data:'2026-08-21',codigo:'GO-EMCHS502C',nome:'Liberdade de expressão: filósofos e sofistas no período clássico',foco:'Liberdade de expressão: origem no debate entre sofistas e Sócrates na pólis grega',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'1',disc:'Filosofia',data:'2026-08-28',codigo:'GO-EMCHS502C',nome:'Liberdade pública e liberdade privada: a reflexão de Benjamin Constant',foco:'Liberdade dos antigos x liberdade dos modernos: a distinção de Benjamin Constant',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'1',disc:'Filosofia',data:'2026-09-04',codigo:'GO-EMCHS502C',nome:'Liberdade pública e liberdade privada: a reflexão de Benjamin Constant',foco:'Estudo de caso: censura e liberdade de expressão em regimes autoritários',metodologia:'Exibição de filme'},
+  {serie:'1',disc:'Filosofia',data:'2026-09-11',codigo:'GO-EMCHS502C',nome:'Liberdade pública e liberdade privada: a reflexão de Benjamin Constant',foco:'Limites da liberdade de expressão: onde termina o direito de opinar?',metodologia:'Pesquisa'},
+  {serie:'1',disc:'Filosofia',data:'2026-09-18',codigo:'GO-EMCHS502C',nome:'Liberdade pública e liberdade privada: a reflexão de Benjamin Constant',foco:'Retomada de Direitos Humanos: dignidade, desigualdade e ação concreta',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'1',disc:'Filosofia',data:'2026-09-25',codigo:'GO-EMCHS502C',nome:'Liberdade pública e liberdade privada: a reflexão de Benjamin Constant',foco:'Revisão geral: Direitos Humanos, dignidade e liberdade de expressão (mapa mental coletivo)',metodologia:'Revisão em grupo'},
+  {serie:'1',disc:'Filosofia',data:'2026-10-02',codigo:'GO-EMCHS502C',nome:'Liberdade pública e liberdade privada: a reflexão de Benjamin Constant',foco:'Recomposição de aprendizagens: atendimento a quem ainda não atingiu os objetivos',metodologia:'Recomposição (atendimento individualizado)'},
+  {serie:'1',disc:'História',data:'2026-08-06',codigo:'GO-EMCHS501A',nome:'Grécia Antiga I: a pólis, Atenas e Esparta',foco:'Formação das pólis gregas: Atenas x Esparta e a democracia ateniense',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'1',disc:'História',data:'2026-08-13',codigo:'GO-EMCHS501A',nome:'Grécia Antiga II: filosofia, guerras e legado',foco:'Filosofia grega (Sócrates, Platão, Aristóteles), Guerras Médicas e do Peloponeso, legado grego',metodologia:'Debate'},
+  {serie:'1',disc:'História',data:'2026-08-20',codigo:'GO-EMCHS501A',nome:'Roma Antiga I: fundação, monarquia, república e império',foco:'Fundação de Roma: Monarquia, República e Império',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'1',disc:'História',data:'2026-08-27',codigo:'GO-EMCHS501A',nome:'Roma Antiga II: expansão, escravidão, queda e direito romano',foco:'Expansão romana, escravidão antiga, queda do Império do Ocidente e Direito Romano',metodologia:'Pesquisa'},
+  {serie:'1',disc:'História',data:'2026-09-03',codigo:'GO-EMCHS501A',nome:'Cristianismo e o Fim da Antiguidade',foco:'Surgimento do Cristianismo, perseguições, Edito de Milão e religião oficial do Império',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'1',disc:'História',data:'2026-09-10',codigo:'GO-EMCHS501A',nome:'Povos Bárbaros e a Formação da Europa Medieval',foco:'Povos bárbaros, migrações germânicas e formação dos reinos germânicos',metodologia:'Exibição de filme'},
+  {serie:'1',disc:'História',data:'2026-09-17',codigo:'EM13CHS402',nome:'Introdução ao Feudalismo I: origem e sociedade feudal',foco:'Origem do feudalismo, sociedade feudal e relações de suserania e vassalagem',metodologia:'Debate'},
+  {serie:'1',disc:'História',data:'2026-09-24',codigo:'EM13CHS402',nome:'Introdução ao Feudalismo II: economia, Igreja e vida cotidiana',foco:'Economia agrária feudal, poder da Igreja Católica e vida cotidiana na Idade Média',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'1',disc:'História',data:'2026-10-01',codigo:'EM13CHS402',nome:'Introdução ao Feudalismo II: economia, Igreja e vida cotidiana',foco:'Revisão geral: Grécia, Roma, Cristianismo, Povos Bárbaros e Feudalismo (mapa mental coletivo + resolução de questões) — Recomposição de aprendizagens para quem ainda não atingiu os objetivos',metodologia:'Revisão em grupo'},
+  {serie:'1',disc:'Sociologia',data:'2026-08-06',codigo:'GO-EMCHS402A',nome:'O modo de produção capitalista: mercadoria, valor e mais-valia',foco:'SEMANA 1 — Sociologia: O modo de produção capitalista: mercadoria, valor e mais-valia',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'1',disc:'Sociologia',data:'2026-08-06',codigo:'GO-EMCHS402B',nome:'Taylorismo e Fordismo',foco:'agrupado nesta aula',metodologia:'Pesquisa'},
+  {serie:'1',disc:'Sociologia',data:'2026-08-13',codigo:'GO-EMCHS402C',nome:'Concentração de renda e desigualdade social',foco:'Analisar a concentração de renda como um dos principais fatores de manutenção da desigualdade social no Brasil, comparando indicadores de instituições oficiais.',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'1',disc:'Sociologia',data:'2026-08-20',codigo:'GO-EMCHS402D',nome:'Trabalho rural e urbano',foco:'Pesquisar aspectos do trabalho rural e urbano, comparando características e dados (textos, mapas, gráficos e estatísticas do IBGE) para avaliar as relações de poder no mundo do trabalho.',metodologia:'Exibição de filme'},
+  {serie:'1',disc:'Sociologia',data:'2026-08-27',codigo:'GO-EMCHS403A',nome:'Mundo do trabalho contemporâneo',foco:'Compreender as novas formas de trabalho (uberização, plataformização, precarização).',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'1',disc:'Sociologia',data:'2026-09-03',codigo:'GO-EMCHS403B',nome:'Tecnologia e empregabilidade',foco:'Compreender os impactos do desenvolvimento tecnológico na organização do mundo do trabalho e na organização espacial, examinando a empregabilidade no contexto das tecnologias e da globalização.',metodologia:'Pesquisa'},
+  {serie:'1',disc:'Sociologia',data:'2026-09-10',codigo:'GO-EMCHS403C',nome:'Trabalho intelectual e manual',foco:'Reconhecer as formas de trabalho intelectual e manual, utilizando textos científicos, literários e jornalísticos para analisar as transformações no mundo do trabalho.',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'1',disc:'Sociologia',data:'2026-09-17',codigo:'GO-EMCHS403D',nome:'Reforma trabalhista',foco:'Analisar os principais pontos da reforma trabalhista, contextualizando os novos arranjos possibilitados pela legislação e seu impacto na vida dos/as trabalhadores/as.',metodologia:'Debate'},
+  {serie:'1',disc:'Sociologia',data:'2026-09-24',codigo:'GO-EMCHS403D',nome:'Reforma trabalhista',foco:'Revisão geral: capitalismo, mais-valia, taylorismo/fordismo, uberização e desigualdade (mapa mental coletivo)',metodologia:'Revisão em grupo'},
+  {serie:'1',disc:'Sociologia',data:'2026-10-01',codigo:'GO-EMCHS403D',nome:'Reforma trabalhista',foco:'Recomposição de aprendizagens e avaliação de fechamento do bimestre',metodologia:'Recomposição (atendimento individualizado)'},
+  {serie:'2',disc:'Filosofia',data:'2026-08-07',codigo:'EM13CHS205',nome:'Cultura e poder',foco:'O que é cultura? Popular, erudita e de massa',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'2',disc:'Filosofia',data:'2026-08-14',codigo:'EM13CHS205',nome:'Cultura e poder',foco:'Cultura como campo de disputa e poder (Gramsci e a hegemonia cultural)',metodologia:'Debate'},
+  {serie:'2',disc:'Filosofia',data:'2026-08-21',codigo:'EM13CHS205',nome:'Cultura e poder',foco:'Culturas afro-brasileiras e indígenas: resistência e protagonismo cultural',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'2',disc:'Filosofia',data:'2026-08-28',codigo:'EM13CHS205',nome:'Cultura e poder',foco:'Quem define o que é "cultura de qualidade"? — Perguntas para o debate: 1) Uma novela ou um funk pode ser "cultura" tanto quanto um livro clássico? 2) Quem decide o que entra no currículo escolar como "cultura importante"? 3) O que se perde quando uma cultura popular (como o samba) vira produto vendável?',metodologia:'Debate'},
+  {serie:'2',disc:'Filosofia',data:'2026-09-04',codigo:'GO-EMCHS205D',nome:'Indústria cultural (Escola de Frankfurt)',foco:'Escola de Frankfurt: Adorno, Horkheimer e o conceito de indústria cultural',metodologia:'Exibição de filme'},
+  {serie:'2',disc:'Filosofia',data:'2026-09-11',codigo:'GO-EMCHS205D',nome:'Indústria cultural (Escola de Frankfurt)',foco:'Padronização, consumo e alienação: cinema, música e redes sociais hoje',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'2',disc:'Filosofia',data:'2026-09-18',codigo:'GO-EMCHS205D',nome:'Indústria cultural (Escola de Frankfurt)',foco:'Existe resistência possível à indústria cultural?',metodologia:'Debate'},
+  {serie:'2',disc:'Filosofia',data:'2026-09-25',codigo:'GO-EMCHS205D',nome:'Cultura de massa: alienação ou empoderamento juvenil?',foco:'Cultura de massa: alienação ou empoderamento juvenil? Debate final antes da revisão',metodologia:'Revisão em grupo'},
+  {serie:'2',disc:'Filosofia',data:'2026-10-02',codigo:'GO-EMCHS205D',nome:'Cultura de massa: alienação ou empoderamento juvenil?',foco:'Recomposição de aprendizagens e avaliação de fechamento do bimestre',metodologia:'Recomposição (atendimento individualizado)'},
+  {serie:'2',disc:'História',data:'2026-08-06',codigo:'EM13CHS601',nome:'Protagonismos indígenas e afrodescendentes',foco:'Panorama: quem são os protagonistas indígenas e afrodescendentes no Brasil hoje',metodologia:'Debate'},
+  {serie:'2',disc:'História',data:'2026-08-13',codigo:'EM13CHS101',nome:'Independência dos Estados Unidos e da América Espanhola',foco:'RECOMPOSIÇÃO (lacuna curricular): Independência dos EUA e da América Espanhola — conteúdo clássico de ENEM',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'2',disc:'História',data:'2026-08-20',codigo:'EM13CHS102',nome:'A Independência do Brasil: da Família Real a D. Pedro I',foco:'RECOMPOSIÇÃO (lacuna curricular): Independência do Brasil — Família Real, Dia do Fico, 7 de Setembro',metodologia:'Debate'},
+  {serie:'2',disc:'História',data:'2026-08-27',codigo:'GO-EMCHS601A',nome:'Escravidão e formação do Brasil',foco:'Conhecer as origens históricas da desigualdade étnico-racial desde o período colonial.',metodologia:'Pesquisa'},
+  {serie:'2',disc:'História',data:'2026-09-03',codigo:'GO-EMCHS601B',nome:'Resistência indígena e negra',foco:'Compreender as formas de resistência indígena e negra à escravidão.',metodologia:'Exibição de filme'},
+  {serie:'2',disc:'História',data:'2026-09-10',codigo:'GO-EMCHS601C',nome:'Exclusão e inclusão precária no Brasil contemporâneo',foco:'Analisar as demandas políticas, sociais e culturais dos povos indígenas e das populações afrodescendentes no Brasil contemporâneo, caracterizando o contexto de exclusão e inclusão precária desses grupos na ordem social e econômica atual.',metodologia:'Debate'},
+  {serie:'2',disc:'História',data:'2026-09-17',codigo:'GO-EMCHS601D',nome:'Ações de redução das desigualdades sociais',foco:'Políticas públicas e ações afirmativas de redução da desigualdade',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'2',disc:'História',data:'2026-09-24',codigo:'GO-EMCHS601D',nome:'Ações de redução das desigualdades sociais',foco:'Produção dos alunos: proposta de ação/campanha na escola ou comunidade',metodologia:'Pesquisa'},
+  {serie:'2',disc:'História',data:'2026-10-01',codigo:'GO-EMCHS601D',nome:'Ações de redução das desigualdades sociais',foco:'Revisão geral: protagonismo indígena e afrodescendente, escravidão, resistência e ações afirmativas (mapa mental coletivo)',metodologia:'Revisão em grupo'},
+  {serie:'2',disc:'História',data:'2026-10-08',codigo:'GO-EMCHS601D',nome:'Ações de redução das desigualdades sociais',foco:'Recomposição de aprendizagens e avaliação de fechamento do bimestre',metodologia:'Recomposição (atendimento individualizado)'},
+  {serie:'2',disc:'Sociologia',data:'2026-08-06',codigo:'GO-EMCHS205C',nome:'Conflitos sociais no Brasil contemporâneo',foco:'SEMANA 1 — Sociologia: Conflitos sociais no Brasil contemporâneo',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'2',disc:'Sociologia',data:'2026-08-13',codigo:'GO-EMCHS205C',nome:'Racismo estrutural e desigualdade social',foco:'Racismo estrutural e desigualdade social: conceito de Silvio Almeida e dados de desigualdade racial no Brasil',metodologia:'Pesquisa'},
+  {serie:'2',disc:'Sociologia',data:'2026-08-20',codigo:'GO-EMCHS205C',nome:'Intolerância religiosa e de gênero no Brasil contemporâneo',foco:'Intolerância religiosa contra religiões de matriz africana e intolerância de gênero (LGBTfobia)',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'2',disc:'Sociologia',data:'2026-08-27',codigo:'GO-EMCHS205C',nome:'Movimentos sociais de enfrentamento às intolerâncias',foco:'Movimentos sociais de enfrentamento às intolerâncias: resposta à desigualdade herdada da escravidão',metodologia:'Exibição de filme'},
+  {serie:'2',disc:'Sociologia',data:'2026-09-03',codigo:'GO-EMCHS205C',nome:'Movimentos sociais de enfrentamento às intolerâncias',foco:'Conflito social, racismo estrutural, intolerância religiosa e movimentos sociais: como esses temas se conectam? — Perguntas: 1) O racismo estrutural e a intolerância religiosa se combinam na vida de quem sofre os dois ao mesmo tempo? 2) Os movimentos sociais estudados conseguiram mudar leis, mudar mentalidades, ou os dois?',metodologia:'Debate'},
+  {serie:'2',disc:'Sociologia',data:'2026-09-10',codigo:'GO-EMCHS205C',nome:'Movimentos sociais de enfrentamento às intolerâncias',foco:'Pesquisa em grupo: um movimento social de enfrentamento à intolerância atuando em Goiás hoje',metodologia:'Pesquisa'},
+  {serie:'2',disc:'Sociologia',data:'2026-09-17',codigo:'GO-EMCHS205C',nome:'Movimentos sociais de enfrentamento às intolerâncias',foco:'Apresentação das pesquisas em grupo sobre movimentos sociais locais',metodologia:'Seminário'},
+  {serie:'2',disc:'Sociologia',data:'2026-09-24',codigo:'GO-EMCHS205C',nome:'Movimentos sociais de enfrentamento às intolerâncias',foco:'Revisão geral: conflitos sociais, racismo estrutural, intolerância religiosa/gênero e movimentos sociais (mapa mental coletivo)',metodologia:'Revisão em grupo'},
+  {serie:'2',disc:'Sociologia',data:'2026-10-01',codigo:'GO-EMCHS205C',nome:'Movimentos sociais de enfrentamento às intolerâncias',foco:'Recomposição de aprendizagens e avaliação de fechamento do bimestre',metodologia:'Recomposição (atendimento individualizado)'},
+  {serie:'3',disc:'Filosofia',data:'2026-08-07',codigo:'EM13CHS605',nome:'Princípios dos Direitos Humanos',foco:'A Declaração Universal dos Direitos Humanos (1948): justiça, igualdade, fraternidade',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'Filosofia',data:'2026-08-14',codigo:'EM13CHS605',nome:'Princípios dos Direitos Humanos',foco:'Os 30 artigos da Declaração Universal: pesquisa em grupo, cada grupo apresenta artigos',metodologia:'Pesquisa'},
+  {serie:'3',disc:'Filosofia',data:'2026-08-21',codigo:'GO-EMCHS605A',nome:'Direitos naturais (Iluminismo)',foco:'Locke: direitos naturais à vida, liberdade e propriedade — origem do Iluminismo político',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'Filosofia',data:'2026-08-28',codigo:'GO-EMCHS605A',nome:'Direitos naturais (Iluminismo)',foco:'Rousseau: contrato social e a ideia de igualdade',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'Filosofia',data:'2026-09-04',codigo:'GO-EMCHS605A',nome:'Direitos naturais (Iluminismo)',foco:'O Iluminismo criou os Direitos Humanos, ou só deu nome a algo que povos já reivindicavam antes? — trazer exemplos de resistência anterior ao século XVIII',metodologia:'Debate'},
+  {serie:'3',disc:'Filosofia',data:'2026-09-11',codigo:'GO-EMCHS605A',nome:'Direitos naturais (Iluminismo)',foco:'Locke: direitos naturais à vida, liberdade e propriedade',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'3',disc:'Filosofia',data:'2026-09-18',codigo:'GO-EMCHS605A',nome:'Direitos naturais (Iluminismo)',foco:'Locke e Rousseau: síntese e transição para os progressos e entraves dos Direitos Humanos no século XX',metodologia:'Seminário'},
+  {serie:'3',disc:'Filosofia',data:'2026-09-25',codigo:'GO-EMCHS605B',nome:'Direitos Humanos: progressos e entraves',foco:'Progressos: conquistas de direitos no século XX (mulheres, negros, LGBTQIA+)',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'Filosofia',data:'2026-10-02',codigo:'GO-EMCHS605B',nome:'Direitos Humanos: progressos e entraves',foco:'Revisão geral: Direitos Humanos, Iluminismo, progressos e entraves (mapa mental coletivo + resolução de questões)',metodologia:'Revisão em grupo'},
+  {serie:'3',disc:'História',data:'2026-08-03',codigo:'GO-EMCHS305A',nome:'Política e meio ambiente no Brasil (pós-Vargas)',foco:'Governos pós-Era Vargas (Dutra, Vargas 2, JK, Jânio, Jango): rupturas e continuidades nas políticas de desenvolvimento',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'História',data:'2026-08-10',codigo:'GO-EMCHS604A',nome:'Segunda Guerra Mundial: totalitarismo, Holocausto e a bomba atômica',foco:'RECOMPOSIÇÃO (2º bimestre): Segunda Guerra Mundial, Holocausto e a bomba atômica sobre Hiroshima e Nagasaki',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'História',data:'2026-08-17',codigo:'GO-EMCHS305A',nome:'Segunda Guerra Mundial: totalitarismo, Holocausto e a bomba atômica',foco:'Governos pós-Vargas: impactos das políticas de desenvolvimento no meio ambiente',metodologia:'Pesquisa'},
+  {serie:'3',disc:'História',data:'2026-08-24',codigo:'GO-EMCHS305A',nome:'Segunda Guerra Mundial: totalitarismo, Holocausto e a bomba atômica',foco:'Desenvolvimento a qualquer custo? Grandes obras e seus impactos sociais/ambientais',metodologia:'Debate'},
+  {serie:'3',disc:'História',data:'2026-08-31',codigo:'GO-EMCHS605B',nome:'Direitos Humanos e Ditadura Militar',foco:'O golpe de 1964: contexto, justificativas oficiais e primeiros atos institucionais',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'História',data:'2026-09-07',codigo:'GO-EMCHS605B',nome:'Direitos Humanos e Ditadura Militar',foco:'AI-5 (1968) e a institucionalização da repressão: censura, tortura, exílio',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'3',disc:'História',data:'2026-09-14',codigo:'GO-EMCHS605B',nome:'Direitos Humanos e Ditadura Militar',foco:'Uma violência desigual: repressão política somada à violência estrutural contra negros e pobres',metodologia:'Pesquisa'},
+  {serie:'3',disc:'História',data:'2026-09-21',codigo:'GO-EMCHS605B',nome:'Direitos Humanos e Ditadura Militar',foco:'Resistência possível: UNE, imprensa alternativa, Comunidades Eclesiais de Base',metodologia:'Exibição de filme'},
+  {serie:'3',disc:'História',data:'2026-09-28',codigo:'GO-EMCHS605B',nome:'Direitos Humanos e Ditadura Militar',foco:'Anistia de 1979: avanço e ambiguidade (perdão a opositores e a torturadores)',metodologia:'Debate'},
+  {serie:'3',disc:'História',data:'2026-10-05',codigo:'GO-EMCHS605B',nome:'Direitos Humanos e Ditadura Militar',foco:'Revisão geral: Segunda Guerra, pós-Vargas, meio ambiente e Ditadura Militar. Recomposição de aprendizagens e avaliação de fechamento do bimestre',metodologia:'Revisão + Recomposição'},
+  {serie:'3',disc:'Sociologia',data:'2026-08-03',codigo:'EM13CHS605',nome:'Direitos Humanos no século XXI',foco:'DUDH (1948): origem, princípios e o contexto do pós-guerra/Holocausto',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'3',disc:'Sociologia',data:'2026-08-06',codigo:'EM13CHS605',nome:'Direitos Humanos no século XXI',foco:'SEMANA 1 — Sociologia: Direitos Humanos no século XXI',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'Sociologia',data:'2026-08-10',codigo:'EM13CHS605',nome:'Direitos Humanos no século XXI',foco:'Crise migratória global: refugiados e o direito de asilo na prática',metodologia:'Pesquisa'},
+  {serie:'3',disc:'Sociologia',data:'2026-08-17',codigo:'EM13CHS605',nome:'Direitos Humanos no século XXI',foco:'Era digital: vigilância, algoritmos e discriminação (reconhecimento facial)',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'Sociologia',data:'2026-08-24',codigo:'GO-EMCHS605B',nome:'Democracia e movimentos sociais',foco:'Democracia representativa x participativa: votar não basta',metodologia:'Exibição de filme'},
+  {serie:'3',disc:'Sociologia',data:'2026-08-31',codigo:'GO-EMCHS605B',nome:'Democracia e movimentos sociais',foco:'O que é um movimento social (organização, estratégia, liderança — não "bagunça")',metodologia:'Livro didático (páginas a definir)'},
+  {serie:'3',disc:'Sociologia',data:'2026-09-07',codigo:'GO-EMCHS605B',nome:'Democracia e movimentos sociais',foco:'Movimentos sociais mudam mesmo alguma coisa, ou só fazem barulho? — Perguntas: 1) Cite um direito que só existe hoje por causa de um movimento social. 2) Movimentos sociais e partidos políticos disputam ou se complementam?',metodologia:'Debate'},
+  {serie:'3',disc:'Sociologia',data:'2026-09-14',codigo:'GO-EMCHS605B',nome:'Democracia e movimentos sociais',foco:'Panorama dos movimentos sociais brasileiros: negro, sindical, feminista, LGBTQIA+, indígena, moradia (MST/MTST)',metodologia:'Pesquisa'},
+  {serie:'3',disc:'Sociologia',data:'2026-09-21',codigo:'GO-EMCHS605B',nome:'Democracia e movimentos sociais',foco:'De movimento a lei: Maria da Penha, cotas raciais e o debate do Marco Temporal',metodologia:'Aula expositiva (texto/slide)'},
+  {serie:'3',disc:'Sociologia',data:'2026-09-28',codigo:'GO-EMCHS605B',nome:'Democracia e movimentos sociais',foco:'Revisão geral: DUDH, democracia, movimentos sociais e conquistas de direitos (mapa mental coletivo)',metodologia:'Revisão em grupo'},
+  {serie:'3',disc:'Sociologia',data:'2026-10-05',codigo:'GO-EMCHS605B',nome:'Democracia e movimentos sociais',foco:'Recomposição de aprendizagens e avaliação de fechamento do bimestre',metodologia:'Recomposição (atendimento individualizado)'},
+];
+const MATRIZ_HABILIDADE = {
+  'História|EF06HI01': 'Reconhecer que a organização do tempo é construída culturalmente, conforme a sociedade e seu contexto histórico.',
+  'História|GO-EF06HI02-B': 'Analisar a importância da história oral e dos diferentes tipos de fontes históricas (materiais, escritas, visuais e orais) na produção do saber histórico.',
+  'História|GO-EF06HI03-A': 'Identificar as teorias sobre o aparecimento do ser humano no continente africano e os processos de evolução, deslocamento e povoamento a partir da África.',
+  'História|EF06HI04': 'Identificar as teorias sobre a origem do homem americano, em especial as dos povos indígenas do Brasil (Serra da Capivara e Lagoa Santa).',
+  'História|EF06HI05': 'Identificar as concepções dos povos indígenas originários e africanos sobre a natureza e sua relação com ela.',
+  'História|EF06HI07': 'Identificar e analisar as formas de registro histórico e cultural das civilizações da África e do Oriente Médio (hieróglifos, cuneiforme, tradição oral, artefatos).',
+  'História|GO-EF06HI07-A': 'Identificar e caracterizar a escrita cuneiforme da Mesopotâmia e sua importância como um dos primeiros sistemas de escrita.',
+  'História|GO-EF06HI07-D': 'Investigar os povos do Antigo Oriente (Índia, China, Japão), sua localização e as rotas comerciais de intercâmbio.',
+  'História|EF06HI08': 'Identificar os espaços territoriais dos povos originários do continente americano (astecas, maias e incas).',
+  'História|GO-EF06HI10-B': 'Compreender as cidades-estado gregas e a democracia ateniense e sua influência nas democracias atuais.',
+  'História|EF06HI11': 'Analisar a formação de Roma Antiga e as bases da civilização romana.',
+  'História|EF06HI12': 'Compreender o conceito de cidadania e as dinâmicas de inclusão e exclusão na Grécia e Roma antigas.',
+  'História|GO-EF06HI13-A': 'Investigar a formação e sustentação dos impérios na Antiguidade, incluindo a África antiga.',
+  'História|GO-EF06HI14-B': 'Entender o fim do Império Romano e a passagem do mundo antigo ao medieval.',
+  'História|GO-EF07HI01-A': 'Conceituar a Modernidade no contexto da formação dos estados nacionais, da expansão marítima e da colonização.',
+  'História|GO-EF07HI02-B': 'Reconhecer as formas de organização social, política e econômica dos povos da América, Europa e África e suas lógicas de produção e circulação de mercadorias.',
+  'História|GO-EF07HI03-C': 'Relacionar o modo de vida das civilizações Inca, Maia e Asteca com as sociedades europeias (escrita, moeda, tempo, comércio).',
+  'História|EF07HI04': 'Compreender o Renascimento e o Humanismo e como influenciaram a transição da mentalidade medieval para a moderna.',
+  'História|GO-EF07HI05-B': 'Analisar a Reforma protestante e as relações entre questões religiosas, políticas e econômicas da época.',
+  'História|GO-EF07HI06-A': 'Identificar as rotas marítimas europeias dos séculos XV-XVI e as motivações políticas e econômicas das grandes navegações.',
+  'História|GO-EF07HI07-B': 'Compreender a relação entre a formação dos Estados nacionais europeus e o mercantilismo na Idade Moderna.',
+  'História|GO-EF07HI08-A': 'Analisar a conquista de Astecas, Incas e Maias pelos espanhóis: alianças, conflitos e resistência.',
+  'História|GO-EF07HI09-C': 'Reconhecer os impactos da conquista e colonização para as populações nativas.',
+  'História|GO-EF07HI12-A': 'Avaliar a diversidade étnico-racial e a formação do povo brasileiro.',
+  'História|GO-EF07HI13-A': 'Analisar a política mercantilista e seus impactos na expansão e colonização europeia.',
+  'História|EF08HI01': 'Conceituar iluminismo, liberalismo e neoliberalismo, estabelecendo relações com a atualidade.',
+  'História|GO-EF08HI02-A': 'Analisar os desdobramentos das revoluções inglesas nas estruturas políticas, sociais e econômicas da sociedade europeia.',
+  'História|GO-EF08HI03-A': 'Identificar e compreender os processos de produção da Revolução Industrial e suas relações com as condições de vida e o trabalho.',
+  'História|EF08HI04': 'Identificar o contexto da Revolução Francesa e analisar seus impactos nas independências das Américas e nas revoltas do Brasil Colônia.',
+  'História|GO-EF08HI05-A': 'Analisar a influência das ideias iluministas e do anticolonialismo nas revoltas da América Portuguesa (Conjurações Mineira, Baiana e Insurreição Pernambucana).',
+  'História|GO-EF08HI11-A': 'Analisar e comparar os movimentos e revoltas do século XVIII no Brasil e na América Espanhola: causas, líderes, desfechos e impactos.',
+  'História|EF08HI12': 'Analisar as causas da transferência da Corte portuguesa para o Brasil em 1808 e seus impactos sociais, políticos e econômicos.',
+  'História|GO-EF08HI14-B': 'Analisar as consequências históricas da colonização e da escravidão sobre populações afrodescendentes e indígenas e as desigualdades estruturais atuais.',
+  'História|GO-EF08HI15-A': 'Analisar o contexto do Primeiro Reinado (1822-1831) e a Independência do Brasil.',
+  'História|GO-EF08HI16-A': 'Avaliar o Período Regencial e as revoltas provinciais.',
+  'História|GO-EF08HI17-A': 'Analisar as estruturas políticas do Segundo Reinado e relações com modelos atuais.',
+  'História|GO-EF08HI18-B': 'Reconhecer as consequências da escravidão e o processo de abolição.',
+  'História|GO-EF08HI20-A': 'Problematizar as origens históricas do racismo na sociedade brasileira.',
+  'História|EF09HI01': 'Reconhecer o contexto histórico que levou à emergência da República no Brasil e a participação da sociedade na mudança de regime.',
+  'História|GO-EF09HI03-A': 'Analisar a Lei de Terras de 1850 como marco da exclusão social e racial no Brasil e seus desdobramentos atuais.',
+  'História|GO-EF09HI02-A': 'Compreender a estrutura de poder oligárquica (política café com leite), o coronelismo, a urbanização e a marginalização das camadas populares.',
+  'História|GO-EF09HI03-C': 'Entender como a abolição não assegurou à população negra acesso a direitos e condições de vida, e as consequências dessa exclusão.',
+  'História|GO-EF09HI05-D': 'Compreender a modernização republicana como processo desigual e excludente, analisando os movimentos rurais e urbanos.',
+  'História|GO-EF09HI06-A': 'Analisar a ascensão de Getúlio Vargas ao poder, o Estado Novo, a legislação trabalhista e a centralização do poder (1930-1945).',
+  'História|GO-EF09HI06-B': 'Analisar os impactos das políticas varguistas em Goiás (mudanças políticas, sociais e econômicas).',
+  'História|GO-EF09HI10-A': 'Analisar o imperialismo do fim do século XIX e sua relação com o nacionalismo e a formação de alianças que levaram à Primeira Guerra.',
+  'História|GO-EF09HI10-C': 'Compreender o contexto e os impactos da Primeira Guerra Mundial (transformações sociais, políticas, econômicas e territoriais).',
+  'História|EF09HI11': 'Identificar os eventos que levaram à Revolução Russa e analisar a implantação da URSS e suas ideologias.',
+  'História|EF09HI12': 'Analisar a Crise de 1929 e seus desdobramentos sobre a economia global.',
+  'História|GO-EF09HI13-A': 'Conceituar os regimes totalitários e analisar sua relação com a Segunda Guerra Mundial.',
+  'História|GO-EF09HI17-A': 'Analisar os governos populistas e desenvolvimentistas (1946-1964) e seus desdobramentos em Goiás.',
+  'História|GO-EF09HI19-A': 'Compreender a ruptura democrática, a Ditadura Militar e a reabertura.',
+  'História|GO-EF09HI18-A': 'Identificar o processo de ocupação do centro-oeste brasileiro, a construção de Brasília, e analisar os impactos sobre a região.',
+  'História|GO-EF09HI19-B': 'Conhecer e analisar as diversas relações de poder e interferências internacionais na situação política e econômica no Brasil, nas décadas de 1960 a 1980.',
+  'História|GO-EF09HI19-C': 'Identificar as mudanças sociais, culturais e políticas nos anos de 1960, analisando os elementos de contestação da ordem estabelecida, bem como os processos de resistência durante a ditadura civil-militar.',
+  'História|GO-EF09HI21-A': 'Analisar a questão indígena durante a ditadura militar, relacionando a questão da terra, das "grandes obras" e da FUNAI aos movimentos de luta e contestação dos indígenas nesse período e na atualidade.',
+  'História|GO-EF09HI21-B': 'Identificar, no contexto da ditadura civil-militar, as manifestações de racismo, repressão, perseguição e discriminação aos grupos negros, na cidade e no campo, e as resistências do movimento negro.',
+  'História|GO-EF09HI22-A': 'Problematizar e analisar a política de conciliação por meio da Anistia de 1979, compreendendo questões relacionadas ao tema na atualidade.',
+  'História|GO-EF09HI22-B': 'Analisar o contexto sócio-político, econômico e cultural da sociedade goianiense na década de 1980, destacando sua participação na política nacional.',
+  'História|GO-EF09HI22-C': 'Conhecer e analisar o acidente com o Césio-137 em Goiânia e sua relação com a promoção da cidadania, com repercussões locais, nacionais e internacionais.',
+  'História|GO-EF09HI26-A': 'Conhecer e problematizar as lutas por igualdade de direito de populações marginalizadas, discutindo políticas públicas afirmativas contra todo tipo de violência.',
+  'História|GO-EF09HI26-B': 'Analisar e problematizar as lutas e os movimentos da sociedade brasileira contra o feminicídio, o machismo, a homofobia, o racismo e o bullying na contemporaneidade.',
+  'História|GO-EF09HI27-A': 'Compreender e problematizar o uso das mídias digitais na contemporaneidade, a partir do conceito de cultura de massas e sua relação com o capitalismo e a lógica consumista.',
+  'História|EF09HI21': 'Identificar e relacionar as demandas indígenas e quilombolas como forma de contestação ao modelo desenvolvimentista da ditadura.',
+  'História|EF09HI22': 'Discutir o papel da mobilização da sociedade brasileira do final do período ditatorial até a Constituição de 1988.',
+  'História|EF09HI23': 'Identificar direitos civis, políticos e sociais expressos na Constituição de 1988 e relacioná-los à noção de cidadania e ao combate ao racismo.',
+  'História|EF09HI24': 'Analisar as transformações políticas, econômicas, sociais e culturais de 1989 aos dias atuais, identificando questões prioritárias para a cidadania e os valores democráticos.',
+  'História|EF09HI25': 'Relacionar as transformações da sociedade brasileira aos protagonismos da sociedade civil após 1989.',
+  'História|EF09HI26': 'Discutir e analisar as causas da violência contra populações marginalizadas, com vistas à tomada de consciência e à construção de uma cultura de paz.',
+  'História|EF09HI27': 'Relacionar aspectos das mudanças econômicas, culturais e sociais ocorridas no Brasil a partir da década de 1990 ao papel do País na era da globalização.',
+  'História|EF09HI28': 'Identificar e analisar aspectos da Guerra Fria, seus principais conflitos e as tensões geopolíticas entre os blocos liderados por soviéticos e estadunidenses.',
+  'História|EF09HI29': 'Descrever e analisar as experiências ditatoriais na América Latina, seus procedimentos e vínculos com o poder, e a atuação de movimentos de contestação.',
+  'História|EF09HI30': 'Comparar as características dos regimes ditatoriais latino-americanos, com atenção à censura, opressão e reformas econômicas e sociais.',
+  'História|EF09HI31': 'Descrever e avaliar os processos de descolonização na África e na Ásia e relacioná-los ao contexto geral da Guerra Fria.',
+  'História|EF09HI32': 'Analisar mudanças e permanências associadas ao processo de globalização, considerando os argumentos dos movimentos críticos às políticas globais.',
+  'História|EF09HI33': 'Analisar as transformações nas relações políticas locais e globais geradas pelo desenvolvimento das tecnologias digitais de informação e comunicação.',
+  'História|EF09HI34': 'Discutir as motivações da adoção de diferentes políticas econômicas na América Latina, assim como seus impactos sociais nos países da região.',
+  'História|EF09HI35': 'Analisar os aspectos relacionados ao fenômeno do terrorismo na contemporaneidade, incluindo os movimentos migratórios e os choques entre diferentes grupos e culturas.',
+  'História|EF09HI36': 'Identificar e discutir as diversidades identitárias e seus significados históricos no início do século XXI, combatendo qualquer forma de preconceito e violência.',
+  'Filosofia|GO-EMCHS103A': 'Compreender o que é Filosofia, suas origens e características; a passagem do Mito para a Filosofia, o surgimento da Pólis e a diferença entre doxa e episteme.',
+  'Filosofia|GO-EMCHS101A': 'Reconhecer os primeiros filósofos (pré-socráticos: Tales, Anaximandro, Heráclito e Parmênides) e suas explicações racionais sobre a origem do universo (arché).',
+  'Filosofia|GO-EMCHS102A': 'Compreender as bases do racionalismo (Descartes) e do empirismo (Locke) como as duas grandes correntes da filosofia moderna sobre a origem do conhecimento.',
+  'Filosofia|GO-EMCHS501A': 'Compreender a diferença entre Ética e Moral, analisando a ética na filosofia clássica (Sócrates, Platão e Aristóteles) e comparando com o estilo de vida contemporâneo.',
+  'Filosofia|EM13CHS502': 'Problematizar formas de desigualdade e identificar ações que promovam os Direitos Humanos.',
+  'Filosofia|GO-EMCHS502C': 'Refletir sobre liberdade de expressão: filósofos x sofistas; liberdade pública e privada (Constant).',
+  'Filosofia|GO-EMCHS104D': 'Compreender a filosofia política medieval por meio de Santo Agostinho e Santo Tomás de Aquino.',
+  'Filosofia|GO-EMCHS106B': 'Compreender as transformações do pensamento político moderno (Maquiavel) e as teorias do absolutismo (Thomas Hobbes).',
+  'Filosofia|GO-EMCHS204B': 'Refletir filosoficamente sobre o trabalho e o cuidado como dimensões éticas da vida humana, com atenção à divisão desigual do trabalho de cuidado entre homens e mulheres, e entre grupos raciais.',
+  'Filosofia|GO-EMCHS201C': 'Compreender o pensamento iluminista do século XVIII (Locke, Rousseau e Montesquieu) e sua influência nos processos revolucionários.',
+  'Filosofia|EM13CHS205': 'Avaliar processos culturais e relações de poder na sociedade contemporânea.',
+  'Filosofia|GO-EMCHS205D': 'Conhecer a Escola de Frankfurt e a indústria cultural (Adorno e Horkheimer).',
+  'Filosofia|GO-EMCHS603A': 'Compreender o pensamento político de Hannah Arendt (poder e soberania) e as relações de poder a partir de Foucault.',
+  'Filosofia|GO-EMCHS604D': 'Compreender o pensamento de Tomás de Aquino e, por Erasmo de Roterdã, a relação entre filosofia humanista e direitos humanos.',
+  'Filosofia|EM13CHS605': 'Analisar os princípios da Declaração dos Direitos Humanos (justiça, igualdade, fraternidade).',
+  'Filosofia|GO-EMCHS605A': 'Entender as origens iluministas dos Direitos Humanos (Locke e Rousseau).',
+  'Filosofia|GO-EMCHS605B': 'Analisar os princípios da Declaração Universal dos Direitos Humanos, identificando progressos e entraves à sua concretização e refletindo sobre as desigualdades sociais no Mundo Contemporâneo.',
+  'História|GO-EMCHS103A': 'Compreender o conceito de História e historiografia, tempo histórico e periodização, Patrimônio Histórico e Cultural.',
+  'História|GO-EMCHS101A': 'Identificar fontes históricas para compreender a pré-história e o surgimento da espécie humana; analisar as Civilizações do Antigo Oriente e da América pré-colombiana.',
+  'História|EM13CHS102': 'Compreender o Renascimento cultural e o Humanismo europeu, identificando rupturas e continuidades com o mundo medieval e suas conexões com a expansão marítima.',
+  'História|GO-EMCHS501A': 'Identificar a Grécia e Roma Antiga (democracia ateniense e direito romano) e analisar a construção da cidadania na Antiguidade Clássica.',
+  'História|EM13CHS104': 'Analisar objetos e vestígios da cultura material e imaterial de diferentes sociedades.',
+  'História|EM13CHS402': 'Analisar as relações sociais e produtivas do mundo feudal (suserania e vassalagem).',
+  'História|GO-EMCHS104D': 'Entender as Cruzadas e o Renascimento urbano e comercial; analisar a crise do sistema feudal.',
+  'História|GO-EMCHS106B': 'Compreender a formação do Estado Nacional Moderno, as Grandes Navegações e as práticas mercantilistas.',
+  'História|GO-EMCHS201D': 'Compreender os processos sociais, econômicos e políticos relacionados à Revolução Francesa.',
+  'História|GO-EMCHS201A': 'Compreender a transição para o capitalismo, as migrações a partir da Revolução Industrial e seus impactos sociais.',
+  'História|EM13CHS601': 'Identificar protagonismos de povos indígenas e afrodescendentes no Brasil contemporâneo.',
+  'História|GO-EMCHS601A': 'Conhecer as origens históricas da desigualdade étnico-racial desde o período colonial.',
+  'História|GO-EMCHS601B': 'Compreender as formas de resistência indígena e negra à escravidão.',
+  'História|GO-EMCHS601C': 'Analisar as demandas políticas, sociais e culturais dos povos indígenas e das populações afrodescendentes no Brasil contemporâneo, caracterizando o contexto de exclusão e inclusão precária desses grupos na ordem social e econômica atual.',
+  'História|GO-EMCHS601D': 'Pesquisar as demandas e protagonismos políticos, sociais e culturais dos povos indígenas e das populações afrodescendentes no Brasil contemporâneo, promovendo ações de redução das desigualdades sociais.',
+  'História|GO-EMCHS603A': 'Compreender as políticas imperialistas na eclosão da Primeira Guerra Mundial e suas fases.',
+  'História|GO-EMCHS603C': 'Analisar o contexto histórico da Rússia no início do século XX e o processo da Revolução Russa de 1917.',
+  'História|GO-EMCHS604A': 'Entender as dinâmicas da Segunda Guerra Mundial, a formação da ONU e da OTAN e a Guerra Fria.',
+  'História|GO-EMCHS305A': 'Analisar os governos pós-Era Vargas e as políticas ambientais.',
+  'História|GO-EMCHS605B': 'Analisar os movimentos de defesa dos Direitos Humanos na Ditadura Militar (1964-1985).',
+  'Sociologia|GO-EMCHS103A': 'Compreender o que é Sociologia, seu conceito, origens e principais pensadores.',
+  'Sociologia|GO-EMCHS104A': 'Conceituar Cultura, cultura material e imaterial, etnocentrismo e diversidade cultural.',
+  'Sociologia|GO-EMCHS401C': 'Compreender a divisão social do trabalho (Durkheim: solidariedade mecânica e orgânica) e a ética protestante e o capitalismo (Weber).',
+  'Sociologia|GO-EMCHS402A': 'Compreender o capitalismo, a mais-valia e a teoria do valor (Marx).',
+  'Sociologia|GO-EMCHS403A': 'Compreender as novas formas de trabalho (uberização, plataformização, precarização).',
+  'Sociologia|GO-EMCHS402B': 'Diferenciar as formas de produção em série, linha de montagem e de produtos mais homogêneos, relacionando-as ao desenvolvimento tecnológico, às mudanças no mundo do trabalho e ao avanço da globalização.',
+  'Sociologia|GO-EMCHS402C': 'Analisar a concentração de renda como um dos principais fatores de manutenção da desigualdade social no Brasil, comparando indicadores de instituições oficiais.',
+  'Sociologia|GO-EMCHS402D': 'Pesquisar aspectos do trabalho rural e urbano, comparando características e dados (textos, mapas, gráficos e estatísticas do IBGE) para avaliar as relações de poder no mundo do trabalho.',
+  'Sociologia|GO-EMCHS403B': 'Compreender os impactos do desenvolvimento tecnológico na organização do mundo do trabalho e na organização espacial, examinando a empregabilidade no contexto das tecnologias e da globalização.',
+  'Sociologia|GO-EMCHS403C': 'Reconhecer as formas de trabalho intelectual e manual, utilizando textos científicos, literários e jornalísticos para analisar as transformações no mundo do trabalho.',
+  'Sociologia|GO-EMCHS403D': 'Analisar os principais pontos da reforma trabalhista, contextualizando os novos arranjos possibilitados pela legislação e seu impacto na vida dos/as trabalhadores/as.',
+  'Sociologia|GO-EMCHS204A': 'Compreender os conceitos de Max Weber sobre o Estado moderno e os tipos de dominação (tradicional, carismática e legal).',
+  'Sociologia|GO-EMCHS204C': 'Analisar sociologicamente a divisão social e sexual do trabalho de cuidado no Brasil, relacionando dados sobre trabalho doméstico e de cuidado a desigualdades de gênero, raça e classe.',
+  'Sociologia|GO-EMCHS201B': 'Compreender as origens sócio-históricas do capitalismo e os conflitos de classe (teoria de classe social de Karl Marx).',
+  'Sociologia|GO-EMCHS205C': 'Debater conflitos sociais, intolerância, racismo e desigualdade no Brasil contemporâneo.',
+  'Sociologia|GO-EMCHS603D': 'Entender as diferenças entre Liberalismo e Socialismo e os limites da construção da cidadania no Brasil e na América Latina.',
+  'Sociologia|GO-EMCHS604C': 'Analisar o papel dos organismos internacionais (ONU, FMI, Banco Mundial, OMC, OMS) e os limites da cidadania nos países de capitalismo dependente.',
+  'Sociologia|EM13CHS605': 'Analisar a aplicação dos Direitos Humanos na realidade do século XXI.',
+  'Sociologia|GO-EMCHS605B': 'Refletir sobre democracia e movimentos sociais na garantia dos Direitos Humanos.',
+};
+
+async function reconstruirTemasOrfaos() {
+  const [turmasSnap, contSnap, temasSnap] = await Promise.all([
+    rtdb.ref("leciona/turmas").once("value"),
+    rtdb.ref("leciona/conteudos").once("value"),
+    rtdb.ref("leciona/temas").once("value"),
+  ]);
+  const turmas = turmasSnap.val() || {};
+  const conteudos = contSnap.val() || {};
+  const temasAll = temasSnap.val() || {};
+
+  const planoPorSemana = {};
+  PLANO_COMPLETO_FULL.forEach((r) => {
+    const chave = r.serie + "|" + r.disc + "|" + segundaDaSemana(r.data);
+    planoPorSemana[chave] = r;
+  });
+
+  const updates = {};
+  let temasRecriados = 0, entradasReligadas = 0;
+  const semCorrespondencia = [];
+
+  Object.entries(conteudos).forEach(([cid, c]) => {
+    if (!c || !c.turmaId || c.bimestre !== "3º Bimestre" || !Array.isArray(c.planejamento)) return;
+    const turma = turmas[c.turmaId];
+    if (!turma || turma.ativo === false || !turma.serie) return;
+    const serie1 = turma.serie[0];
+    const disc = turma.disciplina;
+
+    let ordemAtual = Math.max(0, ...Object.values(temasAll).filter((t) => t && t.conteudoId === cid).map((t) => t.ordem || 0));
+
+    let mudou = false;
+    c.planejamento.forEach((p) => {
+      if (!p || !p.temaId || temasAll[p.temaId]) return;
+      const seg = segundaDaSemana(p.data);
+      const info = planoPorSemana[serie1 + "|" + disc + "|" + seg];
+      if (!info) { semCorrespondencia.push({ turma: turma.nome + " " + disc, data: p.data }); return; }
+      const habilidade = MATRIZ_HABILIDADE[disc + "|" + info.codigo] || "";
+      const novoId = rtdb.ref("leciona/temas").push().key;
+      ordemAtual++;
+      updates["leciona/temas/" + novoId] = {
+        id: novoId, conteudoId: cid, turmaId: c.turmaId,
+        disciplina: disc, serie: turma.serie, bimestre: "3º Bimestre",
+        nome: info.nome, dcgo: info.codigo, habilidade, resumo: "", palavras: "", tempo: "", ordem: ordemAtual,
+        obj: { quadro: "", estudo: "", slides: [], mapaMental: "", avaliacao: { questoes: [], flashcards: [], atividade: [], gabarito: [] } },
+        imagens: [], status: { estado: "", data: "" }, aprovado: {}, adaptado: {}, updatedAt: Date.now(),
+        _recriadoOrfao: true,
+      };
+      p.temaId = novoId;
+      if (!p.obs) p.obs = info.foco;
+      if (!p.metodologia) p.metodologia = info.metodologia;
+      temasRecriados++;
+      entradasReligadas++;
+      mudou = true;
+    });
+    if (mudou) updates["leciona/conteudos/" + cid + "/planejamento"] = c.planejamento;
+  });
+
+  if (Object.keys(updates).length) await rtdb.ref().update(updates);
+  return { temasRecriados, entradasReligadas, semCorrespondencia: semCorrespondencia.length, detalheSemCorrespondencia: semCorrespondencia.slice(0, 30) };
+}
+
+exports.reconstruirTemasOrfaosAgora = onCall(
+  { region: "southamerica-east1", timeoutSeconds: 120, memory: "256MiB" },
+  async (request) => {
+    verificarAcesso(request);
+    try {
+      return await reconstruirTemasOrfaos();
+    } catch (e) {
+      throw new HttpsError("internal", "Erro ao reconstruir temas: " + (e.message || String(e)));
+    }
+  }
+);
