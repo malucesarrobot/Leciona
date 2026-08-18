@@ -3891,6 +3891,25 @@ async function aplicarCorrecoesPendentes(){
   }
 }
 
+async function atualizarQualitativaPlanilha(){
+  const btn=event&&event.target;
+  const textoOriginal=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Atualizando…'; }
+  try{
+    const fn=firebase.app().functions('southamerica-east1').httpsCallable('atualizarQualitativaPlanilhaAgora');
+    const r=await fn({});
+    const d=r.data||{};
+    let msg=d.celulasAtualizadas+' célula(s) atualizada(s) na planilha';
+    if(d.semMatch&&d.semMatch.length) msg+=' · '+d.semMatch.length+' aluno(s)/aba(s) sem match (veja console)';
+    if(d.semMatch&&d.semMatch.length) console.log('[qualitativa->planilha] sem match:', d.semMatch);
+    toast(msg,'ok');
+  }catch(e){
+    toast('⚠ Falha ao atualizar planilha: '+(e.message||e),'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
+  }
+}
+
 /* =========================================================
    ASSISTENTE — chat com IA, com ferramentas (agenda + anotação em
    tema) e opção de anexar qualquer resposta a um tema aberto.
@@ -5788,6 +5807,8 @@ function openConfig(){
         '<small>Puxa faltas e ocorrências direto da planilha (atualizada diariamente) e lança como chamada e desconto na qualitativa. Também roda sozinho todo dia útil à noite — não precisa clicar sempre. Nomes que não batem com ninguém da turma viram pendência (não é lançado errado).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="aplicarCorrecoesPendentes()">🔧 Corrigir código do tema "Independência do Brasil"</button>'+
         '<small>Correção pontual (18/08): código DC-GO estava trocado (Renascimento em vez de recomposição de Independência do Brasil).</small>'+
+        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="atualizarQualitativaPlanilha()">📊 Atualizar qualitativa na planilha da escola (9ºA/9ºC)</button>'+
+        '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
         '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+

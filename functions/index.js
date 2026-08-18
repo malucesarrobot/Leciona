@@ -7,6 +7,7 @@ const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https')
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
+const { google } = require('googleapis');
 
 admin.initializeApp();
 const rtdb = admin.database();
@@ -525,4 +526,105 @@ exports.gerarComIA = onCall(
 
     throw new HttpsError('internal', 'Erro ao consultar a IA: ' + (ultimoErro && ultimoErro.message));
   }
+);
+
+/* =========================================================
+   Sincroniza a nota qualitativa do 9ºA/9ºC (História, CEPI Marajó) com a
+   planilha compartilhada da escola. Roda toda sexta às 20h, ou sob demanda
+   pelo botão em Configurações. Escreve só a coluna HIST — nunca mexe em
+   nenhuma outra coluna/disciplina da planilha (compartilhada com outros
+   professores). Valor da célula é o total acumulado de descontos no
+   bimestre, não incremental — idempotente, seguro rodar de novo quantas
+   vezes for. A justificativa de cada desconto vai como NOTA da célula
+   (não aparece no valor, não bagunça o visual), substituída por inteiro
+   a cada rodada — sempre a lista completa e atual, nunca duplica. */
+const PLANILHA_QUALITATIVA_ID = '1SIBQEXhu_aprqQ4r8P5TaJtpr_W2Z-fV';
+const TURMAS_QUALITATIVA_PLANILHA = [
+  { turmaId: '7c45d998-44a9-421c-ac38-9b5437f3a4e7', aba: '9A' },
+  { turmaId: 'bdf35d81-b0c2-4fa9-9f3f-d744932850fe', aba: '9C' },
+];
+
+async function sheetsClient() {
+  const auth = new google.auth.GoogleAuth({ scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+  const authClient = await auth.getClient();
+  return google.sheets({ version: 'v4', auth: authClient });
+}
+
+async function atualizarQualitativaNaPlanilha() {
+  const sheets = await sheetsClient();
+  const [alunosSnap, qualSnap] = await Promise.all([
+    rtdb.ref('leciona/alunos').once('value'),
+    rtdb.ref('leciona/qualitativa').once('value'),
+  ]);
+  const alunos = alunosSnap.val() || {};
+  const qualitativa = qualSnap.val() || {};
+
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: PLANILHA_QUALITATIVA_ID });
+  const sheetIdPorAba = {};
+  (meta.data.sheets || []).forEach((s) => { sheetIdPorAba[s.properties.title] = s.properties.sheetId; });
+
+  let celulasAtualizadas = 0;
+  const semMatch = [];
+
+  for (const { turmaId, aba } of TURMAS_QUALITATIVA_PLANILHA) {
+    const sheetId = sheetIdPorAba[aba];
+    if (sheetId == null) { semMatch.push({ aba, erro: 'aba não encontrada na planilha' }); continue; }
+
+    const roster = Object.entries(alunos)
+      .filter(([, a]) => a && a.turmaId === turmaId)
+      .map(([aid, a]) => ({ aid, nome: a.nome, tokens: tokensRelevantes(a.nome) }));
+
+    const porAluno = {};
+    Object.values(qualitativa).forEach((q) => {
+      if (!q || q.turmaId !== turmaId) return;
+      (porAluno[q.alunoId] = porAluno[q.alunoId] || []).push(q);
+    });
+
+    const resp = await sheets.spreadsheets.values.get({ spreadsheetId: PLANILHA_QUALITATIVA_ID, range: "'" + aba + "'!A1:N200" });
+    const linhas = resp.data.values || [];
+    const headerRow = linhas[0] || [];
+    const colHist = headerRow.findIndex((h) => (h || '').trim().toUpperCase() === 'HIST');
+    if (colHist < 0) { semMatch.push({ aba, erro: 'coluna HIST não encontrada' }); continue; }
+
+    const requests = [];
+    for (let i = 1; i < linhas.length; i++) {
+      const nomePlanilha = (linhas[i][1] || '').trim();
+      if (!nomePlanilha) continue;
+      const res = encontrarAluno(nomePlanilha, roster);
+      if (res.status !== 'ok') { semMatch.push({ aba, nomePlanilha, status: res.status }); continue; }
+      const eventos = (porAluno[res.aid] || []).sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+      if (!eventos.length) continue;
+      const total = Math.round(eventos.reduce((s, q) => s + (q.valor || 0), 0) * 10) / 10;
+      const nota = eventos.map((q) => (q.data ? q.data.split('-').reverse().join('/') + ' — ' : '') + (q.motivo || '')).join('\n');
+      requests.push({
+        updateCells: {
+          range: { sheetId, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: colHist, endColumnIndex: colHist + 1 },
+          rows: [{ values: [{ userEnteredValue: { numberValue: total }, note: nota }] }],
+          fields: 'userEnteredValue,note',
+        },
+      });
+      celulasAtualizadas++;
+    }
+    if (requests.length) await sheets.spreadsheets.batchUpdate({ spreadsheetId: PLANILHA_QUALITATIVA_ID, requestBody: { requests } });
+  }
+
+  return { celulasAtualizadas, semMatch };
+}
+
+exports.atualizarQualitativaPlanilhaAgora = onCall(
+  { region: 'southamerica-east1', timeoutSeconds: 120, memory: '256MiB' },
+  async (request) => {
+    verificarAcesso(request);
+    try {
+      return await atualizarQualitativaNaPlanilha();
+    } catch (e) {
+      throw new HttpsError('internal', 'Erro ao atualizar planilha: ' + (e.message || String(e)));
+    }
+  }
+);
+
+// Roda sozinha toda sexta-feira às 20h.
+exports.atualizarQualitativaPlanilhaAgendado = onSchedule(
+  { schedule: '0 20 * * 5', timeZone: 'America/Sao_Paulo', region: 'southamerica-east1', memory: '256MiB', timeoutSeconds: 120 },
+  async () => { await atualizarQualitativaNaPlanilha(); }
 );
