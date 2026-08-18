@@ -3,10 +3,18 @@
    navegador. Padrão espelhado do projeto Iuris (chatComAssistente), sem o
    que é específico de lá (anexos, ferramentas de agenda, geração de docx).
 */
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
+const admin = require('firebase-admin');
+
+admin.initializeApp();
+const rtdb = admin.database();
 
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
+// IMPORT_SECRET fica comentado junto com importarPlanilhaHttp mais abaixo —
+// só declarar já exige valor no deploy, mesmo sem nenhuma function usando.
+// const IMPORT_SECRET = defineSecret('IMPORT_SECRET');
 
 // E-mails autorizados a usar a IA do Leciona.
 const EMAILS_AUTORIZADOS = ['prof.malufc@gmail.com', 'malu.cesar@gmail.com'];
@@ -21,6 +29,273 @@ function verificarAcesso(request) {
   }
   return email;
 }
+
+/* =========================================================
+   Importação da planilha de frequência/ocorrências do Arlan
+   (Google Sheets público, uma linha por falta/ocorrência,
+   atualizado diariamente pela coordenação — só cobre as
+   turmas EFG). Lançamos como `leciona/chamadas` (falta) e
+   `leciona/qualitativa` (ocorrência disciplinar, -0.1 em
+   CADA disciplina que a professora dá pra aquela turma —
+   decisão da professora: reflete comportamento geral, não
+   de uma matéria só).
+
+   Idempotência: cada chamada criada e cada ocorrência lançada
+   fica marcada em `leciona/_importLog`, então rodar de novo
+   (todo dia, ou sob demanda) não duplica nem recria o que a
+   professora já editou/apagou manualmente depois. Chamada já
+   existente pra aquele turma+dia (feita na hora, na aula)
+   nunca é sobrescrita. Nomes que não batem com nenhum aluno
+   da turma (ou batem com mais de um) viram um registro em
+   `leciona/_importPendencias` em vez de arriscar lançar errado. */
+
+const PLANILHA_ID = '14OgFpDNC8NDosCX6uoVSxqPdyMi_mRKx';
+const IMPORT_START_DATE = '2026-08-03'; // início da faixa coberta pela planilha atual (3º bimestre 2026)
+
+function urlAba(nomeAba) {
+  return 'https://docs.google.com/spreadsheets/d/' + PLANILHA_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(nomeAba);
+}
+
+function parseCSV(texto) {
+  const linhas = [];
+  let campo = '', linha = [], aspas = false;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (aspas) {
+      if (c === '"') { if (texto[i + 1] === '"') { campo += '"'; i++; } else { aspas = false; } }
+      else campo += c;
+    } else if (c === '"') aspas = true;
+    else if (c === ',') { linha.push(campo); campo = ''; }
+    else if (c === '\n') { linha.push(campo); linhas.push(linha); linha = []; campo = ''; }
+    else if (c !== '\r') campo += c;
+  }
+  if (campo.length || linha.length) { linha.push(campo); linhas.push(linha); }
+  return linhas;
+}
+function csvParaObjetos(texto) {
+  const linhas = parseCSV(texto).filter((l) => l.some((c) => c !== ''));
+  if (!linhas.length) return [];
+  const cabecalho = linhas[0].map((h) => h.trim());
+  return linhas.slice(1).map((l) => {
+    const o = {};
+    cabecalho.forEach((h, i) => { if (h) o[h] = (l[i] || '').trim(); });
+    return o;
+  });
+}
+
+function normNome(s) {
+  return (s || '').trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+}
+const STOPWORDS_NOME = new Set(['DE', 'DA', 'DO', 'DAS', 'DOS', 'E']);
+function tokensRelevantes(s) { return normNome(s).split(' ').filter((t) => t && !STOPWORDS_NOME.has(t)); }
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  let prev = []; for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[n];
+}
+function tokensBatem(a, b) {
+  if (a === b) return true;
+  const limite = (a.length >= 7 || b.length >= 7) ? 2 : (a.length >= 4 && b.length >= 4 ? 1 : 0);
+  if (!limite) return false;
+  return Math.abs(a.length - b.length) <= limite && levenshtein(a, b) <= limite;
+}
+/* Casa um nome da planilha (pode vir incompleto, com apelido, ou com
+   1-2 letras trocadas) contra o roster de UMA turma-disciplina do
+   Leciona. Só retorna 'ok' quando exatamente um aluno cobre TODOS os
+   tokens relevantes do nome buscado — ambíguo ou sem match viram
+   pendência em vez de chute. */
+function encontrarAluno(nomeAlvo, roster) {
+  const alvoTokens = tokensRelevantes(nomeAlvo);
+  if (!alvoTokens.length) return { status: 'sem_nome' };
+  const nAlvo = normNome(nomeAlvo);
+  const exato = roster.find((r) => normNome(r.nome) === nAlvo);
+  if (exato) return { status: 'ok', aid: exato.aid };
+  const cobrem = roster.filter((r) => alvoTokens.every((t) => r.tokens.some((rt) => tokensBatem(t, rt))));
+  if (cobrem.length === 1) return { status: 'ok', aid: cobrem[0].aid };
+  if (cobrem.length > 1) return { status: 'ambiguo', candidatos: cobrem.map((c) => ({ aid: c.aid, nome: c.nome })) };
+  return { status: 'nao_encontrado' };
+}
+
+function temAula(grade, wd) {
+  if (!grade) return false;
+  if (Array.isArray(grade)) return !!grade[wd];
+  return !!(grade[String(wd)] || grade[wd]);
+}
+function isoDeDataBr(br) {
+  const [d, m, a] = (br || '').split('/');
+  if (!d || !m || !a) return null;
+  return a + '-' + m + '-' + d;
+}
+
+const MOTIVO_MAP_OCORRENCIA = {
+  'Uso indevido de celular / eletrônicos': 'celular',
+  'Saída da sala sem permissão': 'comportamento',
+  'Conflito verbal / Discussão com colega': 'comportamento',
+  'Desrespeito ao professor ou funcionário': 'comportamento',
+};
+const MOTIVO_LABEL = { celular: 'Uso de celular', comportamento: 'Comportamento inadequado', outro: 'Outro' };
+
+async function importarPlanilhaArlan() {
+  const [freqCsv, ocorCsv] = await Promise.all([
+    fetch(urlAba('Frequencia_Diaria')).then((r) => r.text()),
+    fetch(urlAba('Ocorrencias')).then((r) => r.text()),
+  ]);
+  const faltas = csvParaObjetos(freqCsv).filter((r) => r.Status === 'Falta' && r.data && r.Turma);
+  const ocorrencias = csvParaObjetos(ocorCsv).filter((r) => r.Nome_Aluno && r.Data && r.Turma);
+
+  const [turmasSnap, alunosSnap, chamadasSnap, logSnap] = await Promise.all([
+    rtdb.ref('leciona/turmas').once('value'),
+    rtdb.ref('leciona/alunos').once('value'),
+    rtdb.ref('leciona/chamadas').once('value'),
+    rtdb.ref('leciona/_importLog').once('value'),
+  ]);
+  const turmas = turmasSnap.val() || {};
+  const alunos = alunosSnap.val() || {};
+  const chamadas = chamadasSnap.val() || {};
+  const log = logSnap.val() || {};
+  const logChamadas = log.chamadas || {};
+  const logQualitativa = log.qualitativa || {};
+
+  const codigoMap = {}; // "1A" etc -> [{tid,disciplina,grade}]
+  Object.keys(turmas).forEach((tid) => {
+    const t = turmas[tid];
+    if (t.unidade !== 'EFG' || t.ativo === false || !t.grade || !t.serie || !t.letra) return;
+    const codigo = t.serie[0] + t.letra;
+    (codigoMap[codigo] = codigoMap[codigo] || []).push({ tid, disciplina: t.disciplina, grade: t.grade });
+  });
+  const rosterPorTurma = {}; // tid -> [{aid,nome,tokens}]
+  Object.keys(alunos).forEach((aid) => {
+    const a = alunos[aid];
+    if (!a.turmaId) return;
+    (rosterPorTurma[a.turmaId] = rosterPorTurma[a.turmaId] || []).push({ aid, nome: a.nome, tokens: tokensRelevantes(a.nome) });
+  });
+  const chamadasExistentes = new Set(Object.values(chamadas).map((c) => c.turmaId + '|' + c.data));
+
+  const faltasPorDiaTurma = {}; // "codigo|iso" -> [nomes]
+  let maxData = IMPORT_START_DATE;
+  faltas.forEach((r) => {
+    const iso = isoDeDataBr(r.data);
+    if (!iso) return;
+    if (iso > maxData) maxData = iso;
+    const chave = r.Turma + '|' + iso;
+    (faltasPorDiaTurma[chave] = faltasPorDiaTurma[chave] || []).push(r.Nome_Aluno);
+  });
+
+  const updates = {};
+  const pendencias = [];
+  let chamadasCriadas = 0, faltasGravadas = 0, qualitativaCriada = 0;
+
+  const cursor = new Date(IMPORT_START_DATE + 'T00:00:00');
+  const fim = new Date(maxData + 'T00:00:00');
+  while (cursor <= fim) {
+    const iso = cursor.toISOString().slice(0, 10);
+    const wd = cursor.getDay();
+    Object.keys(codigoMap).forEach((codigo) => {
+      codigoMap[codigo].forEach(({ tid, disciplina, grade }) => {
+        if (!temAula(grade, wd)) return;
+        const chaveLog = tid + '_' + iso;
+        if (chamadasExistentes.has(tid + '|' + iso) || logChamadas[chaveLog]) return;
+        const nomes = faltasPorDiaTurma[codigo + '|' + iso] || [];
+        const roster = rosterPorTurma[tid] || [];
+        const presencas = {};
+        nomes.forEach((nome) => {
+          const res = encontrarAluno(nome, roster);
+          if (res.status === 'ok') presencas[res.aid] = false;
+          else pendencias.push({ tipo: 'falta', nome, codigo, disciplina, turmaId: tid, data: iso, candidatos: res.candidatos || [] });
+        });
+        const cid = rtdb.ref('leciona/chamadas').push().key;
+        updates['leciona/chamadas/' + cid] = { id: cid, turmaId: tid, data: iso, presencas, _ts: Date.now(), _importadoPlanilha: true };
+        updates['leciona/_importLog/chamadas/' + chaveLog] = true;
+        chamadasCriadas++;
+        faltasGravadas += Object.keys(presencas).length;
+      });
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  ocorrencias.forEach((r) => {
+    const rid = (r.ID_Registro || '').trim();
+    const codigo = (r.Turma || '').trim();
+    const iso = isoDeDataBr(r.Data);
+    const tipo = (r.Tipo_Ocorrencia || '').trim();
+    if (!rid || !iso) return;
+    const motivoKey = MOTIVO_MAP_OCORRENCIA[tipo] || 'outro';
+    (codigoMap[codigo] || []).forEach(({ tid, disciplina }) => {
+      const chaveLog = rid + '_' + tid;
+      if (logQualitativa[chaveLog]) return;
+      updates['leciona/_importLog/qualitativa/' + chaveLog] = true;
+      const res = encontrarAluno(r.Nome_Aluno, rosterPorTurma[tid] || []);
+      if (res.status === 'ok') {
+        const qid = rtdb.ref('leciona/qualitativa').push().key;
+        updates['leciona/qualitativa/' + qid] = {
+          id: qid, alunoId: res.aid, turmaId: tid, data: iso, motivoKey,
+          motivo: MOTIVO_LABEL[motivoKey] + ' — ' + tipo, valor: -0.1, _ts: Date.now(), _importadoPlanilha: true,
+        };
+        qualitativaCriada++;
+      } else {
+        pendencias.push({ tipo: 'ocorrencia', nome: r.Nome_Aluno, codigo, disciplina, data: iso, motivo: tipo, candidatos: res.candidatos || [] });
+      }
+    });
+  });
+
+  pendencias.forEach((p) => {
+    const pid = rtdb.ref('leciona/_importPendencias').push().key;
+    updates['leciona/_importPendencias/' + pid] = Object.assign({ id: pid, criadoEm: Date.now() }, p);
+  });
+
+  if (Object.keys(updates).length) await rtdb.ref().update(updates);
+  return { chamadasCriadas, faltasGravadas, qualitativaCriada, pendencias: pendencias.length };
+}
+
+exports.importarPlanilhaAgora = onCall(
+  { region: 'southamerica-east1', timeoutSeconds: 120, memory: '256MiB' },
+  async (request) => {
+    verificarAcesso(request);
+    try {
+      return await importarPlanilhaArlan();
+    } catch (e) {
+      throw new HttpsError('internal', 'Erro ao importar planilha: ' + (e.message || String(e)));
+    }
+  }
+);
+
+// Roda sozinha todo dia útil à noite, depois que a planilha do Arlan já foi preenchida.
+exports.importarPlanilhaAgendado = onSchedule(
+  { schedule: '30 19 * * 1-5', timeZone: 'America/Sao_Paulo', region: 'southamerica-east1', memory: '256MiB', timeoutSeconds: 120 },
+  async () => { await importarPlanilhaArlan(); }
+);
+
+/* Endpoint HTTP (chave compartilhada, sem precisar de login) pra disparar a
+   importação de fora do app — ex.: de um terminal ou de uma sessão do Claude
+   Code. Desativado por ora: precisa de "firebase functions:secrets:set
+   IMPORT_SECRET" rodado manualmente (fora do Claude Code) antes do deploy —
+   é uma ação que grava segredo de produção, então o modo automático não
+   deixa a própria IA fazer isso sozinha. Pra habilitar: rode o comando
+   acima com uma chave forte, descomente o bloco abaixo e faça deploy nesta
+   function; depois é só "curl -H 'x-import-key: SUA_CHAVE' <url-da-function>".
+if (false) exports.importarPlanilhaHttp = onRequest(
+  { secrets: [IMPORT_SECRET], region: 'southamerica-east1', timeoutSeconds: 120, memory: '256MiB' },
+  async (req, res) => {
+    if (req.get('x-import-key') !== IMPORT_SECRET.value()) {
+      res.status(403).json({ erro: 'chave inválida' });
+      return;
+    }
+    try {
+      res.json(await importarPlanilhaArlan());
+    } catch (e) {
+      res.status(500).json({ erro: e.message || String(e) });
+    }
+  }
+);
+*/
 
 /* Único endpoint pra todo uso de IA do Leciona (substitui os antigos
    callClaude/callClaudeWeb/callClaudeChat do cliente, que faziam fetch

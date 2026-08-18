@@ -3826,6 +3826,28 @@ async function callClaudeWeb(system,user){
   return chamarIA(system,[{role:'user',content:user}],{maxTokens:3000,useWeb:true});
 }
 
+/* Importa faltas/ocorrências da planilha do Arlan via Cloud Function
+   (importarPlanilhaAgora) — a function tem acesso de administrador ao banco,
+   então a escrita acontece lá, não no navegador. Mesma lógica também roda
+   sozinha todo dia útil à noite (importarPlanilhaAgendado). */
+async function importarPlanilhaArlan(){
+  const btn=event&&event.target;
+  const textoOriginal=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Importando…'; }
+  try{
+    const fn=firebase.app().functions('southamerica-east1').httpsCallable('importarPlanilhaAgora');
+    const r=await fn({});
+    const d=r.data||{};
+    let msg=d.chamadasCriadas+' chamada(s) · '+d.faltasGravadas+' falta(s) · '+d.qualitativaCriada+' desconto(s) de qualitativa';
+    if(d.pendencias) msg+=' · '+d.pendencias+' pendência(s) de nome (veja em leciona/_importPendencias)';
+    toast(msg,'ok');
+  }catch(e){
+    toast('⚠ Falha ao importar planilha: '+(e.message||e),'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
+  }
+}
+
 /* =========================================================
    ASSISTENTE — chat com IA, com ferramentas (agenda + anotação em
    tema) e opção de anexar qualquer resposta a um tema aberto.
@@ -5714,6 +5736,8 @@ function openConfig(){
         '<small>Cria os temas que faltam a partir da matriz oficial e já aplica o conteúdo pré-pronto disponível, em todas as suas turmas de uma vez. Não gasta créditos de IA. Não altera temas que já têm conteúdo.</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="manutencaoCompleta()">🧹 Verificar e corrigir tudo</button>'+
         '<small>Um único botão pra tudo: realinha referências desatualizadas, unifica turmas e conteúdos duplicados, remove temas repetidos e corrige conteúdo trocado por engano — na ordem certa, automaticamente. Não pode ser desfeito. Use quando notar algo estranho (temas repetidos, aula sumida etc.) — na dúvida, não faz mal rodar de novo.</small>'+
+        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="importarPlanilhaArlan()">📥 Importar frequência/ocorrências (planilha do Arlan)</button>'+
+        '<small>Puxa faltas e ocorrências direto da planilha (atualizada diariamente) e lança como chamada e desconto na qualitativa. Também roda sozinho todo dia útil à noite — não precisa clicar sempre. Nomes que não batem com ninguém da turma viram pendência (não é lançado errado).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
         '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
