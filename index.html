@@ -3391,12 +3391,14 @@ function renderCronograma(){
   const temasDoCont=temasDoConteudo(cid);
   const temaOpts=temasDoCont.map(t=>'<option value="'+t.id+'"'+(t.id===editing.id?' selected':'')+'>'+esc((t.nome||'(sem nome)').slice(0,40))+'</option>').join('');
   const objOpts=OBJ_DEFS.map(o=>'<option value="'+o.k+'">'+esc(o.label)+'</option>').join('');
-  const lista = plan.length ? plan.map(p=>{
+  const lista = plan.length ? plan.map((p,i)=>{
     const tm=temas[p.temaId];
     const objLabel=(OBJ_DEFS.find(o=>o.k===p.objeto)||{}).label||p.objeto||'—';
     const dataFmt=p.data?new Date(p.data+'T00:00:00').toLocaleDateString('pt-BR'):'—';
     return '<div class="turma-row"><span class="tn" style="flex:0 0 76px">'+esc(dataFmt)+'</span>'+
       '<span style="flex:1;font-size:12px">'+objIconHtml(p.objeto)+esc(tm?tm.nome:'(tema removido)')+' · '+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
+      '<button class="btn ghost sm" onclick="empurrarSequencia(\''+cid+'\',\''+p.id+'\')" title="Repetir este tema na próxima aula, empurrando os seguintes uma semana pra frente">⏩</button>'+
+      (i<plan.length-1?'<button class="btn ghost sm" onclick="resumirComProxima(\''+cid+'\',\''+p.id+'\')" title="Resumir com o próximo tema nesta mesma aula, puxando os seguintes uma semana pra mais cedo">⏪</button>':'')+
       '<button class="btn ghost sm" onclick="remPlanejamento(\''+p.id+'\')" title="Remover">✕</button></div>';
   }).join('') : '<p class="statusdot" style="font-size:12px">Nenhuma aula planejada ainda.</p>';
   box.innerHTML = lista+
@@ -3442,6 +3444,44 @@ function remPlanejamento(pid){
   cont.planejamento=cont.planejamento.filter(p=>p.id!==pid);
   persistConteudo(cont);
   renderCronograma();
+}
+/* Repete o tema desta aula na semana seguinte, empurrando toda a sequência
+   uma semana pra frente — pra quando um assunto toma mais aulas do que o
+   planejado (ex.: 2ª Guerra em 3 aulas em vez de 1). O último tema da
+   sequência ganha uma data nova, uma semana depois do que era o último. */
+function empurrarSequencia(cid, entryId){
+  const cont=conteudos[cid]; if(!cont||!Array.isArray(cont.planejamento)) return;
+  const plan=cont.planejamento.slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const i=plan.findIndex(p=>p.id===entryId); if(i<0) return;
+  const temaIds=plan.slice(i).map(p=>p.temaId);
+  for(let k=plan.length-1;k>i;k--){ plan[k].temaId=temaIds[k-i-1]; }
+  const ultimo=plan[plan.length-1];
+  const novaData=new Date((ultimo.data||plan[i].data)+'T00:00:00');
+  novaData.setDate(novaData.getDate()+7);
+  cont.planejamento.push({id:uid(), data:isoLocal(novaData), temaId:temaIds[temaIds.length-1], objeto:plan[i].objeto||'quadro', obs:''});
+  persistConteudo(cont);
+  renderCronograma();
+  toast('Tema repetido — os seguintes empurraram uma semana.','ok');
+}
+/* Combina o tema desta aula com o da aula seguinte numa aula só (fica
+   anotado no campo observação), e puxa toda a sequência seguinte uma
+   semana pra mais cedo — pra recuperar o tempo perdido depois de empurrar
+   algo. A última aula da sequência antiga é removida (o tema dela já foi
+   absorvido pelo deslocamento, ninguém fica sem ser dado). */
+function resumirComProxima(cid, entryId){
+  const cont=conteudos[cid]; if(!cont||!Array.isArray(cont.planejamento)) return;
+  const plan=cont.planejamento.slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const i=plan.findIndex(p=>p.id===entryId);
+  if(i<0||i>=plan.length-1){ toast('Não tem uma próxima aula pra combinar.','err'); return; }
+  const temaAtual=temas[plan[i].temaId], temaProximo=temas[plan[i+1].temaId];
+  if(!confirm('Combinar "'+(temaAtual?temaAtual.nome:'?')+'" com "'+(temaProximo?temaProximo.nome:'?')+'" nesta mesma aula? Os temas seguintes vão adiantar uma semana.')) return;
+  plan[i].obs=(plan[i].obs?plan[i].obs+' · ':'')+'Resumido junto com: '+(temaProximo?temaProximo.nome:'');
+  for(let k=i+1;k<plan.length-1;k++){ plan[k].temaId=plan[k+1].temaId; }
+  const ultimo=plan[plan.length-1];
+  cont.planejamento=cont.planejamento.filter(p=>p.id!==ultimo.id);
+  persistConteudo(cont);
+  renderCronograma();
+  toast('Temas combinados — os seguintes adiantaram uma semana.','ok');
 }
 /* Todas as aulas planejadas (em qualquer conteúdo/turma) para uma data. */
 function planejamentosDoDia(dataISO){
