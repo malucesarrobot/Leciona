@@ -761,3 +761,55 @@ exports.registrarAulasPassadasAgora = onCall(
     }
   }
 );
+
+/* =========================================================
+   Correção pontual: apaga turmas obsoletas e tudo vinculado a elas
+   (alunos, conteúdos, temas, registros, qualitativa, chamadas) — a turma
+   "Geral" auto-criada sem aluno nenhum, a "Eletiva" do CEPI Marajó (sem
+   aluno) e as 6 turmas de Filosofia do CEPI Marajó marcadas inativas que a
+   professora confirmou não ter mais, mesmo as com histórico de registro/
+   qualitativa. Decidido em 18/08/2026. */
+const TURMAS_A_EXCLUIR = [
+  '4a2bb7d3-490f-443b-a335-0f347e21cfee', // EFG "Geral — 1ª série EM" Sociologia (_auto)
+  '3ef008db-ab56-4673-ad58-369f31ffb062', // CEPI Marajó Eletiva
+  '4dea8eb4-443b-4f5d-b97f-feb344c2b59b', // CEPI Marajó 1ªA Filosofia
+  'd43118fe-7685-4006-b363-3252b9693808', // CEPI Marajó 1ªB Filosofia
+  'a4553570-4da8-487b-9f90-658860759e84', // CEPI Marajó 1ªC Filosofia
+  'a020078d-16d4-4a9b-8fc3-c516e6a918d5', // CEPI Marajó 1ªD Filosofia
+  'bf3c63d6-c619-41ec-bf4a-f2ffc6d2c710', // CEPI Marajó 3ªA Filosofia
+  '46dde117-3d67-4c46-b91b-f5acc4d57a29', // CEPI Marajó 3ªB Filosofia
+];
+
+exports.excluirTurmasObsoletasAgora = onCall(
+  { region: 'southamerica-east1', timeoutSeconds: 120, memory: '256MiB' },
+  async (request) => {
+    verificarAcesso(request);
+    const idsAlvo = new Set(TURMAS_A_EXCLUIR);
+    const nos = ['alunos', 'conteudos', 'temas', 'registros', 'qualitativa', 'chamadas'];
+    const [turmasSnap, ...outros] = await Promise.all([
+      rtdb.ref('leciona/turmas').once('value'),
+      ...nos.map((n) => rtdb.ref('leciona/' + n).once('value')),
+    ]);
+    const turmas = turmasSnap.val() || {};
+    const updates = {};
+    const removidos = {};
+
+    TURMAS_A_EXCLUIR.forEach((tid) => { updates['leciona/turmas/' + tid] = null; });
+    removidos.turmas = TURMAS_A_EXCLUIR.filter((tid) => turmas[tid]).length;
+
+    nos.forEach((n, i) => {
+      const dados = outros[i].val() || {};
+      let count = 0;
+      Object.entries(dados).forEach(([id, item]) => {
+        if (item && idsAlvo.has(item.turmaId)) {
+          updates['leciona/' + n + '/' + id] = null;
+          count++;
+        }
+      });
+      removidos[n] = count;
+    });
+
+    if (Object.keys(updates).length) await rtdb.ref().update(updates);
+    return removidos;
+  }
+);
