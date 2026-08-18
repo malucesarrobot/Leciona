@@ -3451,6 +3451,59 @@ function planejamentosDoDia(dataISO){
   });
   return out;
 }
+/* Escolher/trocar o tema de uma aula específica (turma+data) direto da tela
+   Hoje/Agenda — antes só dava pra ver, não pra editar. entryId vazio = ainda
+   não tem tema nessa data (cria); entryId preenchido = já tem, troca. */
+function abrirTrocarTema(turmaId, dataISO, entryId){
+  const tu=turmas[turmaId]; if(!tu) return;
+  const bim=bimAtivoAgora(dataISO)||scope.bim;
+  const conts=Object.values(conteudos).filter(c=>c.turmaId===turmaId&&c.bimestre===bim);
+  const temasDisp=[];
+  conts.forEach(c=>{ temasDoConteudo(c.id).forEach(t=>temasDisp.push(t)); });
+  const opts=temasDisp.map(t=>'<option value="'+t.id+'">'+esc((t.tituloExibicao||t.nome||'(sem nome)').slice(0,60))+(t.dcgo?' ['+t.dcgo+']':'')+'</option>').join('');
+  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
+    '<div class="modal-h"><h3>Tema da aula — '+esc(turmaNome(tu))+'</h3></div>'+
+    '<div class="modal-b">'+
+    '<div class="field"><label>Data</label><strong>'+esc(dataISO.split('-').reverse().join('/'))+'</strong></div>'+
+    '<div class="field"><label>Tema</label><select id="trocaTemaSel">'+(opts||'<option value="">Nenhum tema cadastrado neste bimestre — crie um na Gestão primeiro</option>')+'</select></div>'+
+    '</div><div class="modal-f">'+
+    (entryId?'<button class="btn ghost" style="color:#a8442f" onclick="removerTemaDoDia(\''+turmaId+'\',\''+entryId+'\')">Remover desta data</button>':'')+
+    '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
+    '<button class="btn primary" onclick="salvarTemaDoDia(\''+turmaId+'\',\''+dataISO+'\',\''+(entryId||'')+'\')">Salvar</button>'+
+    '</div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+}
+function salvarTemaDoDia(turmaId, dataISO, entryId){
+  const temaId=(document.getElementById('trocaTemaSel')||{}).value;
+  if(!temaId){ toast('Escolha um tema.','err'); return; }
+  const tema=temas[temaId]; const cont=tema?conteudos[tema.conteudoId]:null;
+  if(!cont){ toast('Conteúdo deste tema não encontrado.','err'); return; }
+  if(entryId){
+    Object.values(conteudos).forEach(c=>{
+      if(!Array.isArray(c.planejamento)) return;
+      const antes=c.planejamento.length;
+      c.planejamento=c.planejamento.filter(p=>p.id!==entryId);
+      if(c.planejamento.length!==antes) persistConteudo(c);
+    });
+  }
+  if(!cont.planejamento) cont.planejamento=[];
+  cont.planejamento.push({id:uid(), data:dataISO, temaId, objeto:'quadro', obs:''});
+  persistConteudo(cont);
+  closeModal();
+  renderAgendaDia();
+  toast('Tema da aula atualizado.','ok');
+}
+function removerTemaDoDia(turmaId, entryId){
+  Object.values(conteudos).forEach(c=>{
+    if(c.turmaId!==turmaId||!Array.isArray(c.planejamento)) return;
+    const antes=c.planejamento.length;
+    c.planejamento=c.planejamento.filter(p=>p.id!==entryId);
+    if(c.planejamento.length!==antes) persistConteudo(c);
+  });
+  closeModal();
+  renderAgendaDia();
+  toast('Tema removido desta data.','ok');
+}
 /* Abre o editor já no tema certo, ajustando o escopo (disciplina/turma/bimestre)
    a partir do conteúdo — usado pelos atalhos do cronograma na tela Hoje. */
 function abrirTemaDoDia(temaId){
@@ -6490,6 +6543,7 @@ function renderAgendaDia(){
           '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula — pode repetir quantas vezes quiser">✓ Registrar</button>'+
           '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
           '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
+          '<button class="btn ghost sm" onclick="abrirTrocarTema(\''+conteudo.turmaId+'\',\''+iso+'\',\''+entry.id+'\')" title="Trocar o tema desta aula">🔄 trocar tema</button>'+
           (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
         '</div>';
       } else {
@@ -6499,6 +6553,7 @@ function renderAgendaDia(){
           '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
           '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
           '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
+          (tuDia?'<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirTrocarTema(\''+tuDia.id+'\',\''+iso+'\',\'\')" title="Escolher o tema desta aula">+ tema</button>':'')+
           (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
         '</div>');
       }
@@ -8028,7 +8083,8 @@ function renderNotas(){
       return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+' — '+esc(tp.label||av.tipo)+(isCheck?' (checklist)':' (nota)')+(ehCasa?' · também dever de casa':'')+(ehExtra?' · extra/bônus, soma décimos e não entra na média':'')+'" data-avid="'+av.id+'">'+
         (ehCasa?'<span title="Também atribuída como dever de casa">🏠</span> ':'')+
         (ehExtra?'<span title="Extra/bônus — soma décimos na média final, não entra no cálculo">⭐</span> ':'')+
-        '<span class="atv-col-header" onclick="event.stopPropagation();editarNomeAtividade(\''+av.id+'\')" title="Toque pra renomear" style="cursor:text">'+esc(av.nome)+'</span>'+
+        '<span class="atv-col-header">'+esc(av.nome)+'</span>'+
+        '<button class="atv-dup-btn" onclick="event.stopPropagation();editarNomeAtividade(\''+av.id+'\')" title="Renomear esta atividade">✎</button>'+
         (av.recorrente?'<button class="atv-dup-btn" onclick="event.stopPropagation();abrirDuplicarAtividade(\''+av.id+'\')" title="Duplicar pra outra turma/data, sem redigitar">⧉</button>':'')+
         '<button class="atv-del-btn" onclick="event.stopPropagation();removerAtividade(\''+av.id+'\')" title="Remover esta atividade (e as notas lançadas)">✕</button>'+
         '<span class="atv-tipo">peso '+av.peso+(isCheck?' &middot; &check;':'')+'</span>'+
