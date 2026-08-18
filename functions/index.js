@@ -264,6 +264,30 @@ async function importarPlanilhaArlan() {
     });
   });
 
+  /* Ocorrências que ficaram pendentes por nome ambíguo (2+ alunos reais
+     batendo) e foram resolvidas manualmente com a professora — mesmo
+     esquema de idempotência do resto (_importLog), só que com uma chave
+     própria em vez do ID_Registro da planilha. */
+  const OCORRENCIAS_CONFIRMADAS_MANUALMENTE = [
+    { nome: 'Davi Araújo Ribeiro Moura', codigo: '3C', data: '2026-08-03', tipo: 'Uso indevido de celular / eletrônicos' },
+  ];
+  OCORRENCIAS_CONFIRMADAS_MANUALMENTE.forEach(({ nome, codigo, data, tipo }) => {
+    const motivoKey = MOTIVO_MAP_OCORRENCIA[tipo] || 'outro';
+    (codigoMap[codigo] || []).forEach(({ tid }) => {
+      const chaveLog = 'manual_' + normNome(nome) + '_' + data + '_' + tid;
+      if (logQualitativa[chaveLog]) return;
+      updates['leciona/_importLog/qualitativa/' + chaveLog] = true;
+      const res = encontrarAluno(nome, rosterPorTurma[tid] || []);
+      if (res.status !== 'ok') return;
+      const qid = rtdb.ref('leciona/qualitativa').push().key;
+      updates['leciona/qualitativa/' + qid] = {
+        id: qid, alunoId: res.aid, turmaId: tid, data, motivoKey,
+        motivo: MOTIVO_LABEL[motivoKey] + ' — ' + tipo, valor: -0.1, _ts: Date.now(), _importadoPlanilha: true,
+      };
+      qualitativaCriada++;
+    });
+  });
+
   /* Autocorreção: se o SCHEDULE mudou desde a última importação, uma chamada
      que a gente criou antes pode estar num dia que a turma não tem mais aula
      (ou vice-versa). Remove as que ficaram órfãs — só as marcadas
