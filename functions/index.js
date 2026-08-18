@@ -143,6 +143,59 @@ const MOTIVO_MAP_OCORRENCIA = {
 };
 const MOTIVO_LABEL = { celular: 'Uso de celular', comportamento: 'Comportamento inadequado', outro: 'Outro' };
 
+/* Cópia do SCHEDULE do index.html (o quadro de horário real que a professora
+   edita direto lá) — precisa ficar em sync manualmente: sempre que o
+   SCHEDULE do index.html mudar, atualizar aqui também. É a MESMA fonte que
+   `gradeDe()` usa no cliente pra decidir os dias de aula da Chamada; se as
+   duas divergirem, a importação cria chamada num dia que a Chamada não
+   mostra mais (ou vice-versa). */
+const SCHEDULE=[
+  // Segunda — EFG
+  {dia:1,ini:'10:45',fim:'11:35',serie:2,letra:'B',disc:'Sociologia',unidade:'EFG'},
+  {dia:1,ini:'12:25',fim:'13:15',serie:3,letra:'A',disc:'Filosofia',unidade:'EFG'},
+  // Terça — EFG (manhã) + CEPI Marajó (tarde)
+  {dia:2,ini:'07:15',fim:'08:05',serie:3,letra:'B',disc:'História',unidade:'EFG'},
+  {dia:2,ini:'08:05',fim:'08:55',serie:3,letra:'C',disc:'História',unidade:'EFG'},
+  {dia:2,ini:'11:35',fim:'12:25',serie:2,letra:'A',disc:'História',unidade:'EFG'},
+  {dia:2,ini:'12:25',fim:'13:15',serie:3,letra:'A',disc:'História',unidade:'EFG'},
+  {dia:2,ini:'15:40',fim:'16:30',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
+  // Quarta — EFG (manhã) + CEPI Marajó (tarde)
+  {dia:3,ini:'07:15',fim:'08:05',serie:2,letra:'B',disc:'História',unidade:'EFG'},
+  {dia:3,ini:'08:05',fim:'08:55',serie:1,letra:'B',disc:'Filosofia',unidade:'EFG'},
+  {dia:3,ini:'08:55',fim:'09:45',serie:1,letra:'A',disc:'História',unidade:'EFG'},
+  {dia:3,ini:'09:45',fim:'10:35',serie:3,letra:'A',disc:'Sociologia',unidade:'EFG'},
+  {dia:3,ini:'10:45',fim:'11:35',serie:2,letra:'A',disc:'Sociologia',unidade:'EFG'},
+  {dia:3,ini:'14:00',fim:'14:50',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
+  {dia:3,ini:'14:50',fim:'15:40',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
+  {dia:3,ini:'15:40',fim:'16:30',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
+  {dia:3,ini:'16:30',fim:'17:15',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
+  {dia:3,ini:'17:15',fim:'18:00',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
+  // Quinta — EFG
+  {dia:4,ini:'08:55',fim:'09:45',serie:2,letra:'B',disc:'Filosofia',unidade:'EFG'},
+  {dia:4,ini:'09:45',fim:'10:35',serie:3,letra:'B',disc:'Filosofia',unidade:'EFG'},
+  {dia:4,ini:'10:45',fim:'11:35',serie:2,letra:'A',disc:'Filosofia',unidade:'EFG'},
+  {dia:4,ini:'11:35',fim:'12:25',serie:1,letra:'B',disc:'Filosofia',unidade:'EFG'},
+  {dia:4,ini:'12:25',fim:'13:15',serie:1,letra:'A',disc:'Sociologia',unidade:'EFG'},
+  // Sexta — EFG
+  {dia:5,ini:'07:15',fim:'08:05',serie:1,letra:'A',disc:'Filosofia',unidade:'EFG'},
+  {dia:5,ini:'08:05',fim:'08:55',serie:3,letra:'B',disc:'Sociologia',unidade:'EFG'},
+  {dia:5,ini:'09:45',fim:'10:35',serie:3,letra:'C',disc:'Sociologia',unidade:'EFG'},
+  {dia:5,ini:'10:45',fim:'11:35',serie:3,letra:'C',disc:'Filosofia',unidade:'EFG'},
+  {dia:5,ini:'12:25',fim:'13:15',serie:1,letra:'B',disc:'Sociologia',unidade:'EFG'},
+];
+
+function gradeAtual(t) {
+  if (!t || !t.serie || !t.disciplina) return t && t.grade || null;
+  const serieNum = parseInt(t.serie, 10);
+  const entradas = SCHEDULE.filter((x) => x.serie === serieNum && x.letra === (t.letra || '') && x.disc === t.disciplina && x.unidade === (t.unidade || ''));
+  if (entradas.length) {
+    const grade = {};
+    entradas.forEach((x) => { grade[x.dia] = (grade[x.dia] || 0) + 1; });
+    return grade;
+  }
+  return t.grade || null;
+}
+
 async function importarPlanilhaArlan() {
   const [freqCsv, ocorCsv] = await Promise.all([
     fetch(urlAba('Frequencia_Diaria')).then((r) => r.text()),
@@ -164,12 +217,16 @@ async function importarPlanilhaArlan() {
   const logChamadas = log.chamadas || {};
   const logQualitativa = log.qualitativa || {};
 
+  const gradePorTurma = {}; // tid -> grade atual (SCHEDULE tem prioridade sobre t.grade)
   const codigoMap = {}; // "1A" etc -> [{tid,disciplina,grade}]
   Object.keys(turmas).forEach((tid) => {
     const t = turmas[tid];
-    if (t.unidade !== 'EFG' || t.ativo === false || !t.grade || !t.serie || !t.letra) return;
+    if (t.unidade !== 'EFG' || t.ativo === false || !t.serie || !t.letra) return;
+    const grade = gradeAtual(t);
+    if (!grade) return;
+    gradePorTurma[tid] = grade;
     const codigo = t.serie[0] + t.letra;
-    (codigoMap[codigo] = codigoMap[codigo] || []).push({ tid, disciplina: t.disciplina, grade: t.grade });
+    (codigoMap[codigo] = codigoMap[codigo] || []).push({ tid, disciplina: t.disciplina, grade });
   });
   const rosterPorTurma = {}; // tid -> [{aid,nome,tokens}]
   Object.keys(alunos).forEach((aid) => {
@@ -178,6 +235,28 @@ async function importarPlanilhaArlan() {
     (rosterPorTurma[a.turmaId] = rosterPorTurma[a.turmaId] || []).push({ aid, nome: a.nome, tokens: tokensRelevantes(a.nome) });
   });
   const chamadasExistentes = new Set(Object.values(chamadas).map((c) => c.turmaId + '|' + c.data));
+
+  const updates = {};
+  const pendencias = [];
+  let chamadasCriadas = 0, faltasGravadas = 0, qualitativaCriada = 0;
+
+  /* Autocorreção: se o SCHEDULE mudou desde a última importação, uma chamada
+     que a gente criou antes pode estar num dia que a turma não tem mais aula
+     (ou vice-versa). Remove as que ficaram órfãs — só as marcadas
+     _importadoPlanilha, nunca uma chamada feita na hora pela professora —
+     e libera o log delas pra recriar certo no passo seguinte. */
+  let chamadasCorrigidas = 0;
+  Object.entries(chamadas).forEach(([cid, c]) => {
+    if (!c || !c._importadoPlanilha || !c.turmaId || !c.data) return;
+    const grade = gradePorTurma[c.turmaId];
+    const wd = new Date(c.data + 'T00:00:00').getDay();
+    if (grade && temAula(grade, wd)) return; // ainda bate com o horário atual, mantém
+    updates['leciona/chamadas/' + cid] = null;
+    updates['leciona/_importLog/chamadas/' + c.turmaId + '_' + c.data] = null;
+    delete logChamadas[c.turmaId + '_' + c.data];
+    chamadasExistentes.delete(c.turmaId + '|' + c.data);
+    chamadasCorrigidas++;
+  });
 
   const faltasPorDiaTurma = {}; // "codigo|iso" -> [nomes]
   let maxData = IMPORT_START_DATE;
@@ -188,10 +267,6 @@ async function importarPlanilhaArlan() {
     const chave = r.Turma + '|' + iso;
     (faltasPorDiaTurma[chave] = faltasPorDiaTurma[chave] || []).push(r.Nome_Aluno);
   });
-
-  const updates = {};
-  const pendencias = [];
-  let chamadasCriadas = 0, faltasGravadas = 0, qualitativaCriada = 0;
 
   const cursor = new Date(IMPORT_START_DATE + 'T00:00:00');
   const fim = new Date(maxData + 'T00:00:00');
@@ -252,7 +327,7 @@ async function importarPlanilhaArlan() {
   });
 
   if (Object.keys(updates).length) await rtdb.ref().update(updates);
-  return { chamadasCriadas, faltasGravadas, qualitativaCriada, pendencias: pendencias.length };
+  return { chamadasCriadas, faltasGravadas, qualitativaCriada, chamadasCorrigidas, pendencias: pendencias.length };
 }
 
 exports.importarPlanilhaAgora = onCall(

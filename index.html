@@ -3839,6 +3839,7 @@ async function importarPlanilhaArlan(){
     const r=await fn({});
     const d=r.data||{};
     let msg=d.chamadasCriadas+' chamada(s) · '+d.faltasGravadas+' falta(s) · '+d.qualitativaCriada+' desconto(s) de qualitativa';
+    if(d.chamadasCorrigidas) msg+=' · '+d.chamadasCorrigidas+' chamada(s) corrigida(s) de dia (horário mudou)';
     if(d.pendencias) msg+=' · '+d.pendencias+' pendência(s) de nome (veja em leciona/_importPendencias)';
     toast(msg,'ok');
   }catch(e){
