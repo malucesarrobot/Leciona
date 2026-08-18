@@ -6501,6 +6501,12 @@ function renderAgendaGrade(){
     html+='<div class="'+cls.join(' ')+'" onclick="selecionarDiaAgenda(\''+iso+'\')"><span class="agenda-num">'+dia+'</span><div class="agenda-pontos">'+pontos+'</div></div>';
   }
   html+='</div>';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)">'+
+    '<span><span class="agenda-ponto aula" style="display:inline-block;vertical-align:middle;margin-right:3px"></span>aula prevista</span>'+
+    '<span><span class="agenda-ponto cron" style="display:inline-block;vertical-align:middle;margin-right:3px"></span>tema no cronograma</span>'+
+    '<span><span class="agenda-ponto comp" style="display:inline-block;vertical-align:middle;margin-right:3px"></span>compromisso</span>'+
+    '<span><span class="agenda-ponto avulsa" style="display:inline-block;vertical-align:middle;margin-right:3px"></span>aula avulsa</span>'+
+  '</div>';
   grade.innerHTML=html;
 }
 function selecionarDiaAgenda(iso){ _agendaDiaSel=iso; renderAgendaGrade(); renderAgendaDia(); }
