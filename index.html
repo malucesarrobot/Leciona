@@ -4017,6 +4017,23 @@ async function adicionarCalendarioMedio(){
   }
 }
 
+async function corrigirDuasDatas19_08(){
+  const btn=event&&event.target;
+  if(btn){ btn.disabled=true; btn.textContent='Aplicando…'; }
+  try{
+    const fn=firebase.app().functions('southamerica-east1').httpsCallable('corrigirCampos');
+    const r=await fn({correcoes:[
+      {path:'leciona/conteudos/4814b7e8-71a3-4f63-9b43-5178f50c903f/planejamento/2/data', valor:'2026-08-19'},
+      {path:'leciona/conteudos/a61fe997-c349-4a77-97f7-6b5e2711586f/planejamento/2/data', valor:'2026-08-19'},
+    ]});
+    toast((r.data||{}).aplicadas+' data(s) corrigida(s). Recarregue a tela Hoje.','ok');
+  }catch(e){
+    toast('⚠ Falha ao corrigir: '+(e.message||e),'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='🔧 Corrigir data de hoje (2ªA Sociologia e 1ªA História)'; }
+  }
+}
+
 async function atualizarQualitativaPlanilha(){
   const btn=event&&event.target;
   const textoOriginal=btn?btn.textContent:'';
@@ -5931,7 +5948,8 @@ function openConfig(){
         '<small>Um único botão pra tudo: realinha referências desatualizadas, unifica turmas e conteúdos duplicados, remove temas repetidos e corrige conteúdo trocado por engano — na ordem certa, automaticamente. Não pode ser desfeito. Use quando notar algo estranho (temas repetidos, aula sumida etc.) — na dúvida, não faz mal rodar de novo.</small>'+
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="importarPlanilhaArlan()">📥 Importar frequência/ocorrências (planilha do Arlan)</button>'+
         '<small>Puxa faltas e ocorrências direto da planilha (atualizada diariamente) e lança como chamada e desconto na qualitativa. Também roda sozinho todo dia útil à noite — não precisa clicar sempre. Nomes que não batem com ninguém da turma viram pendência (não é lançado errado).</small>'+
-        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="atualizarQualitativaPlanilha()">📊 Atualizar qualitativa na planilha da escola (9ºA/9ºC)</button>'+
+        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="corrigirDuasDatas19_08()">🔧 Corrigir data de hoje (2ªA Sociologia e 1ªA História)</button>'+
+        '<small>Correção pontual (19/08): as duas entradas desta semana ficaram na quinta em vez da quarta.</small>'+
         '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioFundamental()">📅 Adicionar calendário do Fundamental (8º/9º) na Agenda</button>'+
         '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE 2026" do 8º/9º ano (avaliações SEDUC, datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Fundamental].</small>'+
