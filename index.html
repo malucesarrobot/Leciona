@@ -3987,6 +3987,26 @@ async function adicionarCalendarioMedio(){
   }
 }
 
+async function registrarAulasPassadas(){
+  const btn=event&&event.target;
+  const textoOriginal=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Registrando…'; }
+  try{
+    const fn=firebase.app().functions('southamerica-east1').httpsCallable('registrarAulasPassadasAgora');
+    const r=await fn({});
+    const d=r.data||{};
+    let msg=d.criados+' aula(s) registrada(s) como aplicada(s)';
+    if(d.pendencias) msg+=' · '+d.pendencias+' data(s) de cronograma sem horário correspondente (veja console)';
+    if(d.detalhePendencias&&d.detalhePendencias.length) console.log('[registrar aulas] pendências:', d.detalhePendencias);
+    toast(msg,'ok');
+    if(typeof renderPainel==='function') renderPainel();
+  }catch(e){
+    toast('⚠ Falha ao registrar: '+(e.message||e),'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
+  }
+}
+
 async function atualizarQualitativaPlanilha(){
   const btn=event&&event.target;
   const textoOriginal=btn?btn.textContent:'';
@@ -5909,6 +5929,8 @@ function openConfig(){
         '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE 2026" do 8º/9º ano (avaliações SEDUC, datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Fundamental].</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioMedio()">📅 Adicionar calendário do Médio (EFG) na Agenda</button>'+
         '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE (1)" do Médio (blocos de avaliação — Bloco 2 tem História, Bloco 6 tem Sociologia/Filosofia — datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Médio].</small>'+
+        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="registrarAulasPassadas()">▶ Registrar aulas já dadas (cronograma × horário)</button>'+
+        '<small>Cria o registro de aplicação (o mesmo do botão "✓ Registrar") pra todo tema do cronograma do 3º Bimestre cuja data já passou e bate com o horário atual — é isso que faz a % do Painel subir. Data de cronograma que não bate com nenhum dia de aula do horário atual vira pendência (não registra errado).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
         '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+

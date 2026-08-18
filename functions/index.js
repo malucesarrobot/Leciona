@@ -628,3 +628,136 @@ exports.atualizarQualitativaPlanilhaAgendado = onSchedule(
   { schedule: '0 20 * * 5', timeZone: 'America/Sao_Paulo', region: 'southamerica-east1', memory: '256MiB', timeoutSeconds: 120 },
   async () => { await atualizarQualitativaNaPlanilha(); }
 );
+
+function isoDeDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function segundaDaSemana(dataISO) {
+  const d = new Date(dataISO + 'T00:00:00');
+  const diaAtual = d.getDay();
+  d.setDate(d.getDate() - ((diaAtual + 6) % 7));
+  return isoDeDate(d);
+}
+function dataDoDiaNaSemana(segundaISO, diaOficial) {
+  const d = new Date(segundaISO + 'T00:00:00');
+  d.setDate(d.getDate() + ((Number(diaOficial) + 6) % 7));
+  return isoDeDate(d);
+}
+/* Dias de aula/semana da grade, em ordem (ex.: [2,4] = terça e quinta). */
+function diasOficiaisDaGrade(grade) {
+  if (!grade) return [];
+  const dias = Array.isArray(grade)
+    ? grade.map((n, i) => (n ? i : null)).filter((v) => v != null)
+    : Object.keys(grade).filter((k) => grade[k]).map(Number);
+  return dias.sort((a, b) => a - b);
+}
+
+/* =========================================================
+   Backfill: registra como "aplicado" (cria um `registro`, igual ao botão
+   "✓ Registrar" da própria tela) todo tema do cronograma cuja data já
+   passou. No Médio (EFG, 1 aula/semana) e no Fundamental (CEPI Marajó, 3
+   aulas/semana), as entradas de cronograma de cada semana são redistribuídas
+   pelos dias oficiais daquela semana, na ordem em que aparecem no
+   cronograma — corrige datas de horário provisório sem mudar a
+   semana/sequência. Confirmado com a professora: o "quando" exato não
+   importa, o registro oficial entra no dia do horário atual. Fora dessas
+   duas unidades (Eletiva, Estudo Orientado), mantém o critério estrito: só
+   registra se a data já bater com a grade, senão vira pendência.
+   Idempotente — não duplica registro pra um tema+turma+data que já tem um.
+   Só o 3º Bimestre (em andamento). */
+async function registrarAulasPassadas() {
+  const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+  const [turmasSnap, contSnap, temasSnap, regSnap] = await Promise.all([
+    rtdb.ref('leciona/turmas').once('value'),
+    rtdb.ref('leciona/conteudos').once('value'),
+    rtdb.ref('leciona/temas').once('value'),
+    rtdb.ref('leciona/registros').once('value'),
+  ]);
+  const turmas = turmasSnap.val() || {};
+  const conteudos = contSnap.val() || {};
+  const temasAll = temasSnap.val() || {};
+  const registros = regSnap.val() || {};
+
+  const existentes = new Set(Object.values(registros).map((r) => r.temaId + '|' + r.turmaId + '|' + r.data));
+
+  const updates = {};
+  let criados = 0, datasCorrigidas = 0;
+  const pendencias = [];
+
+  Object.values(conteudos).forEach((c) => {
+    if (!c || !c.turmaId || c.bimestre !== '3º Bimestre' || !Array.isArray(c.planejamento)) return;
+    const turma = turmas[c.turmaId];
+    if (!turma || turma.ativo === false) return;
+    const grade = gradeAtual(turma);
+    const redistribui = turma.unidade === 'EFG' || turma.unidade === 'CEPI Marajó';
+    const diasOficiais = redistribui ? diasOficiaisDaGrade(grade) : [];
+
+    // datas finais calculadas pra cada entrada desta turma-conteúdo, antes de gravar
+    const finais = c.planejamento.map((p) => ({ p, dataFinal: p && p.data }));
+
+    if (diasOficiais.length) {
+      // agrupa por semana (segunda-feira) e redistribui em ordem pelos dias oficiais
+      const porSemana = {};
+      finais.forEach((f, idx) => {
+        if (!f.p || !f.p.data) return;
+        const seg = segundaDaSemana(f.p.data);
+        (porSemana[seg] = porSemana[seg] || []).push(idx);
+      });
+      Object.values(porSemana).forEach((idxs) => {
+        idxs.forEach((idx, pos) => {
+          const seg = segundaDaSemana(finais[idx].p.data);
+          const diaAlvo = diasOficiais[pos % diasOficiais.length];
+          finais[idx].dataFinal = dataDoDiaNaSemana(seg, diaAlvo);
+        });
+      });
+    }
+
+    finais.forEach(({ p, dataFinal }, idx) => {
+      if (!p || !p.data || !p.temaId) return;
+      const tema = temasAll[p.temaId];
+      if (!tema) return;
+
+      if (!diasOficiais.length) {
+        // sem redistribuição: exige que a data original já bata com a grade
+        const wd0 = new Date(p.data + 'T00:00:00').getDay();
+        if (!grade || !temAula(grade, wd0)) {
+          pendencias.push({ turma: (turma.nome || '') + ' ' + (turma.disciplina || ''), data: p.data, tema: tema.nome });
+          return;
+        }
+        dataFinal = p.data;
+      }
+
+      if (dataFinal !== p.data) {
+        updates['leciona/conteudos/' + c.id + '/planejamento/' + idx + '/data'] = dataFinal;
+        datasCorrigidas++;
+      }
+      if (dataFinal > hoje) return; // corrigida mas ainda no futuro — próxima rodada registra
+      const chave = p.temaId + '|' + c.turmaId + '|' + dataFinal;
+      if (existentes.has(chave)) return;
+      const rid = rtdb.ref('leciona/registros').push().key;
+      updates['leciona/registros/' + rid] = {
+        id: rid, temaId: p.temaId, turmaId: c.turmaId, data: dataFinal,
+        objetos: ['quadro'], entrega: 'sala',
+        nota: 'Lançado automaticamente a partir do cronograma e do horário (backfill 18/08/2026).' + (dataFinal !== p.data ? ' Data corrigida de ' + p.data.split('-').reverse().join('/') + ' pro dia oficial da semana.' : ''),
+        _ts: Date.now(), _importadoAutomatico: true,
+      };
+      existentes.add(chave);
+      criados++;
+    });
+  });
+
+  if (Object.keys(updates).length) await rtdb.ref().update(updates);
+  return { criados, datasCorrigidas, pendencias: pendencias.length, detalhePendencias: pendencias.slice(0, 40) };
+}
+
+exports.registrarAulasPassadasAgora = onCall(
+  { region: 'southamerica-east1', timeoutSeconds: 120, memory: '256MiB' },
+  async (request) => {
+    verificarAcesso(request);
+    try {
+      return await registrarAulasPassadas();
+    } catch (e) {
+      throw new HttpsError('internal', 'Erro ao registrar aulas: ' + (e.message || String(e)));
+    }
+  }
+);
