@@ -155,7 +155,7 @@ const SCHEDULE=[
   {dia:1,ini:'12:25',fim:'13:15',serie:3,letra:'A',disc:'Filosofia',unidade:'EFG'},
   // Terça — EFG (manhã) + CEPI Marajó (tarde)
   {dia:2,ini:'07:15',fim:'08:05',serie:3,letra:'B',disc:'História',unidade:'EFG'},
-  {dia:2,ini:'08:05',fim:'08:55',serie:3,letra:'C',disc:'História',unidade:'EFG'},
+  {dia:2,ini:'10:45',fim:'11:35',serie:3,letra:'C',disc:'História',unidade:'EFG'},
   {dia:2,ini:'11:35',fim:'12:25',serie:2,letra:'A',disc:'História',unidade:'EFG'},
   {dia:2,ini:'12:25',fim:'13:15',serie:3,letra:'A',disc:'História',unidade:'EFG'},
   {dia:2,ini:'15:40',fim:'16:30',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
