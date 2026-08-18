@@ -238,7 +238,31 @@ async function importarPlanilhaArlan() {
 
   const updates = {};
   const pendencias = [];
-  let chamadasCriadas = 0, faltasGravadas = 0, qualitativaCriada = 0;
+  let chamadasCriadas = 0, faltasGravadas = 0, qualitativaCriada = 0, alunosAdicionados = 0;
+
+  /* Alunos que a planilha do Arlan cita mas que ainda não existiam no
+     Leciona pra nenhuma disciplina daquela turma (revisado manualmente —
+     não é pra virar lista de "criar sempre que não achar", só os casos
+     já confirmados como aluno novo de verdade, não erro de digitação nem
+     nome ambíguo). Cadastra em TODAS as turmas-disciplina do código, do
+     mesmo jeito que os demais alunos da turma, e já entra no roster desta
+     mesma rodada — então uma falta/ocorrência dele já registrada nesta
+     janela de datas casa direto, sem precisar rodar de novo. */
+  const ALUNOS_NOVOS_CONFIRMADOS = [
+    { nome: 'Lucas Oliveira Rangel de Jesus', codigo: '2B' },
+    { nome: 'Caroline Oliveira Rangel de Jesus', codigo: '3A' },
+  ];
+  ALUNOS_NOVOS_CONFIRMADOS.forEach(({ nome, codigo }) => {
+    (codigoMap[codigo] || []).forEach(({ tid }) => {
+      const roster = rosterPorTurma[tid] || (rosterPorTurma[tid] = []);
+      const jaExiste = encontrarAluno(nome, roster).status === 'ok';
+      if (jaExiste) return;
+      const aid = rtdb.ref('leciona/alunos').push().key;
+      updates['leciona/alunos/' + aid] = { id: aid, nome, turmaId: tid, ativo: true, _importadoPlanilha: true };
+      roster.push({ aid, nome, tokens: tokensRelevantes(nome) });
+      alunosAdicionados++;
+    });
+  });
 
   /* Autocorreção: se o SCHEDULE mudou desde a última importação, uma chamada
      que a gente criou antes pode estar num dia que a turma não tem mais aula
@@ -327,7 +351,7 @@ async function importarPlanilhaArlan() {
   });
 
   if (Object.keys(updates).length) await rtdb.ref().update(updates);
-  return { chamadasCriadas, faltasGravadas, qualitativaCriada, chamadasCorrigidas, pendencias: pendencias.length };
+  return { chamadasCriadas, faltasGravadas, qualitativaCriada, chamadasCorrigidas, alunosAdicionados, pendencias: pendencias.length };
 }
 
 exports.importarPlanilhaAgora = onCall(
