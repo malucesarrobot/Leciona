@@ -7388,6 +7388,7 @@ function confirmarQualitativa(alunoId){
   persistQualitativa(q);
   toast('Desconto lançado.','ok');
   renderNotas();
+  closeModal();
   abrirQualitativaAluno(alunoId);
 }
 /* CSV pronta pra digitar no SIAP (sem API — o SIAP não integra automaticamente) */
