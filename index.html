@@ -3934,6 +3934,59 @@ async function adicionarCalendarioFundamental(){
   }
 }
 
+/* Correção pontual: datas do calendário institucional do 3º bimestre pro
+   Médio (EFG) — arquivo "CRONOGRAMA 3º BIMESTRE (1).pdf" do Drive. Blocos
+   de avaliação por matéria (Bloco 2 = Geografia+História; Bloco 6 =
+   Biologia+Sociologia+Filosofia — as duas últimas são da Malu), SEDUC,
+   recuperação, datas comemorativas, conselho de classe. Cada compromisso
+   fica na data da AVALIAÇÃO (a de entrega das questões vai na descrição).
+   Marcado [Médio] pra não confundir com o calendário do Fundamental.
+   Decidido em 18/08/2026. */
+async function adicionarCalendarioMedio(){
+  const btn=event&&event.target;
+  const textoOriginal=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Adicionando…'; }
+  const fonte='Fonte: CRONOGRAMA 3º BIMESTRE (1) — Médio (EFG).';
+  const itens=[
+    ['fbcdc9d5-2b23-4599-bc98-f6e2c11c4e1f','2026-08-10','Avaliação — Produção de Texto [Médio]','Entrega das questões: 03/08. '+fonte],
+    ['a1ed19c0-ec9c-4a04-a842-111f57f08d05','2026-08-17','Avaliação — Bloco 01: Língua Portuguesa (20 questões) [Médio]','Entrega das questões: 10/08. '+fonte],
+    ['353f63a7-952d-4056-aaba-ef8e8c67df14','2026-08-24','Avaliação — Bloco 2: Geografia e História (15 cada) [Médio]','Entrega das questões: 12/08. Inclui História — disciplina da Malu. '+fonte],
+    ['d1a12f60-2fdb-4a2a-8362-476e0943a428','2026-08-31','Avaliação — Bloco 3: Matemática (20 questões) [Médio]','Entrega das questões: 17/08. '+fonte],
+    ['e1ddd736-33f0-4115-91e0-586dd1a75ade','2026-09-07','Feriado SEDUC [Médio]',fonte],
+    ['87d3193e-b4c6-4e89-8864-2c1ec8125816','2026-09-08','Avaliação — Bloco 4: Inglês, Arte, Educação Física (10 cada) [Médio]','Entrega das questões: 24/08. '+fonte],
+    ['65d2ce64-80f1-4c77-a8b3-1e3fa045b174','2026-09-14','Avaliação SEDUC — Produção de texto [Médio]',fonte],
+    ['0f9c0cbb-ffd9-435a-9d67-6ded0f2fbd43','2026-09-16','Trabalho coletivo SEDUC [Médio]',fonte],
+    ['61e89ccd-c059-42f5-ba62-54b39add00e8','2026-09-21','Avaliação — Bloco 5: Física, Química (15 cada) [Médio]','Entrega das questões: 01/09. '+fonte],
+    ['4efadabb-e71e-4def-b476-c67bc231ee2a','2026-09-22','Avaliação SEDUC — Matemática e suas Tecnologias [Médio]',fonte],
+    ['df30ee76-517d-4416-a229-2cb553e0d216','2026-09-23','Avaliação SEDUC — Ciências Humanas e Sociais Aplicadas [Médio]','Área da História. '+fonte],
+    ['c959aa66-d83c-4aa8-8fd6-a1e2dda34db6','2026-09-24','Avaliação SEDUC — Linguagens e suas Tecnologias [Médio]',fonte],
+    ['664fb1a0-ff40-4571-8443-e96a4770d3d0','2026-09-25','Avaliação SEDUC — Ciências da Natureza e suas Tecnologias [Médio]',fonte],
+    ['4b04df43-cbfc-467f-9799-45917f09274e','2026-09-28','Avaliação — Bloco 6: Biologia, Sociologia, Filosofia [Médio]','Entrega das questões: 14/09. Sociologia e Filosofia — disciplinas da Malu. '+fonte],
+    ['ca963095-e747-4e8c-93f8-59e864587918','2026-09-29','Início: Intensificação e recomposição das aprendizagens — Recuperação [Médio]','Período: 29/09 a 02/10. '+fonte],
+    ['27d53798-d2d9-4893-a6de-cec1d29df837','2026-10-01','Último dia de envio de notas para o SIGE [Médio]',fonte],
+    ['301a4e87-6e71-4b07-8c1e-b4cc4edabb4e','2026-10-05','Encontro coletivo da tutoria [Médio]',fonte],
+    ['133d4ceb-01a7-4717-a7a4-608176bf7eaa','2026-10-06','Avaliação diagnóstica [Médio]',fonte],
+    ['c51edd31-8f61-4192-b76e-d6f347a924db','2026-10-07','Conselho de classe [Médio]',fonte],
+    ['9c44de43-a083-46ab-8c80-f021aa0c85d2','2026-08-07','Dia da Lei Maria da Penha [Médio]','Desenvolver alguma ação voltada para esse tema. '+fonte],
+    ['30a8bb84-6c44-4b46-8c2a-7c55a31c3867','2026-08-11','Feirão das Eletivas e Dia do Estudante [Médio]',fonte],
+    ['2abd24e0-d1c4-4485-ba9f-c6b5363cdf89','2026-08-14','Comemoração ao Dia do Estudante [Médio]','Nos dois últimos horários, com participação de todos os professores. Local: quadra. '+fonte],
+    ['dd66cfd9-5ce4-453d-befe-547bb182242a','2026-08-25','Dia de conscientização e combate à violência contra a mulher [Médio]','Sugestão: roda de conversa. '+fonte],
+  ];
+  const correcoes=itens.map(([id,data,titulo,descricao])=>({
+    path:'leciona/compromissos/'+id,
+    valor:{id,data,titulo,descricao,concluido:false,_ts:Date.now()}
+  }));
+  try{
+    const fn=firebase.app().functions('southamerica-east1').httpsCallable('corrigirCampos');
+    const r=await fn({correcoes});
+    toast((r.data||{}).aplicadas+' compromisso(s) adicionado(s) na Agenda.','ok');
+  }catch(e){
+    toast('⚠ Falha ao adicionar: '+(e.message||e),'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
+  }
+}
+
 async function atualizarQualitativaPlanilha(){
   const btn=event&&event.target;
   const textoOriginal=btn?btn.textContent:'';
@@ -5854,6 +5907,8 @@ function openConfig(){
         '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioFundamental()">📅 Adicionar calendário do Fundamental (8º/9º) na Agenda</button>'+
         '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE 2026" do 8º/9º ano (avaliações SEDUC, datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Fundamental].</small>'+
+        '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioMedio()">📅 Adicionar calendário do Médio (EFG) na Agenda</button>'+
+        '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE (1)" do Médio (blocos de avaliação — Bloco 2 tem História, Bloco 6 tem Sociologia/Filosofia — datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Médio].</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
         '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
@@ -6373,13 +6428,11 @@ function renderAgendaDia(){
   // já na linha da aula.
   const cronPorTurma={};
   cron.forEach(c=>{ (cronPorTurma[c.conteudo.turmaId]=cronPorTurma[c.conteudo.turmaId]||[]).push(c); });
-  const turmaIdsComAula=new Set();
   if(aulas.length){
     html+='<div class="agenda-secao-tit">📅 Aulas do dia</div>';
     aulas.forEach(x=>{
       const serie=SERIE_NUM[x.serie]; const u=x.unidade;
       const tuDia=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
-      if(tuDia) turmaIdsComAula.add(tuDia.id);
       const cronDaAula=tuDia?(cronPorTurma[tuDia.id]||[])[0]:null;
       const regDia=tuDia?Object.values(registros).filter(r=>r.turmaId===tuDia.id&&r.data===iso):[];
       const badgeReg=regDia.length?'<span class="reg-badge" title="'+regDia.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
@@ -6411,22 +6464,6 @@ function renderAgendaDia(){
       html+='<div class="hoje-row'+(regDia.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
         '<div class="hoje-info">'+infoHtml+'</div>'+acoesHtml+
       '</div>';
-    });
-  }
-  // Conteúdo previsto hoje pra turmas que não bateram com nenhum horário
-  // real do dia (inconsistência SCHEDULE x planejamento) — não esconde,
-  // só não mistura na lista principal.
-  const cronOrfaos=cron.filter(c=>!turmaIdsComAula.has(c.conteudo.turmaId));
-  if(cronOrfaos.length){
-    html+='<div class="agenda-secao-tit">⚠ Conteúdo previsto sem horário cadastrado hoje</div>';
-    cronOrfaos.forEach(({conteudo,entry,tema})=>{
-      const tu=turmas[conteudo.turmaId]||{};
-      const metSelo=entry.metodologia?'<span class="selo met">🎯 '+esc(entry.metodologia)+'</span>':'';
-      html+='<div class="hoje-row"><div class="hoje-info"><b>'+esc(turmaNome(tu))+' — '+esc(tema.tituloExibicao||tema.nome||'')+(tema.dcgo?' <span class="codigo-inline">'+esc(tema.dcgo)+'</span>':'')+'</b><span>'+esc(entry.obs||'')+'</span>'+metSelo+'</div>'+
-        '<div class="hoje-acoes">'+
-          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula">✓ Registrar</button>'+
-          '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
-        '</div></div>';
     });
   }
   if(avulsas.length){
