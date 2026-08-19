@@ -4093,6 +4093,25 @@ async function reconstruirTemasOrfaos(){
   }
 }
 
+async function preencherCronogramaCompleto(){
+  const btn=event&&event.target;
+  const textoOriginal=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Preenchendo…'; }
+  try{
+    const fn=firebase.app().functions('southamerica-east1').httpsCallable('preencherCronogramaCompletoAgora');
+    const r=await fn({});
+    const d=r.data||{};
+    let msg=d.entradasCriadas+' aula(s) de cronograma criada(s)'+(d.temasCriados?' · '+d.temasCriados+' tema(s) novo(s)':'');
+    if(d.semCorrespondencia) msg+=' · '+d.semCorrespondencia+' sem correspondência (Estudo Orientado/fora do plano — veja console)';
+    if(d.detalheSemCorrespondencia&&d.detalheSemCorrespondencia.length) console.log('[completar cronograma] sem correspondência:', d.detalheSemCorrespondencia);
+    toast(msg,'ok');
+  }catch(e){
+    toast('⚠ Falha ao completar: '+(e.message||e),'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
+  }
+}
+
 async function atualizarQualitativaPlanilha(){
   const btn=event&&event.target;
   const textoOriginal=btn?btn.textContent:'';
@@ -6010,6 +6029,8 @@ function openConfig(){
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="corrigirDuasDatas19_08()">🔧 Corrigir data de hoje (2ªA Sociologia e 1ªA História)</button>'+
         '<button class="btn primary" style="width:100%;margin-top:8px;background:#a8442f;border-color:#a8442f" onclick="reconstruirTemasOrfaos()">🔧 Reconstruir temas apagados (46 aulas em 10 turmas)</button>'+
         '<small>Correção pontual (18/08): muitas entradas do cronograma do 3º Bimestre apontavam pra temas que foram apagados (só sobrou a data). Recria o tema certo (nome, código, habilidade, foco) a partir do plano completo e religa.</small>'+
+        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="preencherCronogramaCompleto()">📅 Completar cronograma do 3º Bimestre (verde = azul)</button>'+
+        '<small>Correção pontual (18/08): cria a entrada de cronograma que falta em todo dia com aula prevista (03/08 a 07/10) que ainda não tinha nenhuma, pro Médio e Fundamental. "Estudo Orientado" e datas fora do plano ficam sem, porque não têm conteúdo da matriz.</small>'+
         '<small>Correção pontual (19/08): as duas entradas desta semana ficaram na quinta em vez da quarta.</small>'+
         '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioFundamental()">📅 Adicionar calendário do Fundamental (8º/9º) na Agenda</button>'+

@@ -1121,3 +1121,119 @@ exports.reconstruirTemasOrfaosAgora = onCall(
     }
   }
 );
+
+
+/* =========================================================
+   Preenche todo buraco restante do cronograma do 3º Bimestre (03/08 a
+   07/10/2026) pra turma EFG/CEPI Marajo — todo dia com aula prevista no
+   horario que ainda nao tem NENHUMA entrada de cronograma ganha uma,
+   casando por serie+disciplina+semana com o plano completo (mesma fonte
+   de reconstruirTemasOrfaos). Se a turma ja tiver um tema com o codigo
+   certo, so cria a entrada; se nao tiver, cria o tema tambem. Garante
+   verde=azul (aula prevista = tema planejado) no calendario da Agenda. */
+async function preencherCronogramaCompleto() {
+  const [turmasSnap, contSnap, temasSnap] = await Promise.all([
+    rtdb.ref("leciona/turmas").once("value"),
+    rtdb.ref("leciona/conteudos").once("value"),
+    rtdb.ref("leciona/temas").once("value"),
+  ]);
+  const turmas = turmasSnap.val() || {};
+  const conteudos = contSnap.val() || {};
+  const temasAll = temasSnap.val() || {};
+
+  const planoPorSemana = {};
+  PLANO_COMPLETO_FULL.forEach((r) => {
+    planoPorSemana[r.serie + "|" + r.disc + "|" + segundaDaSemana(r.data)] = r;
+  });
+
+  // datas ja cobertas por turma
+  const datasPorTurma = {};
+  const conteudoPor3Bim = {}; // turmaId -> conteudo do 3º Bimestre
+  Object.entries(conteudos).forEach(([cid, c]) => {
+    if (!c || !c.turmaId) return;
+    if (c.bimestre === "3º Bimestre") conteudoPor3Bim[c.turmaId] = cid;
+    if (c.bimestre !== "3º Bimestre" || !Array.isArray(c.planejamento)) return;
+    (datasPorTurma[c.turmaId] = datasPorTurma[c.turmaId] || new Set());
+    c.planejamento.forEach((p) => { if (p && p.data) datasPorTurma[c.turmaId].add(p.data); });
+  });
+
+  // tema existente por turma+codigo (pra nao recriar duplicado)
+  const temaPorTurmaCodigo = {};
+  Object.values(temasAll).forEach((t) => {
+    if (!t || !t.turmaId || !t.dcgo) return;
+    temaPorTurmaCodigo[t.turmaId + "|" + t.dcgo] = t;
+  });
+
+  const updates = {};
+  const planejamentoPorConteudo = {};
+  let entradasCriadas = 0, temasCriados = 0;
+  const semCorrespondencia = [];
+
+  const turmasAlvo = Object.values(turmas).filter((t) => t && t.ativo !== false && t.serie && t.letra && (t.unidade === "EFG" || t.unidade === "CEPI Marajó"));
+  const cursor = new Date("2026-08-03T00:00:00");
+  const fim = new Date("2026-10-07T00:00:00");
+  while (cursor <= fim) {
+    const iso = isoDeDate(cursor);
+    const wd = cursor.getDay();
+    turmasAlvo.forEach((turma) => {
+      const grade = gradeAtual(turma);
+      if (!grade || !temAula(grade, wd)) return;
+      const datas = datasPorTurma[turma.id] || (datasPorTurma[turma.id] = new Set());
+      if (datas.has(iso)) return; // já tem cronograma nesse dia
+
+      const serie1 = turma.serie[0], disc = turma.disciplina;
+      const info = planoPorSemana[serie1 + "|" + disc + "|" + segundaDaSemana(iso)];
+      if (!info) { semCorrespondencia.push({ turma: turma.nome + " " + disc + " (" + turma.unidade + ")", data: iso }); return; }
+
+      let cid = conteudoPor3Bim[turma.id];
+      if (!cid) { semCorrespondencia.push({ turma: turma.nome + " " + disc, data: iso, motivo: "sem conteúdo 3º Bimestre" }); return; }
+
+      let tema = temaPorTurmaCodigo[turma.id + "|" + info.codigo];
+      if (!tema) {
+        const habilidade = MATRIZ_HABILIDADE[disc + "|" + info.codigo] || "";
+        const novoId = rtdb.ref("leciona/temas").push().key;
+        const maiorOrdem = Math.max(0, ...Object.values(temasAll).filter((t) => t && t.conteudoId === cid).map((t) => t.ordem || 0));
+        tema = {
+          id: novoId, conteudoId: cid, turmaId: turma.id,
+          disciplina: disc, serie: turma.serie, bimestre: "3º Bimestre",
+          nome: info.nome, dcgo: info.codigo, habilidade, resumo: "", palavras: "", tempo: "", ordem: maiorOrdem + 1,
+          obj: { quadro: "", estudo: "", slides: [], mapaMental: "", avaliacao: { questoes: [], flashcards: [], atividade: [], gabarito: [] } },
+          imagens: [], status: { estado: "", data: "" }, aprovado: {}, adaptado: {}, updatedAt: Date.now(),
+          _recriadoOrfao: true,
+        };
+        updates["leciona/temas/" + novoId] = tema;
+        temaPorTurmaCodigo[turma.id + "|" + info.codigo] = tema;
+        temasAll[novoId] = tema;
+        temasCriados++;
+      }
+
+      if (!planejamentoPorConteudo[cid]) {
+        const cont = conteudos[cid];
+        planejamentoPorConteudo[cid] = (cont && Array.isArray(cont.planejamento)) ? cont.planejamento.slice() : [];
+      }
+      planejamentoPorConteudo[cid].push({ id: rtdb.ref("leciona/conteudos").push().key, data: iso, temaId: tema.id, objeto: "quadro", obs: info.foco || "", metodologia: info.metodologia || "" });
+      datas.add(iso);
+      entradasCriadas++;
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  Object.entries(planejamentoPorConteudo).forEach(([cid, arr]) => {
+    updates["leciona/conteudos/" + cid + "/planejamento"] = arr;
+  });
+
+  if (Object.keys(updates).length) await rtdb.ref().update(updates);
+  return { entradasCriadas, temasCriados, semCorrespondencia: semCorrespondencia.length, detalheSemCorrespondencia: semCorrespondencia.slice(0, 40) };
+}
+
+exports.preencherCronogramaCompletoAgora = onCall(
+  { region: "southamerica-east1", timeoutSeconds: 180, memory: "256MiB" },
+  async (request) => {
+    verificarAcesso(request);
+    try {
+      return await preencherCronogramaCompleto();
+    } catch (e) {
+      throw new HttpsError("internal", "Erro ao preencher cronograma: " + (e.message || String(e)));
+    }
+  }
+);
