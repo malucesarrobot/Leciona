@@ -3494,18 +3494,42 @@ function planejamentosDoDia(dataISO){
 /* Escolher/trocar o tema de uma aula específica (turma+data) direto da tela
    Hoje/Agenda — antes só dava pra ver, não pra editar. entryId vazio = ainda
    não tem tema nessa data (cria); entryId preenchido = já tem, troca. */
+/* candidatos de subtema com pré-pronto disponível pra essa disciplina/série,
+   em QUALQUER bimestre da matriz — não só o bimestre agendado. A matriz
+   organiza o conteúdo por bimestre "oficial", mas o ritmo real da turma
+   pode não bater com essa divisão (ex.: um código catalogado no 2º
+   Bimestre sendo dado de fato no 3º) — sem isso, o tema simplesmente não
+   aparecia pra escolher quando o bimestre real divergia do da matriz. */
+function candidatosPreProntoTodosBimestres(disc, serie, jaExistentesNomes){
+  const out=[]; const vistos=new Set();
+  BIMESTRES.forEach(b=>{
+    candidatosPreProntoDoRecorte(disc, serie, b).forEach(c=>{
+      if(jaExistentesNomes.has(c.nome) || vistos.has(c.nome)) return;
+      vistos.add(c.nome); out.push(c);
+    });
+  });
+  return out;
+}
 function abrirTrocarTema(turmaId, dataISO, entryId){
   const tu=turmas[turmaId]; if(!tu) return;
   const bim=bimAtivoAgora(dataISO)||scope.bim;
   const conts=Object.values(conteudos).filter(c=>c.turmaId===turmaId&&c.bimestre===bim);
   const temasDisp=[];
   conts.forEach(c=>{ temasDoConteudo(c.id).forEach(t=>temasDisp.push(t)); });
-  const opts=temasDisp.map(t=>'<option value="'+t.id+'">'+esc((t.tituloExibicao||t.nome||'(sem nome)').slice(0,60))+(t.dcgo?' ['+t.dcgo+']':'')+'</option>').join('');
+  const nomesExistentes=new Set(temasDisp.map(t=>t.nome));
+  window.__trocaTemaBim=bim;
+  window.__trocaCandidatos=candidatosPreProntoTodosBimestres(tu.disciplina, tu.serie, nomesExistentes);
+  const optsExistentes=temasDisp.map(t=>'<option value="'+t.id+'">'+esc((t.tituloExibicao||t.nome||'(sem nome)').slice(0,60))+(t.dcgo?' ['+t.dcgo+']':'')+'</option>').join('');
+  const optsCandidatos=window.__trocaCandidatos.map((c,i)=>'<option value="novo:'+i+'">✦ '+esc(c.nome.slice(0,60))+(c.dcgo?' ['+c.dcgo+']':'')+' — pré-pronto</option>').join('');
+  const opts=(optsExistentes?'<optgroup label="Temas já criados nesta turma/bimestre">'+optsExistentes+'</optgroup>':'')+
+    (optsCandidatos?'<optgroup label="Subtemas com conteúdo pronto (cria na hora)">'+optsCandidatos+'</optgroup>':'')+
+    '<option value="__livre__">✏️ Digitar um tema novo…</option>';
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>Tema da aula — '+esc(turmaNome(tu))+'</h3></div>'+
     '<div class="modal-b">'+
     '<div class="field"><label>Data</label><strong>'+esc(dataISO.split('-').reverse().join('/'))+'</strong></div>'+
-    '<div class="field"><label>Tema</label><select id="trocaTemaSel">'+(opts||'<option value="">Nenhum tema cadastrado neste bimestre — crie um na Gestão primeiro</option>')+'</select></div>'+
+    '<div class="field"><label>Tema</label><select id="trocaTemaSel" onchange="document.getElementById(\'trocaTemaLivreWrap\').style.display=this.value===\'__livre__\'?\'\':\'none\'">'+opts+'</select></div>'+
+    '<div class="field" id="trocaTemaLivreWrap" style="display:none"><label>Nome do tema novo</label><input id="trocaTemaLivreNome" placeholder="ex.: Debate — desinformação nas redes"></div>'+
     '</div><div class="modal-f">'+
     (entryId?'<button class="btn ghost" style="color:#a8442f" onclick="removerTemaDoDia(\''+turmaId+'\',\''+entryId+'\')">Remover desta data</button>':'')+
     '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
@@ -3514,8 +3538,29 @@ function abrirTrocarTema(turmaId, dataISO, entryId){
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
 }
 function salvarTemaDoDia(turmaId, dataISO, entryId){
-  const temaId=(document.getElementById('trocaTemaSel')||{}).value;
-  if(!temaId){ toast('Escolha um tema.','err'); return; }
+  const sel=(document.getElementById('trocaTemaSel')||{}).value;
+  if(!sel){ toast('Escolha um tema.','err'); return; }
+  const tu=turmas[turmaId]; const bim=window.__trocaTemaBim||bimAtivoAgora(dataISO)||scope.bim;
+  let temaId=sel;
+  if(sel==='__livre__'){
+    const nomeLivre=(document.getElementById('trocaTemaLivreNome')||{}).value.trim();
+    if(!nomeLivre){ toast('Digite o nome do tema.','err'); return; }
+    let cont=Object.values(conteudos).find(co=>co.turmaId===turmaId&&co.bimestre===bim&&co.nome==='Matriz — '+bim);
+    if(!cont){
+      const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===turmaId&&co.bimestre===bim);
+      const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
+      cont={id:uid(),disciplina:tu.disciplina,serie:tu.serie,turmaId,bimestre:bim,nome:'Matriz — '+bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
+      persistConteudo(cont);
+    }
+    const novoTema=blankTema(cont.id,{turmaId,disciplina:tu.disciplina,serie:tu.serie,bimestre:bim,nome:nomeLivre.slice(0,80),ordem:nextOrdemTema(cont.id)});
+    persistTema(novoTema);
+    temaId=novoTema.id;
+  } else if(sel.indexOf('novo:')===0){
+    const cand=(window.__trocaCandidatos||[])[parseInt(sel.slice(5),10)];
+    if(!cand){ toast('Candidato não encontrado — tente reabrir o modal.','err'); return; }
+    const novoTema=criarTemaAPartirDePrePronto({nome:cand.nome, dcgo:cand.dcgo, habilidade:cand.habilidade, disc:tu.disciplina, serie:tu.serie, bim}, turmaId);
+    temaId=novoTema.id;
+  }
   const tema=temas[temaId]; const cont=tema?conteudos[tema.conteudoId]:null;
   if(!cont){ toast('Conteúdo deste tema não encontrado.','err'); return; }
   if(entryId){
@@ -7644,8 +7689,13 @@ function notaQualitativa(alunoId, turmaId){
   const total=10+qualitativaDoAluno(alunoId,turmaId).reduce((s,q)=>s+(q.valor||0),0);
   return Math.max(0, Math.min(10, total));
 }
-function abrirQualitativaAluno(alunoId){
-  const al=alunos[alunoId]; const turmaId=scope.turma; const tu=turmas[turmaId]; if(!al||!tu) return;
+/* Conteúdo de dentro do modal (nota + form + histórico), separado do
+   wrapper — assim dá pra atualizar só isso depois de lançar/remover um
+   desconto, em vez de destruir e recriar o modal inteiro. Recriar o
+   modal do zero fazia ele "pular pro início" a cada clique (era um
+   <div id="modalWrap"> novo por cima do antigo, sem fechar o de antes). */
+function qualitativaBodyHtml(alunoId){
+  const al=alunos[alunoId]; const turmaId=scope.turma; const tu=turmas[turmaId]; if(!al||!tu) return '';
   const eventos=qualitativaDoAluno(alunoId,turmaId);
   const nota=notaQualitativa(alunoId,turmaId);
   const motivoOpts=QUALITATIVA_MOTIVOS.map(m=>'<option value="'+m.k+'" data-valor="'+m.valor+'">'+esc(m.label)+'</option>').join('');
@@ -7654,13 +7704,10 @@ function abrirQualitativaAluno(alunoId){
     return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line,#e5e7eb);font-size:13px">'+
       '<span>'+(q.data?esc(q.data.split('-').reverse().join('/'))+' — ':'')+esc(q.motivo||motivoLabel)+'</span>'+
       '<span style="display:flex;align-items:center;gap:8px"><b style="color:#a8442f">'+(q.valor>0?'+':'')+q.valor.toFixed(1)+'</b>'+
-      '<button class="btn ghost sm" onclick="removerQualitativa(\''+q.id+'\');abrirQualitativaAluno(\''+alunoId+'\')">✕</button></span></div>';
+      '<button class="btn ghost sm" onclick="removerQualitativa(\''+q.id+'\');refreshQualitativaModal(\''+alunoId+'\')">✕</button></span></div>';
   }).join('') : '<p style="color:var(--muted);font-size:13px">Nenhum desconto lançado — nota cheia.</p>';
   const hoje=isoLocal(new Date());
-  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
-    '<div class="modal-h"><h3>Qualitativa — '+esc(al.nome)+'</h3></div>'+
-    '<div class="modal-b">'+
-    '<div style="text-align:center;margin-bottom:12px"><span style="font-size:32px;font-weight:700;color:'+(nota>=7?'#2f6b5e':nota>=5?'#a06a2e':'#a8442f')+'">'+nota.toFixed(1)+'</span><span style="color:var(--muted);font-size:13px"> / 10 — '+esc(turmaNome(tu))+'</span></div>'+
+  return '<div style="text-align:center;margin-bottom:12px"><span style="font-size:32px;font-weight:700;color:'+(nota>=7?'#2f6b5e':nota>=5?'#a06a2e':'#a8442f')+'">'+nota.toFixed(1)+'</span><span style="color:var(--muted);font-size:13px"> / 10 — '+esc(turmaNome(tu))+'</span></div>'+
     '<div class="field"><label>Novo desconto</label><div style="display:flex;gap:6px">'+
       '<select id="qualMotivo" style="flex:1" onchange="document.getElementById(\'qualValor\').value=this.selectedOptions[0].dataset.valor">'+motivoOpts+'</select>'+
       '<input id="qualValor" type="number" step="0.1" value="-0.1" style="width:70px">'+
@@ -7668,9 +7715,22 @@ function abrirQualitativaAluno(alunoId){
     '<div class="field"><label>Observação (opcional)</label><input id="qualObs" placeholder="detalhe, se quiser"></div>'+
     '<div class="field"><label>Data</label><input id="qualData" type="date" value="'+hoje+'"></div>'+
     '<button class="btn primary full" onclick="confirmarQualitativa(\''+alunoId+'\')">Lançar desconto</button>'+
-    '<div class="field" style="border-top:1px solid var(--line,#e5e7eb);padding-top:10px;margin-top:14px"><label>Histórico</label>'+historico+'</div>'+
-    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
+    '<div class="field" style="border-top:1px solid var(--line,#e5e7eb);padding-top:10px;margin-top:14px"><label>Histórico</label>'+historico+'</div>';
+}
+function abrirQualitativaAluno(alunoId){
+  const al=alunos[alunoId]; const tu=turmas[scope.turma]; if(!al||!tu) return;
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
+    '<div class="modal-h"><h3>Qualitativa — '+esc(al.nome)+'</h3></div>'+
+    '<div class="modal-b" id="qualBody">'+qualitativaBodyHtml(alunoId)+'</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
+/* Atualiza só o miolo do modal (nota + histórico), preservando o modal
+   aberto e a posição de rolagem — em vez de fechar/reabrir tudo. */
+function refreshQualitativaModal(alunoId){
+  const body=document.getElementById('qualBody');
+  if(!body){ abrirQualitativaAluno(alunoId); return; }
+  body.innerHTML=qualitativaBodyHtml(alunoId);
 }
 function confirmarQualitativa(alunoId){
   const motivoKey=document.getElementById('qualMotivo').value;
@@ -7682,8 +7742,7 @@ function confirmarQualitativa(alunoId){
   persistQualitativa(q);
   toast('Desconto lançado.','ok');
   renderNotas();
-  closeModal();
-  abrirQualitativaAluno(alunoId);
+  refreshQualitativaModal(alunoId);
 }
 /* CSV pronta pra digitar no SIAP (sem API — o SIAP não integra automaticamente) */
 function exportarQualitativaCSV(){
