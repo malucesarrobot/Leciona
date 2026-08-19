@@ -54,7 +54,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .notas-wrap{max-width:1100px;margin:0 auto;padding:16px}
 .notas-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
 .notas-toolbar h3{font-family:var(--serif);font-size:17px;flex:1;margin:0}
-.notas-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.notas-table-wrap{overflow:auto;max-height:calc(100vh - 260px);min-height:280px;border-radius:10px;border:1px solid var(--border)}
 .notas-table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-size:13px}
 .notas-table th{background:var(--surface);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;font-weight:600;position:sticky;top:0;z-index:2;overflow:hidden;text-overflow:ellipsis}
 .notas-table th.aluno-col{position:sticky;left:0;z-index:3;background:var(--surface)}
