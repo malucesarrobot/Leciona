@@ -1,0 +1,82 @@
+[debug] [2026-08-19T00:09:05.656Z] ----------------------------------------------------------------------
+[debug] [2026-08-19T00:09:05.666Z] Command:       /usr/local/bin/node /usr/local/bin/firebase database:get /leciona/_importLog --limit-to-last 1
+[debug] [2026-08-19T00:09:05.667Z] CLI Version:   15.23.0
+[debug] [2026-08-19T00:09:05.667Z] Platform:      darwin
+[debug] [2026-08-19T00:09:05.667Z] Node Version:  v24.15.0
+[debug] [2026-08-19T00:09:05.668Z] Detected Agent: claude-code_2-1-221_agent
+[debug] [2026-08-19T00:09:05.668Z] Time:          Tue Aug 18 2026 21:09:05 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2026-08-19T00:09:05.669Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-19T00:09:08.024Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-19T00:09:08.025Z] > authorizing via signed-in user (malu.cesar@gmail.com)
+[debug] [2026-08-19T00:09:08.025Z] [iam] checking project leciona-eaa56 for permissions ["firebase.projects.get","firebasedatabase.instances.get"]
+[debug] [2026-08-19T00:09:08.066Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:08.066Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:08.067Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions [none]
+[debug] [2026-08-19T00:09:08.068Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions  x-goog-user-project=leciona-eaa56
+[debug] [2026-08-19T00:09:08.068Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.get"]}
+[debug] [2026-08-19T00:09:09.053Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions 200
+[debug] [2026-08-19T00:09:09.053Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.get"]}
+[debug] [2026-08-19T00:09:09.054Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:09.054Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:09.055Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/leciona-eaa56 [none]
+[debug] [2026-08-19T00:09:09.499Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/leciona-eaa56 200
+[debug] [2026-08-19T00:09:09.500Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/leciona-eaa56 {"projectId":"leciona-eaa56","projectNumber":"824991056615","displayName":"Leciona","name":"projects/leciona-eaa56","resources":{"hostingSite":"leciona-eaa56","realtimeDatabaseInstance":"leciona-eaa56-default-rtdb"},"state":"ACTIVE","labels":{"firebase":"enabled"},"etag":"1_f8cfea50-277e-45a8-a3a9-6858a55b9aa7"}
+[debug] [2026-08-19T00:09:09.500Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:09.500Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:09.500Z] >>> [apiv2][query] GET https://firebasedatabase.googleapis.com/v1beta/projects/leciona-eaa56/locations/-/instances/leciona-eaa56-default-rtdb [none]
+[debug] [2026-08-19T00:09:10.556Z] <<< [apiv2][status] GET https://firebasedatabase.googleapis.com/v1beta/projects/leciona-eaa56/locations/-/instances/leciona-eaa56-default-rtdb 200
+[debug] [2026-08-19T00:09:10.557Z] <<< [apiv2][body] GET https://firebasedatabase.googleapis.com/v1beta/projects/leciona-eaa56/locations/-/instances/leciona-eaa56-default-rtdb {"name":"projects/824991056615/locations/us-central1/instances/leciona-eaa56-default-rtdb","project":"projects/824991056615","databaseUrl":"https://leciona-eaa56-default-rtdb.firebaseio.com","type":"DEFAULT_DATABASE","state":"ACTIVE"}
+[debug] [2026-08-19T00:09:10.559Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:10.559Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:10.559Z] >>> [apiv2][query] GET https://leciona-eaa56-default-rtdb.firebaseio.com/leciona/_importLog.json limitToLast=1
+[debug] [2026-08-19T00:09:10.967Z] <<< [apiv2][status] GET https://leciona-eaa56-default-rtdb.firebaseio.com/leciona/_importLog.json 400
+[debug] [2026-08-19T00:09:10.967Z] <<< [apiv2][body] GET https://leciona-eaa56-default-rtdb.firebaseio.com/leciona/_importLog.json [stream]
+[debug] [2026-08-19T00:09:10.977Z] TypeError: Body is unusable: Body has already been read
+    at consumeBody (node:internal/deps/undici/undici:6961:31)
+    at _Response.text (node:internal/deps/undici/undici:6909:18)
+    at Command.actionFn (/usr/local/lib/node_modules/firebase-tools/lib/commands/database-get.js:94:38)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-08-19T00:09:16.338Z] ----------------------------------------------------------------------
+[debug] [2026-08-19T00:09:16.342Z] Command:       /usr/local/bin/node /usr/local/bin/firebase database:get /leciona/_importLog --limit-to-last 1
+[debug] [2026-08-19T00:09:16.343Z] CLI Version:   15.23.0
+[debug] [2026-08-19T00:09:16.343Z] Platform:      darwin
+[debug] [2026-08-19T00:09:16.343Z] Node Version:  v24.15.0
+[debug] [2026-08-19T00:09:16.343Z] Detected Agent: claude-code_2-1-221_agent
+[debug] [2026-08-19T00:09:16.343Z] Time:          Tue Aug 18 2026 21:09:16 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2026-08-19T00:09:16.344Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-19T00:09:18.852Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-19T00:09:18.853Z] > authorizing via signed-in user (malu.cesar@gmail.com)
+[debug] [2026-08-19T00:09:18.854Z] [iam] checking project leciona-eaa56 for permissions ["firebase.projects.get","firebasedatabase.instances.get"]
+[debug] [2026-08-19T00:09:18.876Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:18.877Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:18.879Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions [none]
+[debug] [2026-08-19T00:09:18.879Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions  x-goog-user-project=leciona-eaa56
+[debug] [2026-08-19T00:09:18.879Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.get"]}
+[debug] [2026-08-19T00:09:19.860Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions 200
+[debug] [2026-08-19T00:09:19.860Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/leciona-eaa56:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.get"]}
+[debug] [2026-08-19T00:09:19.861Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:19.861Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:19.861Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/leciona-eaa56 [none]
+[debug] [2026-08-19T00:09:20.651Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/leciona-eaa56 200
+[debug] [2026-08-19T00:09:20.652Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/leciona-eaa56 {"projectId":"leciona-eaa56","projectNumber":"824991056615","displayName":"Leciona","name":"projects/leciona-eaa56","resources":{"hostingSite":"leciona-eaa56","realtimeDatabaseInstance":"leciona-eaa56-default-rtdb"},"state":"ACTIVE","labels":{"firebase":"enabled"},"etag":"1_f8cfea50-277e-45a8-a3a9-6858a55b9aa7"}
+[debug] [2026-08-19T00:09:20.652Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:20.652Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:20.653Z] >>> [apiv2][query] GET https://firebasedatabase.googleapis.com/v1beta/projects/leciona-eaa56/locations/-/instances/leciona-eaa56-default-rtdb [none]
+[debug] [2026-08-19T00:09:21.723Z] <<< [apiv2][status] GET https://firebasedatabase.googleapis.com/v1beta/projects/leciona-eaa56/locations/-/instances/leciona-eaa56-default-rtdb 200
+[debug] [2026-08-19T00:09:21.723Z] <<< [apiv2][body] GET https://firebasedatabase.googleapis.com/v1beta/projects/leciona-eaa56/locations/-/instances/leciona-eaa56-default-rtdb {"name":"projects/824991056615/locations/us-central1/instances/leciona-eaa56-default-rtdb","project":"projects/824991056615","databaseUrl":"https://leciona-eaa56-default-rtdb.firebaseio.com","type":"DEFAULT_DATABASE","state":"ACTIVE"}
+[debug] [2026-08-19T00:09:21.725Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:21.725Z] Checked if tokens are valid: true, expires at: 1787099316745
+[debug] [2026-08-19T00:09:21.725Z] >>> [apiv2][query] GET https://leciona-eaa56-default-rtdb.firebaseio.com/leciona/_importLog.json limitToLast=1
+[debug] [2026-08-19T00:09:22.127Z] <<< [apiv2][status] GET https://leciona-eaa56-default-rtdb.firebaseio.com/leciona/_importLog.json 400
+[debug] [2026-08-19T00:09:22.127Z] <<< [apiv2][body] GET https://leciona-eaa56-default-rtdb.firebaseio.com/leciona/_importLog.json [stream]
+[debug] [2026-08-19T00:09:22.131Z] TypeError: Body is unusable: Body has already been read
+    at consumeBody (node:internal/deps/undici/undici:6961:31)
+    at _Response.text (node:internal/deps/undici/undici:6909:18)
+    at Command.actionFn (/usr/local/lib/node_modules/firebase-tools/lib/commands/database-get.js:94:38)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: An unexpected error has occurred.
