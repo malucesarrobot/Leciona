@@ -8092,6 +8092,15 @@ function abrirTodasChamadas(){
 }
 function renderNotas(){
   const box=document.getElementById('notasBody'); if(!box) return;
+  // renderNotas() roda de novo a cada escrita em notasCtrl que volta do
+  // Firebase (o listener .on('value') chama isso) — inclusive quando é a
+  // própria professora marcando um checkbox de atividade. Como .notas-table-wrap
+  // é recriado do zero a cada vez e é ele mesmo quem rola (pro cabeçalho
+  // fixo), sem isso a rolagem voltava pro topo a cada clique — precisando
+  // procurar o aluno de novo pra marcar a próxima atividade.
+  const wrapAntigo=box.querySelector('.notas-table-wrap');
+  const scrollSalvo=wrapAntigo?{top:wrapAntigo.scrollTop,left:wrapAntigo.scrollLeft}:null;
+  const restaurarScroll=()=>{ if(!scrollSalvo) return; const w=box.querySelector('.notas-table-wrap'); if(w){ w.scrollTop=scrollSalvo.top; w.scrollLeft=scrollSalvo.left; } };
   const turmaId=scope.turma;
   const todasTurmasInit=Object.values(turmas).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b)));
   if(!turmaId||!todasTurmasInit.length){
@@ -8241,6 +8250,7 @@ function renderNotas(){
 
   h+='</tbody></table></div>';
   box.innerHTML=h;
+  restaurarScroll();
 }
 
 function salvarNota(input){
