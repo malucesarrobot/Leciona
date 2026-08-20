@@ -51,6 +51,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 #viewHoje{flex:1;overflow:auto}
 #viewAcervo{flex:1;overflow:auto}
 #viewNotas{flex:1;overflow:auto}
+#viewLinhaTempo{flex:1;overflow:auto}
 .notas-wrap{max-width:1100px;margin:0 auto;padding:16px}
 .notas-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
 .notas-toolbar h3{font-family:var(--serif);font-size:17px;flex:1;margin:0}
@@ -121,6 +122,9 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .lt-plan-head h3{font-size:14px;margin:0}
 .lt-plan-list{display:flex;flex-direction:column;gap:4px}
 .lt-plan-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:8px;font-size:12.5px}
+.lt-plan-row.hoje{background:#eaf6ef;border:1.5px solid var(--green);box-shadow:0 0 0 1px var(--green) inset}
+.lt-plan-row.passado{opacity:.6}
+.lt-plan-hoje-selo{flex:0 0 auto;background:var(--green);color:#fff;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 6px;border-radius:5px}
 .lt-plan-data{flex:0 0 44px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
 .lt-plan-tema{flex:1;cursor:pointer;font-weight:500}
 .lt-plan-tema:hover{text-decoration:underline}
@@ -5552,11 +5556,19 @@ function recuperarSequencia(turmaId, bim){
   renderLinhaDoTempo();
 }
 
-function planejamentoSectionHtml(tu, bim, hoje){
-  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===tu.id&&c.bimestre===bim);
+/* Todas as entradas de cronograma da turma/bimestre, passadas e futuras,
+   em ordem de data — usado tanto pra renderizar a lista quanto pelos
+   botões ▲▼ (têm que enxergar exatamente a mesma lista/índices que a
+   tela mostra, senão movem a entrada errada). */
+function entradasPlanejamentoLT(turmaId, bim){
+  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===turmaId&&c.bimestre===bim);
   const entradas=[];
-  conts.forEach(c=>(c.planejamento||[]).forEach(p=>{ if(p.data>=hoje) entradas.push({c,p}); }));
+  conts.forEach(c=>(c.planejamento||[]).forEach(p=>entradas.push({c,p})));
   entradas.sort((a,b)=>a.p.data.localeCompare(b.p.data));
+  return entradas;
+}
+function planejamentoSectionHtml(tu, bim, hoje){
+  const entradas=entradasPlanejamentoLT(tu.id, bim);
   // Selo de metodologia por semana — detecta quando a MESMA metodologia se
   // repete 3x ou mais na mesma semana (segunda a domingo) pra essa turma,
   // pra evitar empilhar "texto" 3x sem perceber (pedido dela).
@@ -5572,12 +5584,12 @@ function planejamentoSectionHtml(tu, bim, hoje){
     const k=semanaKey(p.data)+'::'+p.metodologia;
     contagemSemana[k]=(contagemSemana[k]||0)+1;
   });
-  let h='<div class="lt-planejamento"><div class="lt-plan-head"><h3>Planejamento (a partir de hoje)</h3>'+
+  let h='<div class="lt-planejamento"><div class="lt-plan-head"><h3>Planejamento do bimestre</h3>'+
     '<div><button class="btn ghost sm" onclick="recuperarSequencia(\''+tu.id+'\',\''+esc(bim)+'\')" title="Remapeia aulas planejadas que ficaram sem acontecer pras próximas datas disponíveis">🔁 recuperar</button> '+
     '<button class="btn ghost sm" onclick="imprimirPlanejamentoBimestre(\''+tu.id+'\',\''+esc(bim)+'\')" title="Abre o planejamento em papel timbrado, pronto pra imprimir/salvar em PDF">🖨 imprimir planejamento</button> '+
     '<button class="btn sm" onclick="gerarSequenciaAutomatica(\''+tu.id+'\',\''+esc(bim)+'\')">🪄 gerar sequência automática</button></div>'+
   '</div>';
-  if(!entradas.length){ h+='<p style="color:var(--muted);font-size:13px">Nenhuma aula planejada a partir de hoje ainda — use "gerar sequência automática".</p></div>'; return h; }
+  if(!entradas.length){ h+='<p style="color:var(--muted);font-size:13px">Nenhuma aula planejada ainda neste bimestre — use "gerar sequência automática".</p></div>'; return h; }
   h+='<div class="lt-plan-list">'+entradas.map(({c,p},i)=>{
     const t=temas[p.temaId]||{};
     const objLabel=(OBJ_DEFS.find(o=>o.k===p.objeto)||{}).label||p.objeto||'—';
@@ -5585,7 +5597,10 @@ function planejamentoSectionHtml(tu, bim, hoje){
     const metSelo = p.metodologia
       ? '<span class="selo '+(repete?'met-repete':'met')+'" title="'+(repete?'Essa metodologia já aparece 3x ou mais nesta semana pra essa turma':'Metodologia desta aula')+'">🎯 '+esc(p.metodologia)+(repete?' ⚠':'')+'</span>'
       : '';
-    return '<div class="lt-plan-row">'+
+    const ehHoje=p.data===hoje;
+    const ehPassado=p.data<hoje;
+    return '<div class="lt-plan-row'+(ehHoje?' hoje':'')+(ehPassado?' passado':'')+'">'+
+      (ehHoje?'<span class="lt-plan-hoje-selo" title="Aula de hoje">HOJE</span>':'')+
       '<span class="lt-plan-data">'+p.data.split('-').reverse().join('/')+'</span>'+
       '<span class="lt-plan-tema" onclick="abrirEditor(\''+p.temaId+'\')" title="Abrir tema">'+esc(t.tituloExibicao||t.nome||'(tema removido)')+'</span>'+
       '<span class="lt-plan-obj" onclick="abrirEditarObjPlanejamento(\''+c.id+'\',\''+p.id+'\')" title="Clique pra mudar o tipo ou anotar o que rolou nessa aula (ex.: trecho de documentário)">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
@@ -5599,10 +5614,7 @@ function planejamentoSectionHtml(tu, bim, hoje){
   return h;
 }
 function moverPlanejamentoLT(turmaId, bim, index, delta){
-  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===turmaId&&c.bimestre===bim);
-  const hoje=isoLocal(new Date());
-  const entradas=[]; conts.forEach(c=>(c.planejamento||[]).forEach(p=>{ if(p.data>=hoje) entradas.push({c,p}); }));
-  entradas.sort((a,b)=>a.p.data.localeCompare(b.p.data));
+  const entradas=entradasPlanejamentoLT(turmaId, bim);
   const j=index+delta;
   if(j<0||j>=entradas.length) return;
   const dataA=entradas[index].p.data, dataB=entradas[j].p.data;
