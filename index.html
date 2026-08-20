@@ -30,7 +30,6 @@ button{font-family:inherit;cursor:pointer}
 input,textarea,select{font-family:inherit;font-size:14px}
 h1,h2,h3{margin:0;font-weight:600}
 .hidden{display:none!important}
-.serif{font-family:var(--serif)}
 
 #app{display:flex;flex-direction:column;height:100%}
 header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;background:var(--ink);color:var(--board-fg);flex:0 0 auto;max-width:100vw}
@@ -72,8 +71,6 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .nota-media.reprovado{color:var(--err)}
 .nota-check{width:22px;height:22px;cursor:pointer;accent-color:var(--green)}
 .atv-col-header{padding:4px 2px 2px;display:block;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.atv-remover{cursor:pointer;color:var(--muted);font-size:11px;display:inline-block;padding:1px 5px;border-radius:4px}
-.atv-remover:hover{background:var(--err);color:#fff}
 .notas-progresso{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px}
 .notas-progresso .prog-titulo{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .prog-barra-wrap{background:var(--surface);border-radius:20px;height:8px;margin-bottom:8px;overflow:hidden}
@@ -658,9 +655,8 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <div class="themes-body" id="themesBody"></div>
     </main>
   </div>
+  <div id="viewLinhaTempo" class="hidden"><div class="acervo-wrap" id="linhaTempoBody"></div></div>
 </div>
-
-<div id="viewLinhaTempo" class="hidden"><div class="acervo-wrap" id="linhaTempoBody"></div></div>
 
 <div id="editor" class="editor hidden">
   <div class="editor-top">
@@ -668,6 +664,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <input class="tema-nome" id="edNome" placeholder="Nome do tema" oninput="edDirty()">
     <span id="edStatusChip"></span>
     <span id="saveStatus" style="font-size:12px;margin-left:4px"></span>
+    <button class="btn ghost" title="Desfazer a última exclusão de card (quadro, estudo, slide...)" onclick="undoObj()">↩ Desfazer</button>
     <button class="btn" onclick="projetarTema()">▶ Projetar</button>
   </div>
   <div id="edTurmaBadge" style="padding:0 22px 8px;font-size:12px;color:var(--muted)"></div>
@@ -1658,7 +1655,7 @@ function abrirRecuperacao(){
       '<div id="recProg" class="statusdot"></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" id="recBtn" onclick="gerarRecuperacao()">Gerar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 async function gerarRecuperacao(){
   const id1=(document.getElementById('recTema1')||{}).value, id2=(document.getElementById('recTema2')||{}).value;
@@ -2498,7 +2495,7 @@ function openPartirMatriz(){
     '<div class="field"><label>Temas e subtemas</label><div id="pmList" class="pm-list"></div></div>'+
     '<div id="pmProg" class="statusdot"></div></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" id="pmBtn" onclick="criarPartirMatriz()">Criar selecionados</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
   renderPmList();
   // pr\u00e9-pronto pode ainda n\u00e3o estar carregado (\u00e9 sob demanda, por
   // disciplina) \u2014 renderiza de novo quando chegar, pra acender os selos.
@@ -2934,7 +2931,7 @@ function abrirRelatorio3Bim(r){
     linha('Entradas de cronograma (só a entrada é removida — o conteúdo fica)',r.planejamentosAlvo,txtPlan)+
     '<div class="field" style="border-top:1px solid var(--line);padding-top:10px"><label style="color:#a06a2e">⚠ Compromissos no período — NÃO incluídos no botão abaixo, podem ser reunião/prazo real. Remova manualmente na Agenda se forem teste.</label>'+(r.compromissosAlvo.length?('<small>'+cortaLista(txtComp)+'</small>'):'<small style="color:var(--muted)">nenhum</small>')+'</div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" style="background:#c0392b;border-color:#c0392b;color:#fff" onclick="apagarDados3Bim()">Apagar itens acima</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function apagarDados3Bim(){
   const r=_auditoria3BimAtual; if(!r) return;
@@ -2989,7 +2986,7 @@ function abrirPopularSeletivo(){
     '<div class="field"><label>Bimestre</label><select id="popBim"><option value="">Todos os bimestres</option>'+BIMESTRES.map(b=>'<option value="'+esc(b)+'">'+esc(b)+'</option>').join('')+'</select></div>'+
     '<small style="color:var(--muted)">Temas que já existem não são alterados. Não gasta créditos de IA.</small>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="executarPopularSeletivo()">Popular agora</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function executarPopularSeletivo(){
   const filtro={
@@ -3317,7 +3314,7 @@ function abrirMarcarAplicado(){
     (aplicado?'<button class="btn ghost" onclick="desmarcarAplicado()">Desmarcar</button>':'')+
     '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarMarcarAplicado()">Salvar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
 }
 function salvarMarcarAplicado(){
   if(!editing) return;
@@ -3377,7 +3374,7 @@ function openExportConteudo(cid){
     : '<small>Não há outra turma cadastrada. Crie a turma de destino em "+ turmas" primeiro.</small>';
   const foot = alvos.length ? '<button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="doExportConteudo(\''+cid+'\')">Copiar</button>' : '<button class="btn ghost" onclick="closeModal()">Fechar</button>';
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Copiar para outra(s) turma(s)</h3></div><div class="modal-b">'+inner+'</div><div class="modal-f">'+foot+'</div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function doExportConteudo(cid){
   const c=conteudos[cid]; if(!c) return;
@@ -3410,7 +3407,7 @@ function openExportTema(tid){
     : '<small>Não há outra turma cadastrada.</small>';
   const foot = alvos.length ? '<button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="doExportTema(\''+tid+'\')">Copiar aula</button>' : '<button class="btn ghost" onclick="closeModal()">Fechar</button>';
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Copiar aula para outra(s) turma(s)</h3></div><div class="modal-b">'+inner+'</div><div class="modal-f">'+foot+'</div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function doExportTema(tid){
   const t=temas[tid]; if(!t) return;
@@ -3598,7 +3595,7 @@ function abrirTrocarTema(turmaId, dataISO, entryId){
     '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarTemaDoDia(\''+turmaId+'\',\''+dataISO+'\',\''+(entryId||'')+'\')">Salvar</button>'+
     '</div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
 }
 function salvarTemaDoDia(turmaId, dataISO, entryId){
   const sel=(document.getElementById('trocaTemaSel')||{}).value;
@@ -3608,13 +3605,7 @@ function salvarTemaDoDia(turmaId, dataISO, entryId){
   if(sel==='__livre__'){
     const nomeLivre=(document.getElementById('trocaTemaLivreNome')||{}).value.trim();
     if(!nomeLivre){ toast('Digite o nome do tema.','err'); return; }
-    let cont=Object.values(conteudos).find(co=>co.turmaId===turmaId&&co.bimestre===bim&&co.nome==='Matriz — '+bim);
-    if(!cont){
-      const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===turmaId&&co.bimestre===bim);
-      const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
-      cont={id:uid(),disciplina:tu.disciplina,serie:tu.serie,turmaId,bimestre:bim,nome:'Matriz — '+bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
-      persistConteudo(cont);
-    }
+    const cont=acharOuCriarConteudoMatriz(turmaId, tu.disciplina, tu.serie, bim);
     const novoTema=blankTema(cont.id,{turmaId,disciplina:tu.disciplina,serie:tu.serie,bimestre:bim,nome:nomeLivre.slice(0,80),ordem:nextOrdemTema(cont.id)});
     persistTema(novoTema);
     temaId=novoTema.id;
@@ -3892,23 +3883,6 @@ async function genObjFor(temaObj, objKey){
   const vazio=(Array.isArray(novo)&&!novo.length)||(typeof novo==='string'&&!novo.trim());
   return vazio?null:novo;
 }
-async function forcarPrebuilt(){
-  if(!editing){ toast('Abra um tema primeiro.','err'); return; }
-  if(typeof PREBUILT_OBJ==='undefined'){ toast('prebuilt.js não carregou. Verifique se o arquivo está no GitHub.','err'); return; }
-  if(typeof ensurePrebuiltDiscLoaded!=='undefined') await ensurePrebuiltDiscLoaded(editing.disciplina);
-  const pb=getPrebuilt(editing);
-  if(!pb){
-    const keys=Object.keys(PREBUILT_OBJ).slice(0,3).join(', ');
-    toast('Sem pré-pronto para: "'+editing.nome+'". Exemplos disponíveis: '+keys,'');
-    return;
-  }
-  if(!confirm('Isso vai substituir o conteúdo atual por conteúdo pré-pronto. Continuar?')) return;
-  editing.obj=Object.assign({},pb);
-  persistTema(editing);
-  renderObjTabs(); renderObjContent();
-  renderThemes();
-  toast('Conteúdo pré-pronto carregado.','ok');
-}
 function openGerarTudo(soloKey){
   if(!editing){ toast('Abra um tema primeiro.','err'); return; }
   const itens=[['quadro','Quadro'],['estudo','Estudo'],['slides','Slides'],['mapaMental','Mapa mental'],['avaliacao','Avaliação']];
@@ -3920,7 +3894,7 @@ function openGerarTudo(soloKey){
     '<div class="field"><label>Gerar</label><div class="gt-checks">'+checks+'</div></div>'+'<label class="check"><input type="checkbox" id="gtRegerar"> regerar objetos que j\u00e1 t\u00eam conte\u00fado (sen\u00e3o, pula os preenchidos e n\u00e3o gasta cr\u00e9dito \u00e0 toa)</label>'+
     '<div id="gtProg" class="statusdot"></div></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" id="gtBtn" onclick="gerarTudo()">Gerar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 async function genOne(key, foco){
   if(key==='avaliacao'){
@@ -4420,13 +4394,7 @@ function executarFerramentaAssistente(nome, input){
       const tu=acharTurmaPorNome(input.turma); if(!tu) return {erro:'turma não encontrada'};
       if(!input.nome||!input.bimestre) return {erro:'faltam nome/bimestre'};
       const bim=input.bimestre;
-      let cont=Object.values(conteudos).find(co=>co.turmaId===tu.id&&co.bimestre===bim&&co.nome==='Matriz — '+bim);
-      if(!cont){
-        const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===tu.id&&co.bimestre===bim);
-        const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
-        cont={id:uid(),disciplina:tu.disciplina,serie:tu.serie,turmaId:tu.id,bimestre:bim,nome:'Matriz — '+bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
-        persistConteudo(cont);
-      }
+      const cont=acharOuCriarConteudoMatriz(tu.id, tu.disciplina, tu.serie, bim);
       const tema=blankTema(cont.id,{turmaId:tu.id,disciplina:tu.disciplina,serie:tu.serie,bimestre:bim,nome:String(input.nome).slice(0,80),resumo:input.resumo||'',ordem:nextOrdemTema(cont.id)});
       persistTema(tema);
       if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
@@ -4491,7 +4459,7 @@ function openAssistente(){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="_chatMsgs=[];_chatApiMsgs=[];closeModal();">Encerrar conversa</button><button class="btn ghost" onclick="closeModal()">Fechar (manter conversa)</button></div>'+
   '</div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
   renderChat();
 }
 function renderChat(){
@@ -4843,7 +4811,7 @@ function abrirOcorrenciaHoje(turmaId){
       listaAbertas+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
   setTimeout(()=>document.getElementById('ocorrObs')?.focus(),50);
 }
 function editarOcorrenciaHoje(id){
@@ -4893,7 +4861,7 @@ function abrirModalRegistro(){
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarRegistro()">Salvar registro</button></div>'+
     '</div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function salvarRegistro(){
   if(!proj.tema){ closeModal(); return; }
@@ -4943,7 +4911,7 @@ function abrirModalRegistroEditor(){
     '<div class="field"><label>Nota livre</label><input id="regENota" placeholder="observações…"></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarRegistroEditor()">Salvar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
 }
 function salvarRegistroEditor(){
   const turmaId=(document.getElementById('regETurma')||{}).value||editing.turmaId;
@@ -4987,7 +4955,7 @@ function abrirModalRegistroCard(temaId){
     '<div class="field"><label>Nota livre (opcional)</label><input id="regCNota" placeholder="ex.: maioria participou, 3 faltaram…"></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarRegistroCard()">Salvar registro</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
 }
 function salvarRegistroCard(){
   const t=temas[_regCardTemaId]; if(!t){ closeModal(); return; }
@@ -5223,7 +5191,7 @@ function openImgModal(){
       '<div class="img-grid" id="imgResults" style="margin-top:12px"><div class="statusdot">Digite um termo (ou use "sugerir palavras"), clique em Buscar. Dá pra selecionar várias imagens e fazer quantas buscas quiser — tudo acumula no tema.</div></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button><button class="btn primary" id="imgAddBtn" onclick="imgAddSelected()" disabled>Fixar selecionadas (0)</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function imgAddChip(t){ const q=document.getElementById('imgQuery'); q.value=(q.value.trim()?q.value.trim()+' ':'')+t; q.focus(); }
 async function imgSugerir(){
@@ -5306,7 +5274,7 @@ function openTurmas(){
       '<button class="btn primary" onclick="addTurma()">Adicionar</button>'+
     '</div><small>Para a Eletiva, escolha a disciplina "Eletiva" e a série "—".</small></div></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
   document.getElementById('ntDisc').value=scope.disc; document.getElementById('ntUnidade').value=scope.unidade||UNIDADES[0]; ntRefresh();
 }
 function ntRefresh(){
@@ -5400,13 +5368,16 @@ function avisarCalendarioDesatualizado(){
   const anoAtual=new Date().getFullYear();
   if(anoAtual>CALENDARIO_ANO) toast('⚠ O calendário escolar (bimestres/feriados) está configurado só até '+CALENDARIO_ANO+' — atualize BIM_RANGES e FERIADOS_'+CALENDARIO_ANO+' no código pra '+anoAtual+'.','err');
 }
-function turmaKey(t){ return [t.disciplina,t.serie,t.letra||'',t.unidade||''].join('|'); }
+// Nome diferente de chaveTurma() de propósito — essa aqui é só pra bater com
+// KNOWN_GRADES (chave exata disciplina|serie|letra|unidade), não é a chave
+// fuzzy de deduplicação que chaveTurma() usa.
+function chaveHorarioTurma(t){ return [t.disciplina,t.serie,t.letra||'',t.unidade||''].join('|'); }
 /* SCHEDULE (o horário real, editado direto no arquivo) manda sempre que
    cobrir a turma+disciplina — assim atualizar o horário lá já vale pra
    Chamada na hora, sem precisar reconfigurar turma por turma. O grade
    salvo manualmente (t.grade) só é usado pra turmas fora do SCHEDULE
    (Estudo Orientado, Eletiva etc.). */
-function gradeDe(t){ return gradeDeSchedule(t) || (t&&t.grade) || KNOWN_GRADES[turmaKey(t)] || {}; }
+function gradeDe(t){ return gradeDeSchedule(t) || (t&&t.grade) || KNOWN_GRADES[chaveHorarioTurma(t)] || {}; }
 function isoLocal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function contarAulas(t, bim){
   const r=BIM_RANGES[bim]; const grade=gradeDe(t); if(!r) return {total:0,semanas:0};
@@ -5438,11 +5409,6 @@ function datasDoBimestre(t, bim){
 function datasDeAula(t, bim){
   const hoje=isoLocal(new Date());
   return datasDoBimestre(t, bim).filter(iso=>iso<=hoje);
-}
-/* true se hoje é dia de aula desta turma segundo o horário configurado. */
-function hojeTemAula(t){
-  const grade=gradeDe(t); const wd=new Date().getDay();
-  return !!(grade[wd] && !FERIADOS_2026.has(isoLocal(new Date())));
 }
 /* Aulas já dadas (fonte de verdade: chamadas lançadas), não previsão de
    calendário — usada no contador "Aula X/Y" junto de contarAulas() (Y). */
@@ -5714,7 +5680,7 @@ function abrirEditarObjPlanejamento(conteudoId, planejamentoId){
     '<div class="field"><label>Anotação (livre — ex.: "trecho de documentário no fim do horário")</label><textarea id="epObs" rows="2" placeholder="o que você quiser anotar sobre essa aula">'+esc(p.obs||'')+'</textarea></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarEditarObjPlanejamento(\''+conteudoId+'\',\''+planejamentoId+'\')">Salvar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
 }
 function salvarEditarObjPlanejamento(conteudoId, planejamentoId){
   const cont=conteudos[conteudoId]; if(!cont||!Array.isArray(cont.planejamento)) return;
@@ -5856,7 +5822,7 @@ function abrirDiaLinhaTempo(turmaId,dataISO){
     '<div class="modal-h"><h3>'+esc(turmaNome(tu))+' — '+dataISO.split('-').reverse().join('/')+'</h3></div>'+
     '<div class="modal-b">'+corpo+'</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function persistChamada(c){ persistItem('chamadas', chamadas, LS_CHAMADAS, c, 'Falha ao gravar chamada no Firebase'); }
 function chamadaDoDia(turmaId,data){ return Object.values(chamadas).find(c=>c&&c.turmaId===turmaId&&c.data===data)||null; }
@@ -5866,7 +5832,7 @@ function openBimestre(){
     '<div class="modal-h"><h3>Bimestre — aulas e distribuição</h3></div>'+
     '<div class="modal-b" id="bimBody"></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
   renderBimBody();
 }
 function renderBimBody(){
@@ -6010,7 +5976,7 @@ function openRelatorio(){
     '<div style="display:flex;gap:6px;margin:6px 0"><button class="btn ghost sm" onclick="relTemasToggleAll(true)">✓ todos</button> <button class="btn ghost sm" onclick="relTemasToggleAll(false)">✗ nenhum</button><span id="relTemasContador" style="font-size:12px;color:var(--muted);align-self:center;margin-left:4px"></span></div>'+
     '<div id="relTemasList" class="rel-temas-list"></div></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="gerarRelatorio()">Gerar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
   renderRelList();
   renderRelTemasList();
 }
@@ -6198,6 +6164,7 @@ function openConfig(){
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="preencherCronogramaCompleto()">📅 Completar cronograma do 3º Bimestre (verde = azul)</button>'+
         '<small>Correção pontual (18/08): cria a entrada de cronograma que falta em todo dia com aula prevista (03/08 a 07/10) que ainda não tinha nenhuma, pro Médio e Fundamental. "Estudo Orientado" e datas fora do plano ficam sem, porque não têm conteúdo da matriz.</small>'+
         '<small>Correção pontual (19/08): as duas entradas desta semana ficaram na quinta em vez da quarta.</small>'+
+        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="atualizarQualitativaPlanilha()">📊 Atualizar planilha de qualitativa (coluna HIST)</button>'+
         '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioFundamental()">📅 Adicionar calendário do Fundamental (8º/9º) na Agenda</button>'+
         '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE 2026" do 8º/9º ano (avaliações SEDUC, datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Fundamental].</small>'+
@@ -6209,9 +6176,17 @@ function openConfig(){
         '<small>Apaga TODOS os conteúdos, temas, turmas, registros, alunos e notas — local e no Firebase (se conectado). Suas configurações (modelo, credenciais) não são afetadas. <strong>Não pode ser desfeito.</strong></small></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveConfig()">Salvar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function closeModal(){ _relTemasIncluidos=null; const w=document.getElementById('modalWrap'); if(w)w.remove(); }
+/* Ponto único pra abrir qualquer modal — antes eram 39 blocos copy-paste de
+   "criar div#modalWrap e anexar", cada um podendo divergir/esquecer de
+   fechar um modal anterior primeiro. closeModal() aqui garante que nunca
+   fica um #modalWrap empilhado embaixo do outro. */
+function abrirModal(html){
+  closeModal();
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+}
 function saveConfig(){
   const model=document.getElementById('cfgModel').value.trim()||'claude-sonnet-4-6';
   const fb=document.getElementById('cfgFb').value.trim();
@@ -6226,13 +6201,6 @@ function saveConfig(){
   if(fbChanged){ toast('Configurações salvas. Recarregando…','ok'); setTimeout(()=>location.reload(),700); }
   else toast('Configurações salvas.','ok');
 }
-function exportBackup(){
-  const data=JSON.stringify({version:2,exportedAt:new Date().toISOString(),conteudos,temas,turmas},null,2);
-  const blob=new Blob([data],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='leciona-backup-'+isoLocal(new Date())+'.json'; a.click();
-  toast('Backup exportado.','ok');
-}
 function abrirExportarBackup(){
   closeModal();
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+
@@ -6246,7 +6214,7 @@ function abrirExportarBackup(){
       '</div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="executarExportarBackup()">Exportar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function executarExportarBackup(){
   const turmaId=document.getElementById('expTurma').value;
@@ -6406,7 +6374,7 @@ function gradeDeSchedule(t){
   entradas.forEach(x=>{ grade[x.dia]=(grade[x.dia]||0)+1; });
   return grade;
 }
-function bimAtual(){ const iso=isoLocal(new Date()); for(const b in BIM_RANGES){ const r=BIM_RANGES[b]; if(iso>=r[0]&&iso<=r[1]) return b; } return scope.bim||'2º Bimestre'; }
+function bimAtual(){ return bimAtivoAgora() || scope.bim || '2º Bimestre'; }
 /* ═══════════════════════════════════════════════════════════════════════
    AGENDA — visão de mês (grade) + dia (lista), juntando 3 fontes que já
    existem separadas: aulas reais da semana (SCHEDULE, mesma fonte da tela
@@ -6506,7 +6474,7 @@ function abrirNovaAulaAvulsa(dataISO){
     '<div class="field"><label>Data</label><input id="alData" type="date" value="'+esc(dataISO||isoLocal(new Date()))+'"></div>'+
     '<div class="field"><label>Observações (opcional)</label><textarea id="alObs" rows="2"></textarea></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarNovaAulaAvulsa()">Salvar como planejada</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function editarAulaAvulsa(id){
   const a=aulasAvulsas[id]; if(!a) return;
@@ -6521,7 +6489,7 @@ function editarAulaAvulsa(id){
     '<div class="field"><label>Data</label><input id="alData" type="date" value="'+esc(a.data||isoLocal(new Date()))+'"></div>'+
     '<div class="field"><label>Observações (opcional)</label><textarea id="alObs" rows="2">'+esc(a.observacoes||'')+'</textarea></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarNovaAulaAvulsa()">Salvar edição</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function confirmarNovaAulaAvulsa(){
   const turmaId=document.getElementById('alTurma').value;
@@ -6844,7 +6812,7 @@ function abrirDuplicarAtividade(id){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="confirmarDuplicarAtividade(\''+id+'\')">Duplicar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
 }
 function confirmarDuplicarAtividade(id){
   const av=atividadesCtrl[id]; if(!av) return;
@@ -6917,7 +6885,7 @@ function abrirLancarNotas(objetoKey){
       '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
       '<button class="btn primary" onclick="executarLancarNotas()">Criar atividade</button>'+
     '</div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
 }
 
 function executarLancarNotas(){
@@ -7050,7 +7018,7 @@ function abrirRelatorioTurma(){
       '<button class="btn ghost" onclick="exportarRelatorioCSV()">↓ CSV</button>'+
       '<button class="btn ghost" onclick="closeModal()">Fechar</button>'+
     '</div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
 }
 
 function exportarRelatorioCSV(){
@@ -7459,20 +7427,29 @@ function abrirUsarPrePronto(i){
     '<div class="modal-b"><small>'+esc(c.disc)+' · '+esc(c.serie)+' · '+esc(c.bim)+(c.dcgo?' · '+esc(c.dcgo):'')+'</small>'+
     '<div class="field" style="margin-top:10px"><label>Em qual turma</label><select id="upTurma">'+opts+'</select></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarUsarPrePronto('+i+')">Adicionar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
+}
+/* Acha (ou cria) o conteúdo "Matriz — <bimestre>" de uma turma+bimestre —
+   mesmo critério usado em 3 lugares (trocar tema por "livre", criar tema
+   livre via assistente, criar tema a partir de pré-pronto); extraído aqui
+   pra não divergir entre as cópias (cada uma calculava a `ordem` do próximo
+   conteúdo do próprio jeito). */
+function acharOuCriarConteudoMatriz(turmaId, disciplina, serie, bim){
+  let cont=Object.values(conteudos).find(co=>co.turmaId===turmaId&&co.bimestre===bim&&co.nome==='Matriz — '+bim);
+  if(!cont){
+    const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===turmaId&&co.bimestre===bim);
+    const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
+    cont={id:uid(),disciplina,serie,turmaId,bimestre:bim,nome:'Matriz — '+bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
+    persistConteudo(cont);
+  }
+  return cont;
 }
 /* Cria (ou reaproveita, se já existir) um tema a partir de um candidato
    pré-pronto da matriz, numa turma. Compartilhado entre o Acervo e a
    Gestão — mesmo critério de dedup do criarPartirMatriz(): nunca duplica
    se já existe um tema com mesmo dcgo+nome neste conteúdo. */
 function criarTemaAPartirDePrePronto(c, turmaId){
-  let cont=Object.values(conteudos).find(co=>co.turmaId===turmaId&&co.bimestre===c.bim&&co.nome==='Matriz — '+c.bim);
-  if(!cont){
-    const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===turmaId&&co.bimestre===c.bim);
-    const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
-    cont={id:uid(),disciplina:c.disc,serie:c.serie,turmaId,bimestre:c.bim,nome:'Matriz — '+c.bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
-    persistConteudo(cont);
-  }
+  const cont=acharOuCriarConteudoMatriz(turmaId, c.disc, c.serie, c.bim);
   const jaExiste=temasDoConteudo(cont.id).find(t=>t.dcgo===c.dcgo&&t.nome===String(c.nome).slice(0,80));
   const tema=jaExiste||blankTema(cont.id,{turmaId,disciplina:c.disc,serie:c.serie,bimestre:c.bim,nome:String(c.nome).slice(0,80),dcgo:c.dcgo,habilidade:c.habilidade,resumo:c.habilidade,ordem:nextOrdemTema(cont.id)});
   applyPrebuiltIfEmpty(tema);
@@ -7609,20 +7586,7 @@ function abrirBoletimAluno(id){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button>'+
     '<button class="btn primary" onclick="salvarEdicaoAluno(\''+id+'\')">Salvar dados</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
-}
-function abrirEditarAluno(id){
-  const al=alunos[id]; if(!al) return;
-  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
-    '<div class="modal-h"><h3>Editar aluno</h3></div>'+
-    '<div class="modal-b">'+
-      '<div class="field"><label>Nome completo</label><input id="alunoEdNome" value="'+esc(al.nome||'')+'" autofocus></div>'+
-      '<div class="field"><label>Número (opcional)</label><input id="alunoEdNum" type="number" value="'+esc(al.numero!=null?String(al.numero):'')+'" placeholder="ex.: 1"></div>'+
-    '</div>'+
-    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
-    '<button class="btn primary" onclick="salvarEdicaoAluno(\''+id+'\')">Salvar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
-  setTimeout(()=>document.getElementById('alunoEdNome')?.focus(),50);
+  abrirModal(h);
 }
 function salvarEdicaoAluno(id){
   const al=alunos[id]; if(!al) return;
@@ -7656,10 +7620,10 @@ function perfisNecessariosDaTurma(turmaId){
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-function alunosDaTurma(turmaId){ return Object.values(alunos).filter(a=>a.turmaId===turmaId&&a.ativo!==false).sort((a,b)=>(a.numero||999)-(b.numero||999)||(a.nome||'').localeCompare(b.nome||'')); }
+function alunosDaTurma(turmaId){ return Object.values(alunos).filter(a=>a&&a.turmaId===turmaId&&a.ativo!==false).sort((a,b)=>(a.numero||999)-(b.numero||999)||(a.nome||'').localeCompare(b.nome||'')); }
 function atividadesDaTurma(turmaId){
   return Object.values(atividadesCtrl)
-    .filter(av=>av.turmaIds&&av.turmaIds.includes(turmaId))
+    .filter(av=>av&&av.turmaIds&&av.turmaIds.includes(turmaId))
     .sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.nome||'').localeCompare(b.nome||''));
 }
 /* Índice notasCtrl por "alunoId|atividadeId" (mesmo padrão do _temaIdx) —
@@ -7769,7 +7733,7 @@ function abrirQualitativaAluno(alunoId){
     '<div class="modal-h"><h3>Qualitativa — '+esc(al.nome)+'</h3></div>'+
     '<div class="modal-b" id="qualBody">'+qualitativaBodyHtml(alunoId)+'</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 /* Atualiza só o miolo do modal (nota + histórico), preservando o modal
    aberto e a posição de rolagem — em vez de fechar/reabrir tudo. */
@@ -8134,7 +8098,7 @@ function abrirTodasChamadas(){
     '<div class="modal-h"><h3>📋 Chamada — '+esc(turmaNome(tu))+'</h3></div>'+
     '<div class="modal-b" id="todasChamadasBody">'+renderChamadaBody(tu, als)+'</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal();renderNotas()">Fechar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function renderNotas(){
   const box=document.getElementById('notasBody'); if(!box) return;
@@ -8312,7 +8276,7 @@ function salvarNota(input){
   // Atualizar cor
   input.className='nota-input '+(n.valor==null?'':(n.valor>=vmax*0.7?'alta':n.valor<vmax*0.5?'baixa':''));
   // Recalcular médias sem re-render completo
-  const al=alunos[alunoId], atvs=atividadesDaTurma(turmaId);
+  const atvs=atividadesDaTurma(turmaId);
   const med=mediaAluno(alunoId,atvs,turmaId);
   const row=input.closest('tr');
   if(row){ const medCell=row.querySelector('.nota-media'); if(medCell){ medCell.textContent=med!=null?med.toFixed(1):'-'; medCell.className='nota-media '+(med==null?'':(med>=6?'aprovado':'reprovado')); } }
@@ -8329,7 +8293,7 @@ function abrirAddAluno(){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarAluno()">Adicionar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
   setTimeout(()=>document.getElementById('alunoNome')?.focus(),50);
 }
 
@@ -8354,7 +8318,7 @@ function abrirAddAlunoLista(){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="importarListaAlunos()">Importar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
   document.getElementById('alunoLista').addEventListener('input',function(){
     const nomes=parseLista(this.value);
     document.getElementById('alunoPreview').textContent=nomes.length+' aluno(s) detectado(s)';
@@ -8409,7 +8373,7 @@ function abrirAddAtividade(){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarAtividade()">Adicionar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  abrirModal(h);
   setTimeout(()=>document.getElementById('atvNome')?.focus(),50);
 }
 
@@ -8458,7 +8422,7 @@ function abrirExportarCSV(){
       '<button class="btn ghost full" style="margin-bottom:8px" onclick="closeModal();exportarNotasTodasTurmasCSV()">Notas — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
       '<button class="btn ghost full" onclick="closeModal();exportarQualitativaCSV()">Qualitativa — '+esc(turmaNome(tu))+' <small style="opacity:.7">(pronta pro SIAP)</small></button>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 function exportarNotasCSV(){
   const turmaId=scope.turma;
@@ -8795,7 +8759,7 @@ function abrirAdaptacoesTurma(){
       (copiaveis.length?'<button class="btn" onclick="executarCopiarTodasAdaptacoes()">Copiar '+copiaveis.length+' — grátis</button>':'')+
       (gerar.length?'<button class="btn primary" onclick="executarGerarTodasAdaptacoes()">Gerar '+gerar.length+' via IA</button>':'')+
     '</div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
   window.__adaptTurmaItens=itens;
 }
 function executarCopiarTodasAdaptacoes(){
@@ -8866,7 +8830,7 @@ function openAdaptar(){
     cards+
     '<div id="adProg" class="statusdot"></div></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button><button class="btn primary" id="adBtn" onclick="gerarAdaptado()">Gerar adaptações</button></div></div></div>';
-  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 
 async function gerarAdaptado(){
@@ -8959,7 +8923,7 @@ function verAdaptado(perfK){
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Adaptação \u2014 '+esc(pl)+'</h3></div>'+
     '<div class="modal-b">'+(body||'<p>Sem conteúdo.</p>')+'</div>'+
     '<div class="modal-f"><label class="check" style="margin:0 8px 0 0"><input type="checkbox" id="timbreAdaptChk" checked> timbre SEDUC</label><button class="btn ghost" onclick="openAdaptar()">Voltar</button><button class="btn primary" onclick="imprimirAdaptado(\''+perfK+'\', document.getElementById(\'timbreAdaptChk\').checked)">&#128424; imprimir folha do aluno</button></div></div></div>';
-  closeModal(); const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
+  abrirModal(html);
 }
 
 function removerAdaptado(perfK){
