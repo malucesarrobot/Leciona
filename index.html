@@ -124,7 +124,8 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .lt-plan-data{flex:0 0 44px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
 .lt-plan-tema{flex:1;cursor:pointer;font-weight:500}
 .lt-plan-tema:hover{text-decoration:underline}
-.lt-plan-obj{color:var(--muted);flex:0 0 auto;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lt-plan-obj{color:var(--muted);flex:0 0 auto;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.lt-plan-obj:hover{text-decoration:underline}
 .lt-pendencias{margin-top:18px}
 .lt-pendencias h3{font-size:14px;margin-bottom:8px}
 .lt-pend-item{padding:8px 10px;background:var(--surface);border-radius:8px;margin-bottom:5px;font-size:13px;cursor:pointer}
@@ -5587,7 +5588,7 @@ function planejamentoSectionHtml(tu, bim, hoje){
     return '<div class="lt-plan-row">'+
       '<span class="lt-plan-data">'+p.data.split('-').reverse().join('/')+'</span>'+
       '<span class="lt-plan-tema" onclick="abrirEditor(\''+p.temaId+'\')" title="Abrir tema">'+esc(t.tituloExibicao||t.nome||'(tema removido)')+'</span>'+
-      '<span class="lt-plan-obj">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
+      '<span class="lt-plan-obj" onclick="abrirEditarObjPlanejamento(\''+c.id+'\',\''+p.id+'\')" title="Clique pra mudar o tipo ou anotar o que rolou nessa aula (ex.: trecho de documentário)">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
       metSelo+
       '<button class="btn ghost sm" onclick="abrirTrocarTema(\''+tu.id+'\',\''+p.data+'\',\''+p.id+'\')" title="Trocar o tema desta aula — escolher outro já criado, um subtema pronto ou digitar um novo">🔀</button>'+
       '<button class="btn ghost sm" onclick="moverPlanejamentoLT(\''+tu.id+'\',\''+esc(bim)+'\','+i+',-1)"'+(i===0?' disabled':'')+'>▲</button>'+
@@ -5615,6 +5616,35 @@ function removerPlanejamentoLT(conteudoId, planejamentoId){
   c.planejamento=c.planejamento.filter(p=>p.id!==planejamentoId);
   persistConteudo(c);
   renderLinhaDoTempo();
+}
+/* Editar o "tipo" (quadro/estudo/slides/mapa mental/avaliação) e a
+   observação livre de uma aula já agendada, sem precisar apagar e
+   recriar a entrada do cronograma — pedido pra casos como "hoje resolvi
+   colocar um trecho de documentário no fim do 3º horário": não muda o
+   tema, só anota o que rolou de fato naquele dia. */
+function abrirEditarObjPlanejamento(conteudoId, planejamentoId){
+  const cont=conteudos[conteudoId]; if(!cont||!Array.isArray(cont.planejamento)) return;
+  const p=cont.planejamento.find(x=>x.id===planejamentoId); if(!p) return;
+  const objOpts=OBJ_DEFS.map(o=>'<option value="'+o.k+'"'+(o.k===p.objeto?' selected':'')+'>'+esc(o.label)+'</option>').join('');
+  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
+    '<div class="modal-h"><h3>O que rolou nessa aula</h3></div>'+
+    '<div class="modal-b">'+
+    '<div class="field"><label>Tipo</label><select id="epObjeto">'+objOpts+'</select></div>'+
+    '<div class="field"><label>Anotação (livre — ex.: "trecho de documentário no fim do horário")</label><textarea id="epObs" rows="2" placeholder="o que você quiser anotar sobre essa aula">'+esc(p.obs||'')+'</textarea></div>'+
+    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
+    '<button class="btn primary" onclick="salvarEditarObjPlanejamento(\''+conteudoId+'\',\''+planejamentoId+'\')">Salvar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+}
+function salvarEditarObjPlanejamento(conteudoId, planejamentoId){
+  const cont=conteudos[conteudoId]; if(!cont||!Array.isArray(cont.planejamento)) return;
+  const p=cont.planejamento.find(x=>x.id===planejamentoId); if(!p) return;
+  p.objeto=(document.getElementById('epObjeto')||{}).value||p.objeto;
+  p.obs=(document.getElementById('epObs')||{}).value.trim();
+  persistConteudo(cont);
+  closeModal();
+  renderLinhaDoTempo();
+  if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
+  toast('Aula atualizada.','ok');
 }
 const DIAS_SEMANA_CURTO={0:'dom',1:'seg',2:'ter',3:'qua',4:'qui',5:'sex',6:'sáb'};
 /* Papel timbrado do planejamento — mesmo timbre SEDUC do relatório de
