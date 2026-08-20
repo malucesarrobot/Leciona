@@ -48,8 +48,8 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .conn.online .led{background:#6fcaa9}
 
 #viewGestao{flex:1;display:flex;min-height:0}
-#viewHoje{flex:1;overflow:auto}
 #viewAcervo{flex:1;overflow:auto}
+#viewAgenda{flex:1;overflow:auto}
 #viewNotas{flex:1;overflow:auto}
 #viewLinhaTempo{flex:1;overflow:auto}
 .notas-wrap{max-width:1100px;margin:0 auto;padding:16px}
@@ -200,11 +200,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .obj-status-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}
 .obj-dot{font-size:11px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);color:var(--muted)}
 .obj-dot.feito{background:var(--green);color:#fff;border-color:var(--green)}
-.hoje-wrap{max-width:760px;margin:0 auto;padding:30px 22px}
-.hoje-head h2{font-family:Spectral,serif;font-size:30px;margin:0 0 4px}
 .hoje-nav{display:flex;gap:8px;margin:6px 0}
-.hoje-data{color:var(--muted);font-size:13px;margin-bottom:22px}
-.hoje-list{display:flex;flex-direction:column;gap:10px}
 .hoje-row{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 .hoje-hora{flex:0 0 64px;font-weight:700;color:var(--green);font-size:16px;display:flex;flex-direction:column;line-height:1.15}
 .hoje-hora small{font-weight:500;color:var(--muted);font-size:11px}
@@ -212,7 +208,6 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .hoje-info b{font-size:15px}
 .hoje-info span{font-size:12px;color:var(--muted)}
 .hoje-acoes{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.hoje-wrap .empty{text-align:center;color:var(--muted);padding:50px 0;font-size:16px}
 @media(max-width:560px){.hoje-row{flex-wrap:wrap}.hoje-acoes{width:100%;justify-content:flex-start}}
 .scope{flex:0 0 290px;border-right:1px solid var(--line);background:var(--surface);padding:18px 16px;overflow:auto;display:flex;flex-direction:column;gap:14px}
 .scope .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-weight:600}
@@ -598,13 +593,11 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <div class="brand">Leciona<span class="dot"></span><small>Acervo &amp; Projeção</small></div>
     <div class="spacer"></div>
     <nav>
-      <button id="tabHoje" class="active" onclick="setView('hoje')">Hoje</button>
       <button id="tabNotas" onclick="setView('notas')">📊 Notas</button>
       <button id="tabGestao" onclick="setView('gestao')">Gestão</button>
       <button id="tabProjecao" onclick="abrirProjecaoAtual()">Projetar</button>
-      <button id="tabPainel" onclick="setView('painel')">📊 Painel</button>
       <button id="tabAcervo" class="hidden" onclick="setView('acervo')">📚 Acervo</button>
-      <button id="tabAgenda" onclick="_agendaOrigin='hoje';setView('agenda')">📅 Agenda</button>
+      <button id="tabAgenda" class="active" onclick="_agendaOrigin='';setView('agenda')">📅 Agenda</button>
       <button id="tabLinhaTempo" onclick="_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">🗓️ Planejamento</button>
     </nav>
     <span class="conn" id="conn" onclick="location.reload()" style="cursor:pointer" title="Toque para recarregar o app"><span class="led"></span><span id="connTxt">Local</span></span>
@@ -615,8 +608,6 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <button class="icon-btn" title="Configurações" onclick="openConfig()">&#9881;</button>
   </header>
 
-  <div id="viewHoje"><div class="hoje-wrap" id="hojeBody"></div></div>
-  <div id="viewPainel" class="hidden"><div class="acervo-wrap" id="painelBody"></div></div>
   <div id="viewAcervo" class="hidden"><div class="acervo-wrap" id="acervoBody"></div></div>
   <div id="viewAgenda" class="hidden"><div class="agenda-wrap" id="agendaBody"></div></div>
   <div id="viewNotas" class="hidden"><div class="notas-wrap" id="notasBody"></div></div>
@@ -639,7 +630,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button class="btn primary full" onclick="novoConteudo()">+ Novo conteúdo</button>
       <button class="btn full" onclick="openRelatorio()">&#128196; Gerar relatório / PDF</button>
       <button class="btn full" onclick="setView('acervo')">&#128218; Acervo — buscar em tudo</button>
-      <button class="btn full" onclick="_painelOrigin='gestao';_painelBim=scope.bim;setView('painel')">&#128200; Painel geral — progresso de todas as turmas</button>
+      <button class="btn full" onclick="_painelBim=scope.bim;_painelAbertoNoPlanejamento=true;_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">&#128200; Painel geral — progresso de todas as turmas</button>
       <button class="btn full" onclick="_agendaOrigin='gestao';setView('agenda')">&#128197; Agenda</button>
       <button class="btn full" onclick="_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">&#128197; Linha do tempo desta turma</button>
       <button class="btn full" onclick="abrirAdaptacoesTurma()">&#129513; Adaptações desta turma</button>
@@ -676,6 +667,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <button class="btn ghost" onclick="fecharEditor()">← Voltar</button>
     <input class="tema-nome" id="edNome" placeholder="Nome do tema" oninput="edDirty()">
     <span id="edStatusChip"></span>
+    <span id="saveStatus" style="font-size:12px;margin-left:4px"></span>
     <button class="btn" onclick="projetarTema()">▶ Projetar</button>
   </div>
   <div id="edTurmaBadge" style="padding:0 22px 8px;font-size:12px;color:var(--muted)"></div>
@@ -1158,12 +1150,25 @@ function repararObjTema(t){
   if(o.quadro==null){ o.quadro=''; changed=true; }
   if(o.estudo==null){ o.estudo=''; changed=true; }
   if(o.mapaMental==null){ o.mapaMental=''; changed=true; }
-  if(!Array.isArray(o.slides)){ o.slides=[]; changed=true; }
+  // slides/avaliação: o Firebase apaga arrays/objetos vazios ao gravar, então
+  // "ausente" (undefined) é o estado normal de repouso pra quem nunca usou
+  // slides/avaliação nesse tema — só marca `changed` (força regravação) se o
+  // campo EXISTIA com tipo errado (dado realmente corrompido). Marcar changed
+  // pra um valor simplesmente ausente cria um loop infinito: grava vazio →
+  // Firebase apaga → volta a vir ausente → "repara" nc → grava de novo…
+  if(!Array.isArray(o.slides)){
+    if(o.slides!=null) changed=true;
+    o.slides=[];
+  }
   if(!o.avaliacao || typeof o.avaliacao!=='object' || Array.isArray(o.avaliacao)){
-    o.avaliacao={questoes:[],flashcards:[],atividade:[],gabarito:[]}; changed=true;
+    if(o.avaliacao!=null) changed=true;
+    o.avaliacao={questoes:[],flashcards:[],atividade:[],gabarito:[]};
   } else {
     ['questoes','flashcards','atividade','gabarito'].forEach(k=>{
-      if(!Array.isArray(o.avaliacao[k])){ o.avaliacao[k]=[]; changed=true; }
+      if(!Array.isArray(o.avaliacao[k])){
+        if(o.avaliacao[k]!=null) changed=true;
+        o.avaliacao[k]=[];
+      }
     });
   }
   return changed;
@@ -1175,6 +1180,7 @@ let conteudos = {};
 let registros = {};          // { id: registro } — histórico de aplicações
 let ocorrencias = {};        // { id: {turmaId,data,categoria,observacao,resolvida} } — quando a turma NÃO teve aula normal (passeio, palestra, dispensa...)
 let _temaIdx = null;         // índice temas por conteudoId (cache)
+let _notaIdx = null;         // índice notasCtrl por "alunoId|atividadeId" (cache)
 let alunos = {};             // { id: aluno } — alunos por turma
 let atividadesCtrl = {};     // { id: atividade } — atividades de controle de notas
 let notasCtrl = {};          // { id: nota } — notas dos alunos
@@ -1183,6 +1189,7 @@ let compromissos = {};       // { id: {titulo,data,hora,descricao,concluido,_ts}
 let aulasAvulsas = {};        // { id: {turmaId,titulo,tipo,observacoes,dcgoRef,data,status:'planejada'|'executada',_ts} } — aula sem tema vinculado (explicação, atividade, correção, recomposição)
 let notasGerais = {};         // { id: {texto,autor:'professora'|'assistente',ts} } — bloco de notas solto na Agenda, não ligado a nenhum tema/aula
 let qualitativa = {};         // { id: {alunoId,turmaId,data,motivo,valor,_ts} } — descontos da nota qualitativa (começa em 10, não entra na média de atividades)
+let _pendingWrites = {};      // { 'leciona/colecao/id': item } — escritas via persistItem() ainda não confirmadas pelo Firebase; sobrevive a reload (localStorage) e é reenviada em replayPendingWrites(), pra não perder chamada/nota feita offline se o app recarregar antes de sincronizar
 let _buscaTerm = '';          // termo de busca atual (sincronizado via setBusca)
 let temas = {};
 let turmas = {};            // turmas reais (9º A, 9º B...)
@@ -1197,7 +1204,8 @@ const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_
       LS_REG='leciona_registros', LS_ALUNOS='leciona_alunos',
       LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl',
       LS_OCORR='leciona_ocorrencias', LS_CHAMADAS='leciona_chamadas',
-      LS_COMP='leciona_compromissos', LS_AULASAVULSAS='leciona_aulas_avulsas', LS_NOTASGERAIS='leciona_notas_gerais', LS_QUALITATIVA='leciona_qualitativa';
+      LS_COMP='leciona_compromissos', LS_AULASAVULSAS='leciona_aulas_avulsas', LS_NOTASGERAIS='leciona_notas_gerais', LS_QUALITATIVA='leciona_qualitativa',
+      LS_PENDING='leciona_pending_writes';
 // Versão do formato dos dados. Se uma futura versão do app mudar a estrutura,
 // este número sobe e a migração correspondente roda uma única vez, de forma
 // controlada — em vez de o app tentar ler dados antigos com código novo e
@@ -1266,6 +1274,39 @@ function pushBackSeguro(path, upd){
     return;
   }
   DB.ref().update(upd).catch(e=>console.warn('pushBack '+path+':',e));
+}
+/* Helper único pra gravar um item (chamada, nota, aluno, aula avulsa…) tanto
+   local quanto no Firebase, com fila de pendências que sobrevive a reload —
+   sem isso, uma chamada lançada offline que nunca chegou a confirmar no
+   Firebase some quando o app recarrega antes de reconectar (o primeiro
+   snapshot do servidor, que nunca recebeu a escrita, vira autoridade e
+   apaga o que só existia em memória/localStorage). O item entra em
+   _pendingWrites ANTES da tentativa de gravação e só sai quando o Firebase
+   confirma — replayPendingWrites() reenvia o que sobrou toda vez que
+   reconecta, inclusive logo depois de um reload. */
+function persistItem(colecaoNome, colecao, lsKey, item, msgErro){
+  item._ts=Date.now();
+  colecao[item.id]=item;
+  lsSet(lsKey, JSON.stringify(colecao));
+  const fullPath='leciona/'+colecaoNome+'/'+item.id;
+  _pendingWrites[fullPath]=item;
+  lsSet(LS_PENDING, JSON.stringify(_pendingWrites));
+  if(!DB) return;
+  DB.ref(fullPath).set(item).then(()=>{
+    delete _pendingWrites[fullPath];
+    lsSet(LS_PENDING, JSON.stringify(_pendingWrites));
+  }).catch(e=>toast('⚠ '+msgErro+' (mantido localmente, tentaremos de novo ao reconectar). '+e.message,'err'));
+}
+function replayPendingWrites(){
+  if(!DB) return;
+  const paths=Object.keys(_pendingWrites);
+  if(!paths.length) return;
+  paths.forEach(fullPath=>{
+    DB.ref(fullPath).set(_pendingWrites[fullPath]).then(()=>{
+      delete _pendingWrites[fullPath];
+      lsSet(LS_PENDING, JSON.stringify(_pendingWrites));
+    }).catch(e=>console.warn('replay pendente falhou: '+fullPath, e));
+  });
 }
 const _modoSeguro = /[?&]safe=1\b/.test(location.search);
 function _escutar(path, cb){
@@ -1389,6 +1430,11 @@ function initFirebase(){
     DB = firebase.database();
     setConn(true);
     if(_modoSeguro) toast('⚠ Modo seguro: lendo os dados uma única vez, sem sincronização automática. Gravações manuais (salvar, excluir) continuam funcionando.','');
+    replayPendingWrites();
+    // reenvia pendências toda vez que a conexão com o Firebase volta (não só
+    // no boot) — cobre o caso de cair wifi no meio da aula e voltar sem dar
+    // reload na página.
+    if(!_modoSeguro) DB.ref('.info/connected').on('value', s=>{ if(s.val()===true) replayPendingWrites(); });
     _escutar('relCfg', s=>{ const v=s.val(); if(v&&v.ordem){ let ord=v.ordem.filter(k=>REL_KEYS.includes(k)); REL_KEYS.forEach(k=>{ if(!ord.includes(k)) ord.push(k); }); relCfg.ordem=ord; relCfg.rotulos=Object.assign({},REL_LABELS_DEFAULT,v.rotulos||{}); } });
     _escutar('leciona/conteudos', s=>{
       const m=mergeRemote(conteudos, s.val()); conteudos=m.merged; lsSet(LS_CONT, JSON.stringify(conteudos));
@@ -1406,7 +1452,7 @@ function initFirebase(){
     // remoto é sempre autoridade aqui (nunca "ressuscita" atividade/nota
     // apagada em outro aparelho — mesma lição do bug de mergeRemote()).
     _escutar('leciona/atividades_ctrl', s=>{ atividadesCtrl=s.val()||{}; lsSet(LS_ATVCTRL,JSON.stringify(atividadesCtrl)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
-    _escutar('leciona/notas_ctrl', s=>{ notasCtrl=s.val()||{}; lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
+    _escutar('leciona/notas_ctrl', s=>{ notasCtrl=s.val()||{}; _notaIdx=null; lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
     // remoto é sempre autoridade aqui (nunca "ressuscita" registro apagado
     // em outro aparelho — ex.: "Desmarcar aplicado" — mesma lição do bug
     // de mergeRemote()).
@@ -1473,7 +1519,9 @@ function loadLocal(){
   try{ alunos=JSON.parse(localStorage.getItem(LS_ALUNOS)||'{}'); }catch(e){ alunos={}; }
   try{ atividadesCtrl=JSON.parse(localStorage.getItem(LS_ATVCTRL)||'{}'); }catch(e){ atividadesCtrl={}; }
   try{ notasCtrl=JSON.parse(localStorage.getItem(LS_NOTAS)||'{}'); }catch(e){ notasCtrl={}; }
+  _notaIdx=null;
   try{ mediaModo=JSON.parse(localStorage.getItem('leciona_media_modo')||'{}'); }catch(e){ mediaModo={}; }
+  try{ _pendingWrites=JSON.parse(localStorage.getItem(LS_PENDING)||'{}'); }catch(e){ _pendingWrites={}; }
   resetRelCfgSeDesatualizado();
   try{ conteudos = JSON.parse(localStorage.getItem(LS_CONT)||'{}'); }catch(e){ conteudos={}; }
   try{ temas = JSON.parse(localStorage.getItem(LS_TEMAS)||'{}'); }catch(e){ temas={}; }
@@ -1816,7 +1864,11 @@ function _migrateAndRenderReal(){
         if(!t.turmaId || !turmas[t.turmaId]) return;
         t._ts=Date.now(); t.updatedAt=t._ts; updates['leciona/temas/'+t.id]=t;
       });
-      if(Object.keys(updates).length) DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
+      // via pushBackSeguro (não direto) — mesmo com o loop de repararObjTema
+      // corrigido, esse é o caminho que grava em massa mais fácil de gerar
+      // muitas escritas seguidas, então mantém a proteção contra tempestade
+      // de sync como segunda linha de defesa.
+      if(Object.keys(updates).length) pushBackSeguro('migrate', updates);
     }
   }
   renderThemes();
@@ -1854,10 +1906,10 @@ function boot(){
   refreshTurmas();
   if(scope.turma && turmas[scope.turma]) document.getElementById('selTurma').value=scope.turma;
   onScopeChange();
-  let viewSalva='hoje', offsetSalvo=0;
-  try{ viewSalva=localStorage.getItem('leciona_lastview')||'hoje'; offsetSalvo=parseInt(localStorage.getItem('leciona_hojeoffset'),10)||0; }catch(e){}
-  hojeOffset=offsetSalvo;
+  let viewSalva='agenda';
+  try{ viewSalva=localStorage.getItem('leciona_lastview')||'agenda'; }catch(e){}
   setView(viewSalva);
+  avisarCalendarioDesatualizado();
   // sw.js não fornecido — Service Worker desabilitado até implementação
   document.addEventListener('keydown', projKeys);
   if(typeof prefetchPrebuiltEmSegundoPlano!=='undefined') prefetchPrebuiltEmSegundoPlano();
@@ -2825,7 +2877,7 @@ function excluirTodosDados(){
   closeModal();
 
   [LS_CONT,LS_TEMAS,LS_TURMAS,LS_REG,LS_ALUNOS,LS_ATVCTRL,LS_NOTAS,LS_OCORR,LS_CHAMADAS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
-  conteudos={}; temas={}; turmas={}; registros={}; alunos={}; atividadesCtrl={}; notasCtrl={}; ocorrencias={}; chamadas={}; _temaIdx=null;
+  conteudos={}; temas={}; turmas={}; registros={}; alunos={}; atividadesCtrl={}; notasCtrl={}; ocorrencias={}; chamadas={}; _temaIdx=null; _notaIdx=null;
 
   if(DB){
     DB.ref('leciona').remove()
@@ -2898,7 +2950,7 @@ function apagarDados3Bim(){
   r.chamadasAlvo.forEach(x=>{ delete chamadas[x.id]; upd['leciona/chamadas/'+x.id]=null; });
   r.ocorrenciasAlvo.forEach(x=>{ delete ocorrencias[x.id]; upd['leciona/ocorrencias/'+x.id]=null; });
   r.atividadesAlvo.forEach(x=>{ delete atividadesCtrl[x.id]; upd['leciona/atividades_ctrl/'+x.id]=null; });
-  r.notasAlvo.forEach(x=>{ delete notasCtrl[x.id]; upd['leciona/notas_ctrl/'+x.id]=null; });
+  r.notasAlvo.forEach(x=>{ delete notasCtrl[x.id]; upd['leciona/notas_ctrl/'+x.id]=null; }); if(r.notasAlvo.length) _notaIdx=null;
   r.temasAplicadosAlvo.forEach(t=>{ t.status={}; upd['leciona/temas/'+t.id+'/status']=null; });
   r.planejamentosAlvo.forEach(({conteudoId,entry})=>{
     const c=conteudos[conteudoId]; if(!c||!c.planejamento) return;
@@ -3173,7 +3225,13 @@ function voltarHeader(){
   if(editing && ed && !ed.classList.contains('hidden')){ fecharEditor(); return; }
   const modal=document.getElementById('modalWrap');
   if(modal){ closeModal(); return; }
-  history.back();
+  // Sem editor nem modal aberto: não há pra onde "voltar" dentro do app (as
+  // views trocam de classe CSS, não empilham no histórico do navegador), e
+  // history.back() literalmente fechava/saía do app com um toque só. Volta
+  // pra última view conhecida em vez disso.
+  let v='agenda';
+  try{ v=localStorage.getItem('leciona_lastview')||'agenda'; }catch(e){}
+  setView(v);
 }
 let _saveT=null;
 function setSaveStatus(estado){
@@ -5298,7 +5356,7 @@ function excluirTurma(id){
   alunosDaT.forEach(a=>{ delete alunos[a.id]; if(DB) DB.ref('leciona/alunos/'+a.id).remove().catch(()=>{}); });
   if(alunosDaT.length) lsSet(LS_ALUNOS, JSON.stringify(alunos));
   notasDaT.forEach(n=>{ delete notasCtrl[n.id]; if(DB) DB.ref('leciona/notas_ctrl/'+n.id).remove().catch(()=>{}); });
-  if(notasDaT.length) lsSet(LS_NOTAS, JSON.stringify(notasCtrl));
+  if(notasDaT.length){ lsSet(LS_NOTAS, JSON.stringify(notasCtrl)); _notaIdx=null; }
   ativsAfetadas.forEach(av=>{
     av.turmaIds=(av.turmaIds||[]).filter(tid=>tid!==id);
     if(av.turmaIds.length) persistAtivCtrl(av);
@@ -5316,6 +5374,7 @@ function excluirTurma(id){
    RELATÓRIO / PDF (via impressão do navegador)
    ========================================================= */
 /* ================= FASE 2 — ABA BIMESTRE ================= */
+const CALENDARIO_ANO = 2026; // ano coberto por BIM_RANGES/FERIADOS_2026 — ver avisarCalendarioDesatualizado()
 const BIM_RANGES = {
   '1º Bimestre':['2026-01-20','2026-04-10'],
   '2º Bimestre':['2026-04-11','2026-06-30'],
@@ -5331,6 +5390,16 @@ const WD_NOMES = {1:'Segunda',2:'Terça',3:'Quarta',4:'Quinta',5:'Sexta'};
 // grades conhecidas do horário do CEPI Marajó (getDay: 2=Ter,3=Qua)
 const KNOWN_GRADES = { 'História|9º ano|A|CEPI Marajó':{2:1,3:2}, 'História|9º ano|C|CEPI Marajó':{2:2,3:1} };
 function bimAtivoAgora(dataISO){ const iso=dataISO||isoLocal(new Date()); for(const b in BIM_RANGES){ const r=BIM_RANGES[b]; if(iso>=r[0]&&iso<=r[1]) return b; } return null; }
+/* BIM_RANGES/FERIADOS_2026 são datas fixas digitadas à mão pra 2026 — sem
+   isso, o app simplesmente para de mostrar aulas/aplicar bimestre no ano
+   seguinte, sem nenhum aviso (bimAtivoAgora vira sempre null). Chamado uma
+   vez no boot: se o ano corrente já passou do coberto, avisa em vez de ficar
+   silenciosamente "vazio". Não dispara durante o recesso de julho — esse é
+   um null esperado, dentro do próprio ano configurado. */
+function avisarCalendarioDesatualizado(){
+  const anoAtual=new Date().getFullYear();
+  if(anoAtual>CALENDARIO_ANO) toast('⚠ O calendário escolar (bimestres/feriados) está configurado só até '+CALENDARIO_ANO+' — atualize BIM_RANGES e FERIADOS_'+CALENDARIO_ANO+' no código pra '+anoAtual+'.','err');
+}
 function turmaKey(t){ return [t.disciplina,t.serie,t.letra||'',t.unidade||''].join('|'); }
 /* SCHEDULE (o horário real, editado direto no arquivo) manda sempre que
    cobrir a turma+disciplina — assim atualizar o horário lá já vale pra
@@ -5710,8 +5779,10 @@ function renderLinhaDoTempo(){
   let html='<div class="acervo-filtros">'+
     '<select onchange="_ltTurma=this.value;renderLinhaDoTempo()">'+turmaOpts+'</select>'+
     '<select onchange="_ltBim=this.value;renderLinhaDoTempo()">'+bimOpts+'</select>'+
-  '</div>';
-  if(!tu){ box.innerHTML=html+'<div class="empty"><p>Selecione uma turma.</p></div>'; return; }
+    '<button class="btn ghost sm" style="margin-left:auto" onclick="togglePainelNoPlanejamento()">'+(_painelAbertoNoPlanejamento?'📊 Ocultar painel geral ▲':'📊 Ver painel geral ▾')+'</button>'+
+  '</div>'+
+  '<div id="painelInlineBody"'+(_painelAbertoNoPlanejamento?'':' class="hidden"')+' style="margin-bottom:16px"></div>';
+  if(!tu){ box.innerHTML=html+'<div class="empty"><p>Selecione uma turma.</p></div>'; if(_painelAbertoNoPlanejamento) renderPainel(); return; }
   const atrasada=turmaAtrasada(tu.id);
   const abertas=ocorrenciasAbertas(tu.id);
   const cont=contarAulas(tu,_ltBim), dadas=aulasDadas(tu,_ltBim);
@@ -5724,7 +5795,7 @@ function renderLinhaDoTempo(){
   const datas=datasDoBimestre(tu,_ltBim);
   if(!datas.length){
     html+='<div class="empty"><p>Essa turma não tem horário configurado, ou o bimestre está fora do calendário.</p></div>';
-    box.innerHTML=html; return;
+    box.innerHTML=html; if(_painelAbertoNoPlanejamento) renderPainel(); return;
   }
   html+='<div class="lt-strip-wrap"><div class="lt-strip">';
   datas.forEach(iso=>{
@@ -5756,6 +5827,11 @@ function renderLinhaDoTempo(){
       : '<p style="color:var(--muted);font-size:13px">Nenhum — tudo aplicado.</p>')+
   '</div>';
   box.innerHTML=html;
+  if(_painelAbertoNoPlanejamento) renderPainel();
+}
+function togglePainelNoPlanejamento(){
+  _painelAbertoNoPlanejamento=!_painelAbertoNoPlanejamento;
+  renderLinhaDoTempo();
 }
 function abrirDiaLinhaTempo(turmaId,dataISO){
   const tu=turmas[turmaId]||{};
@@ -5782,7 +5858,7 @@ function abrirDiaLinhaTempo(turmaId,dataISO){
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
-function persistChamada(c){ c._ts=Date.now(); chamadas[c.id]=c; lsSet(LS_CHAMADAS,JSON.stringify(chamadas)); if(DB) DB.ref('leciona/chamadas/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar chamada no Firebase (mantida localmente). '+e.message,'err')); }
+function persistChamada(c){ persistItem('chamadas', chamadas, LS_CHAMADAS, c, 'Falha ao gravar chamada no Firebase'); }
 function chamadaDoDia(turmaId,data){ return Object.values(chamadas).find(c=>c&&c.turmaId===turmaId&&c.data===data)||null; }
 function openBimestre(){
   if(!scope.turma){ toast('Selecione uma turma primeiro.','err'); return; }
@@ -6331,89 +6407,6 @@ function gradeDeSchedule(t){
   return grade;
 }
 function bimAtual(){ const iso=isoLocal(new Date()); for(const b in BIM_RANGES){ const r=BIM_RANGES[b]; if(iso>=r[0]&&iso<=r[1]) return b; } return scope.bim||'2º Bimestre'; }
-let hojeOffset=0;
-function hojeMudarDia(d){ hojeOffset+=d; try{ localStorage.setItem('leciona_hojeoffset', String(hojeOffset)); }catch(e){} renderHoje(); }
-function renderHoje(){
-  const box=document.getElementById('hojeBody'); if(!box) return;
-  const now=new Date(); now.setDate(now.getDate()+hojeOffset);
-  const dia=now.getDay(); const h=hojeOffset===0?now.getHours():12;
-  const saud=hojeOffset<0?'Você está vendo':hojeOffset>0?'Você está vendo':(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite');
-  const uni=unidadeDoDia(dia);
-  const aulas=SCHEDULE.filter(x=>x.dia===dia).sort((a,b)=>a.ini.localeCompare(b.ini));
-  const dataHojeISO=isoLocal(now);
-  const bimHoje=bimAtivoAgora(dataHojeISO);
-  const planejHoje=planejamentosDoDia(dataHojeISO);
-  let html='<div class="hoje-head"><h2>'+saud+(hojeOffset!==0?' — '+DIAS_LONGO[dia]:'!')+'</h2>'+
-    '<div class="hoje-nav"><button class="btn ghost sm" onclick="hojeMudarDia(-1)">‹ dia anterior</button>'+
-    (hojeOffset!==0?'<button class="btn ghost sm" onclick="hojeOffset=0;try{localStorage.setItem(\'leciona_hojeoffset\',\'0\')}catch(e){};renderHoje()">hoje</button>':'')+
-    '<button class="btn ghost sm" onclick="hojeMudarDia(1)">próximo dia ›</button>'+
-    '<button class="btn ghost sm" onclick="_agendaOrigin=\'hoje\';setView(\'agenda\')" title="Ver o mês inteiro, com aulas e compromissos">📅 Ver agenda do mês</button>'+
-    '<button class="btn ghost sm" onclick="abrirNovaAulaAvulsa(\''+dataHojeISO+'\')">+ Aula avulsa</button></div>'+
-    '<div class="hoje-data">'+DIAS_LONGO[dia]+' · '+now.toLocaleDateString('pt-BR')+(uni?(' · '+uni):'')+' · '+(bimHoje||'Recesso / sem bimestre ativo')+'</div></div>';
-  if(!bimHoje){
-    html+='<div class="empty"><p>Sem bimestre letivo ativo nesta data — período de recesso. 🎉</p></div>';
-    box.innerHTML=html; return;
-  }
-  if(planejHoje.length){
-    html+='<h3 style="font-family:var(--serif);font-size:15px;margin:4px 0 8px">📅 Cronograma de hoje</h3><div class="hoje-list" style="margin-bottom:22px">'+
-      planejHoje.map(({conteudo,entry,tema})=>{
-        const tu=turmas[conteudo.turmaId]||{};
-        const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
-        const nRegs=registrosDoTema(tema.id).filter(r=>r.turmaId===tu.id).length;
-        return '<div class="hoje-row">'+
-          '<div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
-          '<div class="hoje-acoes">'+
-            '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+conteudo.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
-            '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+conteudo.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
-            '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
-            '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
-            '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula hoje — pode repetir o mesmo tema quantas vezes quiser, cada vez com seus próprios objetos/data">✓ Registrar</button>'+
-          '</div></div>';
-      }).join('')+
-    '</div>';
-  }
-  const aulasAvulsasHoje=aulasAvulsasDoDiaGlobal(dataHojeISO);
-  if(aulasAvulsasHoje.length){
-    html+='<h3 style="font-family:var(--serif);font-size:15px;margin:4px 0 8px">✎ Aulas avulsas</h3><div class="hoje-list" style="margin-bottom:22px">'+
-      aulasAvulsasHoje.map(a=>{
-        const tu=turmas[a.turmaId]||{};
-        const cor=a.status==='executada'?'#2f6b5e':'#a06a2e';
-        return '<div class="hoje-row">'+
-          '<div class="hoje-info"><b style="color:'+cor+'">Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+'</b><span>'+esc(turmaNome(tu))+' · '+esc(a.titulo)+' · '+(a.status==='executada'?'executada':'planejada')+(a.observacoes?(' · '+esc(a.observacoes)):'')+'</span></div>'+
-          '<div class="hoje-acoes">'+
-            '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+a.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
-            '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+a.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
-            '<button class="btn ghost sm" onclick="abrirAula(\''+tu.disciplina+'\',\''+tu.unidade+'\',\''+tu.serie+'\',\''+(tu.letra||'')+'\')">abrir</button>'+
-            (a.status!=='executada'?'<button class="btn ghost sm" onclick="marcarAulaAvulsaExecutada(\''+a.id+'\')">marcar executada</button>':'')+
-            '<button class="btn ghost sm" onclick="editarAulaAvulsa(\''+a.id+'\')">editar</button>'+
-            '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">remover</button>'+
-          '</div></div>';
-      }).join('')+
-    '</div>';
-  }
-  if(!aulas.length){ html+='<div class="empty"><p>Sem aulas neste dia. 🎉</p><p style="margin-top:10px"><button class="btn" onclick="setView(\'gestao\')">Ir para a Gestão</button></p></div>'; box.innerHTML=html; return; }
-  html+='<div class="hoje-list">'+aulas.map(x=>{
-    const serie=SERIE_NUM[x.serie]; const u=x.unidade;
-    const titulo=x.disc+' · '+serieCurta(serie)+x.letra;
-    // Verifica se há registro de aplicação para esta turma hoje
-    const tuHoje=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
-    const dataHoje=isoLocal(now);
-    const regHoje=tuHoje?Object.values(registros).filter(r=>r.turmaId===tuHoje.id&&r.data===dataHoje):[];
-    const badgeReg=regHoje.length?'<span class="reg-badge" title="'+regHoje.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
-    const badgeAtraso=(tuHoje&&turmaAtrasada(tuHoje.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
-    const acoes = x.disc==='Estudo Orientado'
-      ? '<span class="statusdot">sem planejamento</span>'
-      : '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
-        '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
-        '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
-        '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
-        (tuHoje?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuHoje.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'');
-    return '<div class="hoje-row'+(regHoje.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
-      '<div class="hoje-info"><b>'+esc(titulo)+'</b><span>'+esc(u)+'</span>'+badgeReg+badgeAtraso+'</div>'+
-      '<div class="hoje-acoes">'+acoes+'</div></div>';
-  }).join('')+'</div>';
-  box.innerHTML=html;
-}
 /* ═══════════════════════════════════════════════════════════════════════
    AGENDA — visão de mês (grade) + dia (lista), juntando 3 fontes que já
    existem separadas: aulas reais da semana (SCHEDULE, mesma fonte da tela
@@ -6425,7 +6418,7 @@ function renderHoje(){
    tanto pela professora (textarea) quanto pelo assistente (ferramenta
    deixar_nota_geral). Mesma coleção pros dois lados, diferenciados só por
    `autor`. */
-function persistNotaGeral(n){ n._ts=Date.now(); notasGerais[n.id]=n; lsSet(LS_NOTASGERAIS,JSON.stringify(notasGerais)); if(DB) DB.ref('leciona/notas_gerais/'+n.id).set(n).catch(e=>toast('⚠ Falha ao gravar a nota (mantida localmente). '+e.message,'err')); }
+function persistNotaGeral(n){ persistItem('notas_gerais', notasGerais, LS_NOTASGERAIS, n, 'Falha ao gravar a nota'); }
 function removerNotaGeral(id){
   delete notasGerais[id];
   lsSet(LS_NOTASGERAIS,JSON.stringify(notasGerais));
@@ -6464,7 +6457,7 @@ function renderNotasGeraisAgenda(){
       '</div>'
     ).join('') : '<p style="color:var(--muted);font-size:13px">Nenhuma anotação ainda.</p>');
 }
-function persistCompromisso(c){ c._ts=Date.now(); compromissos[c.id]=c; lsSet(LS_COMP,JSON.stringify(compromissos)); if(DB) DB.ref('leciona/compromissos/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar na agenda (mantido localmente). '+e.message,'err')); }
+function persistCompromisso(c){ persistItem('compromissos', compromissos, LS_COMP, c, 'Falha ao gravar na agenda'); }
 function removerCompromisso(id){
   if(!confirm('Remover este compromisso da agenda?')) return;
   delete compromissos[id];
@@ -6483,7 +6476,7 @@ function toggleCompromissoConcluido(id){
    igual ao padrão do SIAP. Coleção própria, separada de `registros` (que
    exige temaId) — ver justificativa no plano de manutenção. ---------- */
 const AULA_AVULSA_TIPOS={explicacao:'Explicação',atividade:'Atividade',correcao:'Correção',recomposicao:'Recomposição de aprendizagem'};
-function persistAulaAvulsa(a){ a._ts=Date.now(); aulasAvulsas[a.id]=a; lsSet(LS_AULASAVULSAS,JSON.stringify(aulasAvulsas)); if(DB) DB.ref('leciona/aulas_avulsas/'+a.id).set(a).catch(e=>toast('⚠ Falha ao gravar aula avulsa (mantida localmente). '+e.message,'err')); }
+function persistAulaAvulsa(a){ persistItem('aulas_avulsas', aulasAvulsas, LS_AULASAVULSAS, a, 'Falha ao gravar aula avulsa'); }
 function removerAulaAvulsa(id){
   if(!confirm('Remover esta aula avulsa?')) return;
   delete aulasAvulsas[id];
@@ -6550,7 +6543,7 @@ function confirmarNovaAulaAvulsa(){
 }
 let _agendaMes=null;     // Date do 1º dia do mês em exibição
 let _agendaDiaSel=null;  // ISO do dia selecionado no painel
-let _agendaOrigin='hoje';
+let _agendaOrigin='';
 let _agendaGradeAberta=false; // calendário do mês vem recolhido por padrão (ex-tela Hoje)
 function toggleAgendaGrade(){ _agendaGradeAberta=!_agendaGradeAberta; renderAgenda(); }
 function mudarMesAgenda(delta){
@@ -6792,24 +6785,25 @@ function projetarAula(disc,uni,serie,letra){
   if(primeiro) projetarTemaId(primeiro.id);
   else { setView('gestao'); toast('Sem temas nesta turma ainda — crie ou use "Partir da matriz".',''); }
 }
-/* A antiga aba "Hoje" foi suprimida (pedido da Malu) — v==='hoje' agora é
-   só um sinônimo de "Agenda, aberta no dia de hoje", pra não ter que caçar
-   toda chamada interna de setView('hoje')/_agendaOrigin='hoje' espalhada
-   pelo código. viewHoje/renderHoje() ficam sem uso (não removidos agora,
-   por segurança — várias chamadas ainda os referenciam indiretamente). */
+/* As antigas abas "Hoje" e "Painel" foram suprimidas (pedido da Malu):
+   "Hoje" virou só a Agenda aberta no dia atual (Agenda já abre em hoje por
+   padrão); "Painel" virou uma seção retrátil dentro de Planejamento (ver
+   togglePainelNoPlanejamento). Migração de valores antigos guardados em
+   localStorage['leciona_lastview'] pra quem já tinha o app aberto antes
+   dessa mudança. */
 function setView(v){
   fecharProjecao();
-  const viewId = (v==='hoje') ? 'viewAgenda' : ('view'+v.charAt(0).toUpperCase()+v.slice(1));
-  ['viewHoje','viewPainel','viewAcervo','viewAgenda','viewNotas','viewGestao','viewLinhaTempo'].forEach(id=>{
+  if(v==='hoje') v='agenda';
+  if(v==='painel') v='linhaTempo';
+  const viewId = 'view'+v.charAt(0).toUpperCase()+v.slice(1);
+  ['viewAcervo','viewAgenda','viewNotas','viewGestao','viewLinhaTempo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('hidden', id!==viewId);
   });
-  const tabId = (v==='hoje') ? 'tabHoje' : (v==='linhaTempo') ? 'tabLinhaTempo' : ('tab'+v.charAt(0).toUpperCase()+v.slice(1));
-  ['tabHoje','tabPainel','tabAcervo','tabAgenda','tabNotas','tabGestao','tabLinhaTempo'].forEach(id=>{
+  const tabId = (v==='linhaTempo') ? 'tabLinhaTempo' : ('tab'+v.charAt(0).toUpperCase()+v.slice(1));
+  ['tabAcervo','tabAgenda','tabNotas','tabGestao','tabLinhaTempo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('active', id===tabId);
   });
   try{ localStorage.setItem('leciona_lastview', v); }catch(e){}
-  if(v==='hoje'){ _agendaMes=new Date(); _agendaDiaSel=isoLocal(new Date()); _agendaGradeAberta=false; renderAgenda(); }
-  if(v==='painel') renderPainel();
   if(v==='acervo') renderAcervo();
   if(v==='agenda') renderAgenda();
   if(v==='notas') renderNotas();
@@ -6872,6 +6866,7 @@ function removerAtividade(id){
   // Remover notas associadas
   Object.keys(notasCtrl).forEach(nid=>{ if(notasCtrl[nid].atividadeId===id){ delete notasCtrl[nid]; } });
   lsSet(LS_NOTAS,JSON.stringify(notasCtrl));
+  _notaIdx=null;
   renderNotas();
   toast('Atividade removida.','ok');
 }
@@ -7082,8 +7077,9 @@ let _acervoBusca='', _acervoDisc='', _acervoSerie='', _acervoBim='';
    Pensado pra quem tem muitas turmas/disciplinas: mostra % aplicado por
    turma num bimestre, destaca quem está atrasada (ocorrência sem resolver)
    e dá um atalho direto pra abrir aquela turma na Gestão. */
-let _painelBim = null, _painelDisc = '', _painelOrigin = 'gestao';
+let _painelBim = null, _painelDisc = '';
 let _painelExpandidas = new Set();
+let _painelAbertoNoPlanejamento = false; // seção retrátil dentro de Planejamento (ex-aba Painel)
 function togglePainelTurma(turmaId){
   if(_painelExpandidas.has(turmaId)) _painelExpandidas.delete(turmaId); else _painelExpandidas.add(turmaId);
   renderPainel();
@@ -7112,7 +7108,7 @@ function painelRosterHtml(turmaId){
   '</div>';
 }
 function renderPainel(){
-  const box=document.getElementById('painelBody'); if(!box) return;
+  const box=document.getElementById('painelInlineBody'); if(!box) return;
   if(_painelBim==null) _painelBim = bimAtual();
   const discs=[...new Set(turmasAtivas().map(t=>t.disciplina).filter(Boolean))].sort();
 
@@ -7141,8 +7137,7 @@ function renderPainel(){
   const comConteudo = linhas.filter(l=>l.total>0);
   const pctMedio = comConteudo.length ? Math.round(comConteudo.reduce((s,l)=>s+l.pct,0)/comConteudo.length) : 0;
 
-  let html = '<button class="btn ghost sm" style="margin-bottom:10px" onclick="setView(\''+_painelOrigin+'\')">← Voltar'+(_painelOrigin==='notas'?' pra Notas':' pra Gestão')+'</button>'+
-    '<div class="acervo-filtros">'+
+  let html = '<div class="acervo-filtros">'+
     '<select onchange="_painelDisc=this.value;renderPainel()"><option value="">Todas disciplinas</option>'+
       discs.map(d=>'<option value="'+esc(d)+'"'+(d===_painelDisc?' selected':'')+'>'+esc(d)+'</option>').join('')+
     '</select>'+
@@ -7544,9 +7539,9 @@ const ATIV_TIPOS={
 const OBJ_TIPO_PADRAO={quadro:'texto',estudo:'texto',slides:'debate',mapaMental:'mapa',avaliacao:'atividade'};
 
 // ── Persist ──────────────────────────────────────────────────────────────
-function persistAluno(a){ a._ts=Date.now(); alunos[a.id]=a; lsSet(LS_ALUNOS,JSON.stringify(alunos)); if(DB) DB.ref('leciona/alunos/'+a.id).set(a).catch(e=>console.warn(e)); }
-function persistAtivCtrl(av){ av._ts=Date.now(); atividadesCtrl[av.id]=av; lsSet(LS_ATVCTRL,JSON.stringify(atividadesCtrl)); if(DB) DB.ref('leciona/atividades_ctrl/'+av.id).set(av).catch(e=>console.warn(e)); }
-function persistNota(n){ n._ts=Date.now(); notasCtrl[n.id]=n; lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); if(DB) DB.ref('leciona/notas_ctrl/'+n.id).set(n).catch(e=>console.warn(e)); }
+function persistAluno(a){ persistItem('alunos', alunos, LS_ALUNOS, a, 'Falha ao gravar dados do aluno'); }
+function persistAtivCtrl(av){ persistItem('atividades_ctrl', atividadesCtrl, LS_ATVCTRL, av, 'Falha ao gravar atividade'); }
+function persistNota(n){ persistItem('notas_ctrl', notasCtrl, LS_NOTAS, n, 'Falha ao gravar nota'); _notaIdx=null; }
 function removerAluno(id){
   const al=alunos[id]; if(!al) return;
   if(!confirm('Remover "'+(al.nome||'este aluno')+'"? As notas lançadas para ele também serão removidas. Não pode ser desfeito.')) return;
@@ -7556,7 +7551,7 @@ function removerAluno(id){
   // notas lançadas pra esse aluno ficariam órfãs (sem aluno pra aparecer) — limpa junto
   const notasApagar=Object.keys(notasCtrl).filter(nid=>notasCtrl[nid].alunoId===id);
   notasApagar.forEach(nid=>{ delete notasCtrl[nid]; if(DB) DB.ref('leciona/notas_ctrl/'+nid).remove().catch(()=>{}); });
-  if(notasApagar.length) lsSet(LS_NOTAS,JSON.stringify(notasCtrl));
+  if(notasApagar.length){ lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); _notaIdx=null; }
   renderNotas();
   toast('Aluno removido.','ok');
 }
@@ -7667,7 +7662,13 @@ function atividadesDaTurma(turmaId){
     .filter(av=>av.turmaIds&&av.turmaIds.includes(turmaId))
     .sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.nome||'').localeCompare(b.nome||''));
 }
-function notaDoAluno(alunoId,atividadeId){ return Object.values(notasCtrl).find(n=>n.alunoId===alunoId&&n.atividadeId===atividadeId)||null; }
+/* Índice notasCtrl por "alunoId|atividadeId" (mesmo padrão do _temaIdx) —
+   notaDoAluno() é chamada em loop pra cada aluno×atividade em renderNotas,
+   médias, CSV, ranking… sem índice isso é uma busca linear em notasCtrl
+   inteiro por chamada, o que fica visivelmente lento conforme o ano avança
+   e o número de notas cresce. */
+function _buildNotaIdx(){ _notaIdx={}; Object.values(notasCtrl).forEach(n=>{ if(n) _notaIdx[n.alunoId+'|'+n.atividadeId]=n; }); }
+function notaDoAluno(alunoId,atividadeId){ if(!_notaIdx) _buildNotaIdx(); return _notaIdx[alunoId+'|'+atividadeId]||null; }
 function mediaAtividade(atividadeId,turmaId){
   const av=atividadesCtrl[atividadeId]||{};
   const als=alunosDaTurma(turmaId);
@@ -7723,7 +7724,7 @@ const QUALITATIVA_MOTIVOS=[
   {k:'dormindo', label:'Dormindo em sala', valor:-0.1},
   {k:'outro', label:'Outro', valor:-0.1},
 ];
-function persistQualitativa(q){ q._ts=Date.now(); qualitativa[q.id]=q; lsSet(LS_QUALITATIVA,JSON.stringify(qualitativa)); if(DB) DB.ref('leciona/qualitativa/'+q.id).set(q).catch(e=>toast('⚠ Falha ao gravar (mantido localmente). '+e.message,'err')); }
+function persistQualitativa(q){ persistItem('qualitativa', qualitativa, LS_QUALITATIVA, q, 'Falha ao gravar'); }
 function removerQualitativa(id){
   delete qualitativa[id];
   lsSet(LS_QUALITATIVA,JSON.stringify(qualitativa));
@@ -8182,7 +8183,7 @@ function renderNotas(){
     '</select>'+
     '<button class="btn ghost sm" onclick="abrirExportarCSV()">↓ CSV</button>'+
     '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
-    '<button class="btn ghost sm" onclick="_painelOrigin=\'notas\';_painelBim=scope.bim;setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
+    '<button class="btn ghost sm" onclick="_painelBim=scope.bim;_painelAbertoNoPlanejamento=true;_ltTurma=scope.turma;_ltBim=scope.bim;setView(\'linhaTempo\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
     '<button class="btn ghost sm" onclick="_agendaOrigin=\'notas\';setView(\'agenda\')" title="Agenda — aulas, cronograma e compromissos por dia">📅 Agenda</button>'+
   '</div>';
 
@@ -8274,9 +8275,10 @@ function renderNotas(){
           'onchange="salvarNotaCheck(this)"></td>';
       }
       const val=n&&n.valor!=null?n.valor:'';
-      const cls=val===''?'':(val>=7?'alta':val<5?'baixa':'');
-      return '<td style="background:'+tp.bg+'20"><input class="nota-input '+cls+'" type="number" min="0" max="10" step="0.5" value="'+esc(String(val))+'" '+
-        'data-al="'+al.id+'" data-av="'+av.id+'" data-tu="'+turmaId+'" '+
+      const vmax=av.valorMax||10;
+      const cls=val===''?'':(val>=vmax*0.7?'alta':val<vmax*0.5?'baixa':'');
+      return '<td style="background:'+tp.bg+'20"><input class="nota-input '+cls+'" type="number" min="0" max="'+vmax+'" step="0.5" value="'+esc(String(val))+'" '+
+        'data-al="'+al.id+'" data-av="'+av.id+'" data-tu="'+turmaId+'" data-max="'+vmax+'" '+
         'onchange="salvarNota(this)" onblur="salvarNota(this)"></td>';
     }).join('')+
     '<td><span class="nota-media '+medCls+'">'+medStr+'</span></td>'+
@@ -8300,14 +8302,15 @@ function renderNotas(){
 
 function salvarNota(input){
   const alunoId=input.dataset.al, atividadeId=input.dataset.av, turmaId=input.dataset.tu;
+  const vmax=parseFloat(input.dataset.max)||10;
   const val=input.value.trim();
   // Encontrar ou criar nota
   let n=notaDoAluno(alunoId,atividadeId);
   if(!n) n={id:uid(),alunoId,atividadeId,turmaId};
-  n.valor=val===''?null:Math.min(10,Math.max(0,parseFloat(val)||0));
+  n.valor=val===''?null:Math.min(vmax,Math.max(0,parseFloat(val)||0));
   persistNota(n);
   // Atualizar cor
-  input.className='nota-input '+(n.valor==null?'':(n.valor>=7?'alta':n.valor<5?'baixa':''));
+  input.className='nota-input '+(n.valor==null?'':(n.valor>=vmax*0.7?'alta':n.valor<vmax*0.5?'baixa':''));
   // Recalcular médias sem re-render completo
   const al=alunos[alunoId], atvs=atividadesDaTurma(turmaId);
   const med=mediaAluno(alunoId,atvs,turmaId);

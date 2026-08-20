@@ -33,6 +33,26 @@ fi
 
 echo "→ Sintaxe OK."
 
+if [ -f functions/index.js ]; then
+  echo "→ Conferindo se SCHEDULE de index.html e functions/index.js estão em sync…"
+  node -e "
+    const fs=require('fs');
+    function extractSchedule(file){
+      const src=fs.readFileSync(file,'utf8');
+      const m=src.match(/const SCHEDULE\s*=\s*(\[[\s\S]*?\n\]);/);
+      if(!m) throw new Error('SCHEDULE não encontrado em '+file);
+      return eval(m[1]);
+    }
+    const a=extractSchedule('index.html');
+    const b=extractSchedule('functions/index.js');
+    if(JSON.stringify(a)!==JSON.stringify(b)){
+      console.error('✗ SCHEDULE diverge entre index.html e functions/index.js — atualize os dois (importarPlanilhaAgora/Agendado usa a cópia de functions/index.js pra saber os dias de aula) antes de publicar.');
+      process.exit(1);
+    }
+  " || { echo "  (deploy abortado — SCHEDULE fora de sync)" >&2; exit 1; }
+  echo "  ✓ SCHEDULE em sync"
+fi
+
 if [ -f sw.js ]; then
   novo_cache="leciona-$(date +%Y%m%d%H%M%S)"
   sed -i '' "s/const CACHE = '[^']*'/const CACHE = '$novo_cache'/" sw.js
