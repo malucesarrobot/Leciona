@@ -1587,6 +1587,16 @@ function removerRegistro(id){
 function registrosDoTema(temaId){
   return Object.values(registros).filter(r=>r.temaId===temaId).sort((a,b)=>b.data.localeCompare(a.data));
 }
+/* Usado pelos 3 fluxos que criam registro (projeção, card da Gestão/Agenda,
+   aba Registro do editor) — antes nenhum deles avisava se já existia um
+   registro pro mesmo tema+turma+data, então um duplo-clique em "Registrar"
+   duplicava em silêncio (relatado por ela). true = pode seguir (não tinha
+   duplicata, ou ela confirmou mesmo assim); false = cancelar. */
+function avisoRegistroDuplicado(temaId, turmaId, data){
+  const dup=Object.values(registros).find(r=>r&&r.temaId===temaId&&r.turmaId===turmaId&&r.data===data);
+  if(!dup) return true;
+  return confirm('Já existe um registro pra este tema nesta turma em '+data+'. Criar outro mesmo assim (fica duplicado)? Cancelar pra não duplicar.');
+}
 
 /* ── Ocorrências (turma sem aula normal: passeio, palestra, dispensa...) ──
    Registro rápido, sem precisar entrar na turma nem escolher tema — feito
@@ -3209,6 +3219,16 @@ function abrirEditor(id){
   renderObjTabs(); renderObjContent();
   setSaveStatus('salvo');
   document.getElementById('editor').classList.remove('hidden');
+}
+/* Abre o tema já direto na aba "Registro" (editar/excluir aplicações) — usado
+   pelo modal do dia na Linha do Tempo, pra não deixar ela ter que descobrir
+   sozinha que essa aba existe (ela relatou não achar como editar/excluir um
+   registro depois de aplicado). */
+function abrirTemaNoRegistro(temaId){
+  abrirEditor(temaId);
+  activeObj='__registro';
+  renderObjTabs();
+  renderAbaRegistro();
 }
 function fecharEditor(){
   clearTimeout(_saveT);
@@ -4869,6 +4889,7 @@ function salvarRegistro(){
   const entrega=(document.getElementById('regEntrega')||{}).value||'sala';
   const data=(document.getElementById('regData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('regNota')||{}).value||'';
+  if(!avisoRegistroDuplicado(proj.tema.id, proj.tema.turmaId, data)) return;
   const r=novoRegistro(proj.tema.id, proj.tema.turmaId, objs, entrega, nota);
   r.data=data;
   persistRegistro(r);
@@ -4890,41 +4911,53 @@ function renderAbaRegistro(){
       regs.map(r=>{
         const tu2=turmas[r.turmaId]||{};
         return '<tr><td>'+r.data+'</td><td>'+esc(turmaNome(tu2))+'</td><td>'+esc((r.objetos||[]).join(', '))+'</td><td>'+esc(r.entrega||'')+'</td><td>'+esc(r.nota||'')+'</td>'+
-          '<td><button class="btn ghost sm" data-rid="'+r.id+'" onclick="removerRegistro(this.getAttribute(\"data-rid\"));renderAbaRegistro()">✕</button></td></tr>';
+          '<td><button class="btn ghost sm" onclick="abrirModalRegistroEditor(\''+r.id+'\')" title="Editar">✎</button> '+
+          '<button class="btn ghost sm" onclick="removerRegistro(\''+r.id+'\');renderAbaRegistro()" title="Excluir">✕</button></td></tr>';
       }).join('')+'</tbody></table>';
   }
   document.getElementById('objContent').innerHTML=h;
 }
-function abrirModalRegistroEditor(){
+/* regId opcional: sem ele, cria um registro novo (comportamento antigo); com
+   ele, abre pra editar o registro existente (mesmo modal, campos
+   pré-preenchidos) — antes só dava pra excluir e recriar do zero. */
+function abrirModalRegistroEditor(regId){
   if(!editing) return;
-  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>'<label class="check"><input type="checkbox" name="regObjE" value="'+o.k+'">'+o.label+'</label>').join('');
-  const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
-  const tuOpts=Object.values(turmas).filter(t=>t.disciplina===editing.disciplina).map(t=>'<option value="'+t.id+'"'+(t.id===editing.turmaId?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('');
+  const existing = regId ? registros[regId] : null;
+  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>'<label class="check"><input type="checkbox" name="regObjE" value="'+o.k+'"'+((existing&&(existing.objetos||[]).includes(o.k))?' checked':'')+'>'+o.label+'</label>').join('');
+  const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'"'+(existing&&existing.entrega===e?' selected':'')+'>'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
+  const tuOpts=Object.values(turmas).filter(t=>t.disciplina===editing.disciplina).map(t=>'<option value="'+t.id+'"'+(t.id===(existing?existing.turmaId:editing.turmaId)?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('');
   const hoje=isoLocal(new Date());
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
-    '<div class="modal-h"><h3>＋ Novo registro</h3></div>'+
+    '<div class="modal-h"><h3>'+(existing?'✎ Editar registro':'＋ Novo registro')+'</h3></div>'+
     '<div class="modal-b">'+
     '<div class="field"><label>Turma</label><select id="regETurma">'+tuOpts+'</select></div>'+
     '<div class="field"><label>O que usou</label><div class="gt-checks">'+objChecks+'</div></div>'+
     '<div class="field"><label>Como foi entregue</label><select id="regEEntrega">'+entOpts+'</select></div>'+
-    '<div class="field"><label>Data</label><input type="date" id="regEData" value="'+hoje+'"></div>'+
-    '<div class="field"><label>Nota livre</label><input id="regENota" placeholder="observações…"></div>'+
+    '<div class="field"><label>Data</label><input type="date" id="regEData" value="'+(existing?existing.data:hoje)+'"></div>'+
+    '<div class="field"><label>Nota livre</label><input id="regENota" placeholder="observações…" value="'+esc(existing?(existing.nota||''):'')+'"></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
-    '<button class="btn primary" onclick="salvarRegistroEditor()">Salvar</button></div></div></div>';
+    '<button class="btn primary" onclick="salvarRegistroEditor(\''+(regId||'')+'\')">Salvar</button></div></div></div>';
   abrirModal(h);
 }
-function salvarRegistroEditor(){
+function salvarRegistroEditor(regId){
   const turmaId=(document.getElementById('regETurma')||{}).value||editing.turmaId;
   const objs=[...document.querySelectorAll('input[name=regObjE]:checked')].map(c=>c.value);
   const entrega=(document.getElementById('regEEntrega')||{}).value||'sala';
   const data=(document.getElementById('regEData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('regENota')||{}).value||'';
-  const r=novoRegistro(editing.id, turmaId, objs, entrega, nota);
-  r.data=data;
+  let r;
+  if(regId && registros[regId]){
+    r=registros[regId];
+    r.turmaId=turmaId; r.objetos=objs; r.entrega=entrega; r.data=data; r.nota=nota;
+  } else {
+    if(!avisoRegistroDuplicado(editing.id, turmaId, data)) return;
+    r=novoRegistro(editing.id, turmaId, objs, entrega, nota);
+    r.data=data;
+  }
   persistRegistro(r);
   closeModal();
   renderAbaRegistro();
-  toast('Registro salvo.','ok');
+  toast(regId?'Registro atualizado.':'Registro salvo.','ok');
   if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 /* Registrar aplicação direto do card na Gestão, sem entrar na projeção. */
@@ -4964,6 +4997,7 @@ function salvarRegistroCard(){
   const entrega=(document.getElementById('regCEntrega')||{}).value||'sala';
   const data=(document.getElementById('regCData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('regCNota')||{}).value||'';
+  if(!avisoRegistroDuplicado(t.id, t.turmaId, data)) return;
   const r=novoRegistro(t.id, t.turmaId, objs, entrega, nota);
   r.data=data;
   persistRegistro(r);
@@ -5677,6 +5711,7 @@ function abrirEditarObjPlanejamento(conteudoId, planejamentoId){
     '<div class="modal-h"><h3>O que rolou nessa aula</h3></div>'+
     '<div class="modal-b">'+
     '<div class="field"><label>Tipo</label><select id="epObjeto">'+objOpts+'</select></div>'+
+    '<div class="field"><label>Metodologia (o que de fato foi usado — pode divergir do planejado)</label><input id="epMetodologia" placeholder="ex.: aula expositiva, trabalho em grupo…" value="'+esc(p.metodologia||'')+'"></div>'+
     '<div class="field"><label>Anotação (livre — ex.: "trecho de documentário no fim do horário")</label><textarea id="epObs" rows="2" placeholder="o que você quiser anotar sobre essa aula">'+esc(p.obs||'')+'</textarea></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarEditarObjPlanejamento(\''+conteudoId+'\',\''+planejamentoId+'\')">Salvar</button></div></div></div>';
@@ -5686,6 +5721,7 @@ function salvarEditarObjPlanejamento(conteudoId, planejamentoId){
   const cont=conteudos[conteudoId]; if(!cont||!Array.isArray(cont.planejamento)) return;
   const p=cont.planejamento.find(x=>x.id===planejamentoId); if(!p) return;
   p.objeto=(document.getElementById('epObjeto')||{}).value||p.objeto;
+  p.metodologia=(document.getElementById('epMetodologia')||{}).value.trim();
   p.obs=(document.getElementById('epObs')||{}).value.trim();
   persistConteudo(cont);
   closeModal();
@@ -5804,11 +5840,22 @@ function abrirDiaLinhaTempo(turmaId,dataISO){
   const chamada=chamadaDoDia(turmaId,dataISO);
   const regs=Object.values(registros).filter(r=>r&&r.turmaId===turmaId&&r.data===dataISO);
   const avulsas=aulasAvulsasDoDia(turmaId,dataISO);
+  // Entrada de planejamento (cronograma) desse dia, se existir — dias reservados
+  // pela sequência automática (revisão/recomposição no fim do bimestre) não
+  // ganham entrada nenhuma, então sem isso não tinha como definir/trocar o
+  // tema desses dias (ela relatou não achar como trocar tema da última aula).
+  let entryDoDia=null;
+  Object.values(conteudos).forEach(c=>{
+    if(c.turmaId!==turmaId||!Array.isArray(c.planejamento)) return;
+    const p=c.planejamento.find(x=>x.data===dataISO);
+    if(p) entryDoDia=p;
+  });
+  const temaDoDia=entryDoDia?(temas[entryDoDia.temaId]||{}):null;
   let corpo='';
   if(chamada) corpo+='<div class="lt-modal-item">📋 Chamada lançada nesse dia.</div>';
   regs.forEach(r=>{
     const t=temas[r.temaId]||{};
-    corpo+='<div class="lt-modal-item lt-modal-click" onclick="closeModal();abrirEditor(\''+r.temaId+'\')">📗 '+esc(t.tituloExibicao||t.nome||'tema')+' — '+esc((r.objetos||[]).join(', '))+'</div>';
+    corpo+='<div class="lt-modal-item lt-modal-click" onclick="closeModal();abrirTemaNoRegistro(\''+r.temaId+'\')" title="Abre direto na aba de editar/excluir este registro">📗 '+esc(t.tituloExibicao||t.nome||'tema')+' — '+esc((r.objetos||[]).join(', '))+'</div>';
   });
   avulsas.forEach(a=>{
     corpo+='<div class="lt-modal-item lt-modal-click" onclick="closeModal();editarAulaAvulsa(\''+a.id+'\')">✎ Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+' · '+esc(a.titulo)+' ('+(a.status==='executada'?'executada':'planejada')+')</div>';
@@ -5818,6 +5865,7 @@ function abrirDiaLinhaTempo(turmaId,dataISO){
       '<button class="btn ghost full" style="margin-top:6px" onclick="closeModal();abrirTodasChamadas()">📋 Lançar chamada</button>'+
       '<button class="btn ghost full" style="margin-top:6px" onclick="closeModal();abrirNovaAulaAvulsa(\''+dataISO+'\')">✎ Aula avulsa nesse dia</button>';
   }
+  corpo+='<button class="btn ghost full" style="margin-top:6px" onclick="closeModal();abrirTrocarTema(\''+turmaId+'\',\''+dataISO+'\',\''+(entryDoDia?entryDoDia.id:'')+'\')" title="Escolher/trocar o tema planejado pra esse dia — funciona mesmo em dias sem entrada no cronograma (ex.: revisão/recomposição no fim do bimestre)">🔀 '+(entryDoDia?('Trocar tema: '+esc(temaDoDia.tituloExibicao||temaDoDia.nome||'tema')):'Definir tema desta aula')+'</button>';
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:420px">'+
     '<div class="modal-h"><h3>'+esc(turmaNome(tu))+' — '+dataISO.split('-').reverse().join('/')+'</h3></div>'+
     '<div class="modal-b">'+corpo+'</div>'+
@@ -6620,7 +6668,12 @@ function renderAgendaDia(){
       const tuDia=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
       const cronDaAula=tuDia?(cronPorTurma[tuDia.id]||[])[0]:null;
       const regDia=tuDia?Object.values(registros).filter(r=>r.turmaId===tuDia.id&&r.data===iso):[];
-      const badgeReg=regDia.length?'<span class="reg-badge" title="'+regDia.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
+      const chamadaDia=tuDia?chamadaDoDia(tuDia.id,iso):null;
+      // Mesmo critério de "aplicado" da Linha do Tempo (chamada||registro||avulsa) —
+      // antes o badge daqui só olhava registro, então uma aula com chamada lançada
+      // mas sem registro de aplicação ficava sem indicação nenhuma de que rolou.
+      const aplicadoDia=regDia.length>0||!!chamadaDia;
+      const badgeReg=aplicadoDia?'<span class="reg-badge" title="'+(regDia.length?(regDia.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)'):'chamada lançada')+'">✓ aplicado</span>':'';
       const badgeAtraso=(tuDia&&turmaAtrasada(tuDia.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
       let infoHtml, acoesHtml;
       if(cronDaAula){
@@ -6648,7 +6701,7 @@ function renderAgendaDia(){
           (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
         '</div>');
       }
-      html+='<div class="hoje-row'+(regDia.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
+      html+='<div class="hoje-row'+(aplicadoDia?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
         '<div class="hoje-info">'+infoHtml+'</div>'+acoesHtml+
       '</div>';
     });
