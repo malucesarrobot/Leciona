@@ -164,7 +164,7 @@ const SCHEDULE=[
   {dia:3,ini:'08:05',fim:'08:55',serie:2,letra:'A',disc:'Sociologia',unidade:'EFG'},
   {dia:3,ini:'08:55',fim:'09:45',serie:1,letra:'A',disc:'História',unidade:'EFG'},
   {dia:3,ini:'09:45',fim:'10:35',serie:3,letra:'A',disc:'Sociologia',unidade:'EFG'},
-  {dia:3,ini:'10:45',fim:'11:35',serie:1,letra:'B',disc:'Filosofia',unidade:'EFG'},
+  {dia:3,ini:'10:45',fim:'11:35',serie:1,letra:'B',disc:'História',unidade:'EFG'},
   {dia:3,ini:'14:00',fim:'14:50',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
   {dia:3,ini:'14:50',fim:'15:40',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
   {dia:3,ini:'15:40',fim:'16:30',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
