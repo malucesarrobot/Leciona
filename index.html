@@ -6370,15 +6370,15 @@ const DIAS_LONGO={0:'Domingo',1:'Segunda-feira',2:'Terça-feira',3:'Quarta-feira
    Marajó (tarde) caem nos mesmos dias da semana desde a grade definitiva de
    2026/2, então não dá mais pra inferir a escola só pelo dia. */
 function unidadeDoDia(d){ const us=[...new Set(SCHEDULE.filter(x=>x.dia===d).map(x=>x.unidade))]; return us.join(' · '); }
-/* grade real (quadro "HORÁRIO final 18.08.pdf", 2026-08-18, substituindo a
-   versão "HORÁRIO_atualização (2)" de 2026-08-17; e CEPI Marajó
-   "HORÁRIO_2026_FUNDAMENTAL", ainda de 2026-08-12 — sem atualização mais
-   recente), lida por dia da semana: {dia, ini, fim, serie(nº), letra, disc,
-   unidade} */
+/* grade real (quadro "HORARIOfinal_24.08.pdf", 2026-08-24, substituindo a
+   versão "HORÁRIO final 18.08.pdf" de 2026-08-18 — mudou Filosofia 3ºA de
+   Segunda 12:25 pra Quinta 07:15, e trocou os horários de Filosofia 1ºB
+   com Sociologia 2ºA na Quarta; e CEPI Marajó "HORÁRIO_2026_FUNDAMENTAL",
+   ainda de 2026-08-12 — sem atualização mais recente), lida por dia da
+   semana: {dia, ini, fim, serie(nº), letra, disc, unidade} */
 const SCHEDULE=[
   // Segunda — EFG
   {dia:1,ini:'10:45',fim:'11:35',serie:2,letra:'B',disc:'Sociologia',unidade:'EFG'},
-  {dia:1,ini:'12:25',fim:'13:15',serie:3,letra:'A',disc:'Filosofia',unidade:'EFG'},
   // Terça — EFG (manhã) + CEPI Marajó (tarde)
   {dia:2,ini:'07:15',fim:'08:05',serie:3,letra:'B',disc:'História',unidade:'EFG'},
   {dia:2,ini:'10:45',fim:'11:35',serie:3,letra:'C',disc:'História',unidade:'EFG'},
@@ -6387,16 +6387,17 @@ const SCHEDULE=[
   {dia:2,ini:'15:40',fim:'16:30',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
   // Quarta — EFG (manhã) + CEPI Marajó (tarde)
   {dia:3,ini:'07:15',fim:'08:05',serie:2,letra:'B',disc:'História',unidade:'EFG'},
-  {dia:3,ini:'08:05',fim:'08:55',serie:1,letra:'B',disc:'Filosofia',unidade:'EFG'},
+  {dia:3,ini:'08:05',fim:'08:55',serie:2,letra:'A',disc:'Sociologia',unidade:'EFG'},
   {dia:3,ini:'08:55',fim:'09:45',serie:1,letra:'A',disc:'História',unidade:'EFG'},
   {dia:3,ini:'09:45',fim:'10:35',serie:3,letra:'A',disc:'Sociologia',unidade:'EFG'},
-  {dia:3,ini:'10:45',fim:'11:35',serie:2,letra:'A',disc:'Sociologia',unidade:'EFG'},
+  {dia:3,ini:'10:45',fim:'11:35',serie:1,letra:'B',disc:'Filosofia',unidade:'EFG'},
   {dia:3,ini:'14:00',fim:'14:50',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
   {dia:3,ini:'14:50',fim:'15:40',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
   {dia:3,ini:'15:40',fim:'16:30',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
   {dia:3,ini:'16:30',fim:'17:15',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
   {dia:3,ini:'17:15',fim:'18:00',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
   // Quinta — EFG
+  {dia:4,ini:'07:15',fim:'08:05',serie:3,letra:'A',disc:'Filosofia',unidade:'EFG'},
   {dia:4,ini:'08:55',fim:'09:45',serie:2,letra:'B',disc:'Filosofia',unidade:'EFG'},
   {dia:4,ini:'09:45',fim:'10:35',serie:3,letra:'B',disc:'Filosofia',unidade:'EFG'},
   {dia:4,ini:'10:45',fim:'11:35',serie:2,letra:'A',disc:'Filosofia',unidade:'EFG'},
