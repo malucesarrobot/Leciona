@@ -30,9 +30,10 @@ button{font-family:inherit;cursor:pointer}
 input,textarea,select{font-family:inherit;font-size:14px}
 h1,h2,h3{margin:0;font-weight:600}
 .hidden{display:none!important}
+.serif{font-family:var(--serif)}
 
 #app{display:flex;flex-direction:column;height:100%}
-header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;background:var(--ink);color:var(--board-fg);flex:0 0 auto;max-width:100vw}
+header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;background:var(--ink);color:var(--board-fg);flex:0 0 auto}
 .brand{display:flex;align-items:baseline;gap:10px;font-family:var(--serif);font-weight:700;font-size:22px;letter-spacing:.3px}
 .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--ochre);display:inline-block;transform:translateY(-2px)}
 .brand small{font-family:var(--sans);font-weight:500;font-size:11px;color:#9fb0ab;letter-spacing:.14em;text-transform:uppercase}
@@ -47,14 +48,13 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .conn.online .led{background:#6fcaa9}
 
 #viewGestao{flex:1;display:flex;min-height:0}
+#viewHoje{flex:1;overflow:auto}
 #viewAcervo{flex:1;overflow:auto}
-#viewAgenda{flex:1;overflow:auto}
 #viewNotas{flex:1;overflow:auto}
-#viewLinhaTempo{flex:1;overflow:auto}
 .notas-wrap{max-width:1100px;margin:0 auto;padding:16px}
 .notas-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
 .notas-toolbar h3{font-family:var(--serif);font-size:17px;flex:1;margin:0}
-.notas-table-wrap{overflow:auto;max-height:calc(100vh - 260px);min-height:280px;border-radius:10px;border:1px solid var(--border)}
+.notas-table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
 .notas-table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;font-size:13px}
 .notas-table th{background:var(--surface);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;font-weight:600;position:sticky;top:0;z-index:2;overflow:hidden;text-overflow:ellipsis}
 .notas-table th.aluno-col{position:sticky;left:0;z-index:3;background:var(--surface)}
@@ -70,7 +70,9 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .nota-media.aprovado{color:var(--green)}
 .nota-media.reprovado{color:var(--err)}
 .nota-check{width:22px;height:22px;cursor:pointer;accent-color:var(--green)}
-.atv-col-header{padding:4px 2px 2px;display:block;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.atv-col-header{padding:4px 2px 2px;display:block;text-align:center}
+.atv-remover{cursor:pointer;color:var(--muted);font-size:11px;display:inline-block;padding:1px 5px;border-radius:4px}
+.atv-remover:hover{background:var(--err);color:#fff}
 .notas-progresso{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px}
 .notas-progresso .prog-titulo{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .prog-barra-wrap{background:var(--surface);border-radius:20px;height:8px;margin-bottom:8px;overflow:hidden}
@@ -119,14 +121,10 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .lt-plan-head h3{font-size:14px;margin:0}
 .lt-plan-list{display:flex;flex-direction:column;gap:4px}
 .lt-plan-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:8px;font-size:12.5px}
-.lt-plan-row.hoje{background:#eaf6ef;border:1.5px solid var(--green);box-shadow:0 0 0 1px var(--green) inset}
-.lt-plan-row.passado{opacity:.6}
-.lt-plan-hoje-selo{flex:0 0 auto;background:var(--green);color:#fff;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 6px;border-radius:5px}
 .lt-plan-data{flex:0 0 44px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
 .lt-plan-tema{flex:1;cursor:pointer;font-weight:500}
 .lt-plan-tema:hover{text-decoration:underline}
-.lt-plan-obj{color:var(--muted);flex:0 0 auto;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
-.lt-plan-obj:hover{text-decoration:underline}
+.lt-plan-obj{color:var(--muted);flex:0 0 auto;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lt-pendencias{margin-top:18px}
 .lt-pendencias h3{font-size:14px;margin-bottom:8px}
 .lt-pend-item{padding:8px 10px;background:var(--surface);border-radius:8px;margin-bottom:5px;font-size:13px;cursor:pointer}
@@ -197,7 +195,11 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .obj-status-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}
 .obj-dot{font-size:11px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);color:var(--muted)}
 .obj-dot.feito{background:var(--green);color:#fff;border-color:var(--green)}
+.hoje-wrap{max-width:760px;margin:0 auto;padding:30px 22px}
+.hoje-head h2{font-family:Spectral,serif;font-size:30px;margin:0 0 4px}
 .hoje-nav{display:flex;gap:8px;margin:6px 0}
+.hoje-data{color:var(--muted);font-size:13px;margin-bottom:22px}
+.hoje-list{display:flex;flex-direction:column;gap:10px}
 .hoje-row{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 .hoje-hora{flex:0 0 64px;font-weight:700;color:var(--green);font-size:16px;display:flex;flex-direction:column;line-height:1.15}
 .hoje-hora small{font-weight:500;color:var(--muted);font-size:11px}
@@ -205,6 +207,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .hoje-info b{font-size:15px}
 .hoje-info span{font-size:12px;color:var(--muted)}
 .hoje-acoes{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.hoje-wrap .empty{text-align:center;color:var(--muted);padding:50px 0;font-size:16px}
 @media(max-width:560px){.hoje-row{flex-wrap:wrap}.hoje-acoes{width:100%;justify-content:flex-start}}
 .scope{flex:0 0 290px;border-right:1px solid var(--line);background:var(--surface);padding:18px 16px;overflow:auto;display:flex;flex-direction:column;gap:14px}
 .scope .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-weight:600}
@@ -235,7 +238,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 /* Conteúdo > Tema */
 .conteudo{border:1px solid var(--line);background:#fff;border-radius:var(--radius);margin-bottom:14px}
 .conteudo-head{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--line);border-radius:var(--radius) var(--radius) 0 0;position:sticky;top:0;z-index:4}
-.conteudo-head .cname{font-family:var(--serif);font-size:16px;font-weight:600;flex:1;min-width:0;cursor:pointer}
+.conteudo-head .cname{font-family:var(--serif);font-size:16px;font-weight:600;flex:1;cursor:pointer}
 .conteudo-head .ordbtns{display:flex;flex-direction:column;gap:1px}
 .ordbtns button{border:1px solid var(--line);background:#fff;width:22px;height:17px;line-height:1;border-radius:4px;font-size:10px;color:var(--muted);padding:0}
 .ordbtns button:hover{border-color:var(--green);color:var(--green)}
@@ -250,9 +253,6 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .selo.casa:hover{background:#eee0c5}
 .selo.adapt-falta{background:#fdecea;color:#a8442f;text-transform:none;cursor:pointer;font-weight:700}
 .selo.adapt-falta:hover{background:#f9d9d5}
-.selo.met{background:#e3ecf7;color:#2a4d8a;text-transform:none}
-.selo.met-repete{background:#fdecea;color:#a8442f;text-transform:none;font-weight:700}
-.codigo-inline{font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:var(--muted);background:var(--surface,#f0ead9);padding:1px 5px;border-radius:4px}
 
 .tlist{display:grid;gap:8px}
 .tcard{border:1px solid var(--line);background:#fff;border-radius:9px;padding:11px 13px 11px 17px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.12s;position:relative;overflow:hidden}
@@ -530,24 +530,6 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
   .tcard .btn.ghost.sm{min-width:38px;min-height:38px;font-size:15px}
   .meta-pane{display:none}
   .topbar nav button{padding:7px 10px}
-  /* Cabeçalho de conteúdo (Matriz — Bimestre, selos, renomear/→turma/excluir):
-     numa linha só isso nunca cabe num celular — quebra pra não cortar botão
-     nem apertar o título a ponto de não dar pra ler. */
-  .conteudo-head{flex-wrap:wrap;position:static}
-  .conteudo-head .cname{flex:1 1 100%;order:1}
-  .conteudo-head .ordbtns{order:0}
-  .conteudo-head .selos{order:2}
-  .conteudo-head .btn.ghost.sm{order:3;font-size:12px;padding:5px 8px}
-  /* Topbar: com Hoje/Notas/Gestão/Projetar/Painel/Agenda/Planejamento +
-     ícones de ação, nunca cabe tudo — deixa rolar de lado em vez de sumir
-     botão (principalmente o de Configurações, que é o último da fila). */
-  header.topbar{overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;padding:8px 10px}
-  header.topbar::-webkit-scrollbar{display:none}
-  .topbar .brand{flex:0 0 auto}
-  .topbar .brand small{display:none}
-  .topbar nav{flex:0 0 auto}
-  .topbar .icon-btn{flex:0 0 auto}
-  .topbar .spacer{flex:0 0 12px}
 }
 
 /* Ranking — pra projetar no fim da aula */
@@ -590,11 +572,13 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <div class="brand">Leciona<span class="dot"></span><small>Acervo &amp; Projeção</small></div>
     <div class="spacer"></div>
     <nav>
+      <button id="tabHoje" class="active" onclick="setView('hoje')">Hoje</button>
       <button id="tabNotas" onclick="setView('notas')">📊 Notas</button>
       <button id="tabGestao" onclick="setView('gestao')">Gestão</button>
       <button id="tabProjecao" onclick="abrirProjecaoAtual()">Projetar</button>
+      <button id="tabPainel" onclick="setView('painel')">📊 Painel</button>
       <button id="tabAcervo" class="hidden" onclick="setView('acervo')">📚 Acervo</button>
-      <button id="tabAgenda" class="active" onclick="_agendaOrigin='';setView('agenda')">📅 Agenda</button>
+      <button id="tabAgenda" onclick="_agendaOrigin='hoje';setView('agenda')">📅 Agenda</button>
       <button id="tabLinhaTempo" onclick="_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">🗓️ Planejamento</button>
     </nav>
     <span class="conn" id="conn" onclick="location.reload()" style="cursor:pointer" title="Toque para recarregar o app"><span class="led"></span><span id="connTxt">Local</span></span>
@@ -605,6 +589,8 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <button class="icon-btn" title="Configurações" onclick="openConfig()">&#9881;</button>
   </header>
 
+  <div id="viewHoje"><div class="hoje-wrap" id="hojeBody"></div></div>
+  <div id="viewPainel" class="hidden"><div class="acervo-wrap" id="painelBody"></div></div>
   <div id="viewAcervo" class="hidden"><div class="acervo-wrap" id="acervoBody"></div></div>
   <div id="viewAgenda" class="hidden"><div class="agenda-wrap" id="agendaBody"></div></div>
   <div id="viewNotas" class="hidden"><div class="notas-wrap" id="notasBody"></div></div>
@@ -627,7 +613,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button class="btn primary full" onclick="novoConteudo()">+ Novo conteúdo</button>
       <button class="btn full" onclick="openRelatorio()">&#128196; Gerar relatório / PDF</button>
       <button class="btn full" onclick="setView('acervo')">&#128218; Acervo — buscar em tudo</button>
-      <button class="btn full" onclick="_painelBim=scope.bim;_painelAbertoNoPlanejamento=true;_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">&#128200; Painel geral — progresso de todas as turmas</button>
+      <button class="btn full" onclick="_painelOrigin='gestao';_painelBim=scope.bim;setView('painel')">&#128200; Painel geral — progresso de todas as turmas</button>
       <button class="btn full" onclick="_agendaOrigin='gestao';setView('agenda')">&#128197; Agenda</button>
       <button class="btn full" onclick="_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">&#128197; Linha do tempo desta turma</button>
       <button class="btn full" onclick="abrirAdaptacoesTurma()">&#129513; Adaptações desta turma</button>
@@ -655,16 +641,15 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <div class="themes-body" id="themesBody"></div>
     </main>
   </div>
-  <div id="viewLinhaTempo" class="hidden"><div class="acervo-wrap" id="linhaTempoBody"></div></div>
 </div>
+
+<div id="viewLinhaTempo" class="hidden"><div class="acervo-wrap" id="linhaTempoBody"></div></div>
 
 <div id="editor" class="editor hidden">
   <div class="editor-top">
     <button class="btn ghost" onclick="fecharEditor()">← Voltar</button>
     <input class="tema-nome" id="edNome" placeholder="Nome do tema" oninput="edDirty()">
     <span id="edStatusChip"></span>
-    <span id="saveStatus" style="font-size:12px;margin-left:4px"></span>
-    <button class="btn ghost" title="Desfazer a última exclusão de card (quadro, estudo, slide...)" onclick="undoObj()">↩ Desfazer</button>
     <button class="btn" onclick="projetarTema()">▶ Projetar</button>
   </div>
   <div id="edTurmaBadge" style="padding:0 22px 8px;font-size:12px;color:var(--muted)"></div>
@@ -1147,25 +1132,12 @@ function repararObjTema(t){
   if(o.quadro==null){ o.quadro=''; changed=true; }
   if(o.estudo==null){ o.estudo=''; changed=true; }
   if(o.mapaMental==null){ o.mapaMental=''; changed=true; }
-  // slides/avaliação: o Firebase apaga arrays/objetos vazios ao gravar, então
-  // "ausente" (undefined) é o estado normal de repouso pra quem nunca usou
-  // slides/avaliação nesse tema — só marca `changed` (força regravação) se o
-  // campo EXISTIA com tipo errado (dado realmente corrompido). Marcar changed
-  // pra um valor simplesmente ausente cria um loop infinito: grava vazio →
-  // Firebase apaga → volta a vir ausente → "repara" nc → grava de novo…
-  if(!Array.isArray(o.slides)){
-    if(o.slides!=null) changed=true;
-    o.slides=[];
-  }
+  if(!Array.isArray(o.slides)){ o.slides=[]; changed=true; }
   if(!o.avaliacao || typeof o.avaliacao!=='object' || Array.isArray(o.avaliacao)){
-    if(o.avaliacao!=null) changed=true;
-    o.avaliacao={questoes:[],flashcards:[],atividade:[],gabarito:[]};
+    o.avaliacao={questoes:[],flashcards:[],atividade:[],gabarito:[]}; changed=true;
   } else {
     ['questoes','flashcards','atividade','gabarito'].forEach(k=>{
-      if(!Array.isArray(o.avaliacao[k])){
-        if(o.avaliacao[k]!=null) changed=true;
-        o.avaliacao[k]=[];
-      }
+      if(!Array.isArray(o.avaliacao[k])){ o.avaliacao[k]=[]; changed=true; }
     });
   }
   return changed;
@@ -1177,7 +1149,6 @@ let conteudos = {};
 let registros = {};          // { id: registro } — histórico de aplicações
 let ocorrencias = {};        // { id: {turmaId,data,categoria,observacao,resolvida} } — quando a turma NÃO teve aula normal (passeio, palestra, dispensa...)
 let _temaIdx = null;         // índice temas por conteudoId (cache)
-let _notaIdx = null;         // índice notasCtrl por "alunoId|atividadeId" (cache)
 let alunos = {};             // { id: aluno } — alunos por turma
 let atividadesCtrl = {};     // { id: atividade } — atividades de controle de notas
 let notasCtrl = {};          // { id: nota } — notas dos alunos
@@ -1186,7 +1157,6 @@ let compromissos = {};       // { id: {titulo,data,hora,descricao,concluido,_ts}
 let aulasAvulsas = {};        // { id: {turmaId,titulo,tipo,observacoes,dcgoRef,data,status:'planejada'|'executada',_ts} } — aula sem tema vinculado (explicação, atividade, correção, recomposição)
 let notasGerais = {};         // { id: {texto,autor:'professora'|'assistente',ts} } — bloco de notas solto na Agenda, não ligado a nenhum tema/aula
 let qualitativa = {};         // { id: {alunoId,turmaId,data,motivo,valor,_ts} } — descontos da nota qualitativa (começa em 10, não entra na média de atividades)
-let _pendingWrites = {};      // { 'leciona/colecao/id': item } — escritas via persistItem() ainda não confirmadas pelo Firebase; sobrevive a reload (localStorage) e é reenviada em replayPendingWrites(), pra não perder chamada/nota feita offline se o app recarregar antes de sincronizar
 let _buscaTerm = '';          // termo de busca atual (sincronizado via setBusca)
 let temas = {};
 let turmas = {};            // turmas reais (9º A, 9º B...)
@@ -1201,8 +1171,7 @@ const LS_CONT='leciona_conteudos', LS_TEMAS='leciona_temas', LS_TURMAS='leciona_
       LS_REG='leciona_registros', LS_ALUNOS='leciona_alunos',
       LS_ATVCTRL='leciona_atividades_ctrl', LS_NOTAS='leciona_notas_ctrl',
       LS_OCORR='leciona_ocorrencias', LS_CHAMADAS='leciona_chamadas',
-      LS_COMP='leciona_compromissos', LS_AULASAVULSAS='leciona_aulas_avulsas', LS_NOTASGERAIS='leciona_notas_gerais', LS_QUALITATIVA='leciona_qualitativa',
-      LS_PENDING='leciona_pending_writes';
+      LS_COMP='leciona_compromissos', LS_AULASAVULSAS='leciona_aulas_avulsas', LS_NOTASGERAIS='leciona_notas_gerais', LS_QUALITATIVA='leciona_qualitativa';
 // Versão do formato dos dados. Se uma futura versão do app mudar a estrutura,
 // este número sobe e a migração correspondente roda uma única vez, de forma
 // controlada — em vez de o app tentar ler dados antigos com código novo e
@@ -1271,39 +1240,6 @@ function pushBackSeguro(path, upd){
     return;
   }
   DB.ref().update(upd).catch(e=>console.warn('pushBack '+path+':',e));
-}
-/* Helper único pra gravar um item (chamada, nota, aluno, aula avulsa…) tanto
-   local quanto no Firebase, com fila de pendências que sobrevive a reload —
-   sem isso, uma chamada lançada offline que nunca chegou a confirmar no
-   Firebase some quando o app recarrega antes de reconectar (o primeiro
-   snapshot do servidor, que nunca recebeu a escrita, vira autoridade e
-   apaga o que só existia em memória/localStorage). O item entra em
-   _pendingWrites ANTES da tentativa de gravação e só sai quando o Firebase
-   confirma — replayPendingWrites() reenvia o que sobrou toda vez que
-   reconecta, inclusive logo depois de um reload. */
-function persistItem(colecaoNome, colecao, lsKey, item, msgErro){
-  item._ts=Date.now();
-  colecao[item.id]=item;
-  lsSet(lsKey, JSON.stringify(colecao));
-  const fullPath='leciona/'+colecaoNome+'/'+item.id;
-  _pendingWrites[fullPath]=item;
-  lsSet(LS_PENDING, JSON.stringify(_pendingWrites));
-  if(!DB) return;
-  DB.ref(fullPath).set(item).then(()=>{
-    delete _pendingWrites[fullPath];
-    lsSet(LS_PENDING, JSON.stringify(_pendingWrites));
-  }).catch(e=>toast('⚠ '+msgErro+' (mantido localmente, tentaremos de novo ao reconectar). '+e.message,'err'));
-}
-function replayPendingWrites(){
-  if(!DB) return;
-  const paths=Object.keys(_pendingWrites);
-  if(!paths.length) return;
-  paths.forEach(fullPath=>{
-    DB.ref(fullPath).set(_pendingWrites[fullPath]).then(()=>{
-      delete _pendingWrites[fullPath];
-      lsSet(LS_PENDING, JSON.stringify(_pendingWrites));
-    }).catch(e=>console.warn('replay pendente falhou: '+fullPath, e));
-  });
 }
 const _modoSeguro = /[?&]safe=1\b/.test(location.search);
 function _escutar(path, cb){
@@ -1427,11 +1363,6 @@ function initFirebase(){
     DB = firebase.database();
     setConn(true);
     if(_modoSeguro) toast('⚠ Modo seguro: lendo os dados uma única vez, sem sincronização automática. Gravações manuais (salvar, excluir) continuam funcionando.','');
-    replayPendingWrites();
-    // reenvia pendências toda vez que a conexão com o Firebase volta (não só
-    // no boot) — cobre o caso de cair wifi no meio da aula e voltar sem dar
-    // reload na página.
-    if(!_modoSeguro) DB.ref('.info/connected').on('value', s=>{ if(s.val()===true) replayPendingWrites(); });
     _escutar('relCfg', s=>{ const v=s.val(); if(v&&v.ordem){ let ord=v.ordem.filter(k=>REL_KEYS.includes(k)); REL_KEYS.forEach(k=>{ if(!ord.includes(k)) ord.push(k); }); relCfg.ordem=ord; relCfg.rotulos=Object.assign({},REL_LABELS_DEFAULT,v.rotulos||{}); } });
     _escutar('leciona/conteudos', s=>{
       const m=mergeRemote(conteudos, s.val()); conteudos=m.merged; lsSet(LS_CONT, JSON.stringify(conteudos));
@@ -1449,7 +1380,7 @@ function initFirebase(){
     // remoto é sempre autoridade aqui (nunca "ressuscita" atividade/nota
     // apagada em outro aparelho — mesma lição do bug de mergeRemote()).
     _escutar('leciona/atividades_ctrl', s=>{ atividadesCtrl=s.val()||{}; lsSet(LS_ATVCTRL,JSON.stringify(atividadesCtrl)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
-    _escutar('leciona/notas_ctrl', s=>{ notasCtrl=s.val()||{}; _notaIdx=null; lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
+    _escutar('leciona/notas_ctrl', s=>{ notasCtrl=s.val()||{}; lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); if(!document.getElementById('viewNotas').classList.contains('hidden')) renderNotas(); });
     // remoto é sempre autoridade aqui (nunca "ressuscita" registro apagado
     // em outro aparelho — ex.: "Desmarcar aplicado" — mesma lição do bug
     // de mergeRemote()).
@@ -1516,9 +1447,7 @@ function loadLocal(){
   try{ alunos=JSON.parse(localStorage.getItem(LS_ALUNOS)||'{}'); }catch(e){ alunos={}; }
   try{ atividadesCtrl=JSON.parse(localStorage.getItem(LS_ATVCTRL)||'{}'); }catch(e){ atividadesCtrl={}; }
   try{ notasCtrl=JSON.parse(localStorage.getItem(LS_NOTAS)||'{}'); }catch(e){ notasCtrl={}; }
-  _notaIdx=null;
   try{ mediaModo=JSON.parse(localStorage.getItem('leciona_media_modo')||'{}'); }catch(e){ mediaModo={}; }
-  try{ _pendingWrites=JSON.parse(localStorage.getItem(LS_PENDING)||'{}'); }catch(e){ _pendingWrites={}; }
   resetRelCfgSeDesatualizado();
   try{ conteudos = JSON.parse(localStorage.getItem(LS_CONT)||'{}'); }catch(e){ conteudos={}; }
   try{ temas = JSON.parse(localStorage.getItem(LS_TEMAS)||'{}'); }catch(e){ temas={}; }
@@ -1586,16 +1515,6 @@ function removerRegistro(id){
 }
 function registrosDoTema(temaId){
   return Object.values(registros).filter(r=>r.temaId===temaId).sort((a,b)=>b.data.localeCompare(a.data));
-}
-/* Usado pelos 3 fluxos que criam registro (projeção, card da Gestão/Agenda,
-   aba Registro do editor) — antes nenhum deles avisava se já existia um
-   registro pro mesmo tema+turma+data, então um duplo-clique em "Registrar"
-   duplicava em silêncio (relatado por ela). true = pode seguir (não tinha
-   duplicata, ou ela confirmou mesmo assim); false = cancelar. */
-function avisoRegistroDuplicado(temaId, turmaId, data){
-  const dup=Object.values(registros).find(r=>r&&r.temaId===temaId&&r.turmaId===turmaId&&r.data===data);
-  if(!dup) return true;
-  return confirm('Já existe um registro pra este tema nesta turma em '+data+'. Criar outro mesmo assim (fica duplicado)? Cancelar pra não duplicar.');
 }
 
 /* ── Ocorrências (turma sem aula normal: passeio, palestra, dispensa...) ──
@@ -1665,7 +1584,7 @@ function abrirRecuperacao(){
       '<div id="recProg" class="statusdot"></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" id="recBtn" onclick="gerarRecuperacao()">Gerar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 async function gerarRecuperacao(){
   const id1=(document.getElementById('recTema1')||{}).value, id2=(document.getElementById('recTema2')||{}).value;
@@ -1871,11 +1790,7 @@ function _migrateAndRenderReal(){
         if(!t.turmaId || !turmas[t.turmaId]) return;
         t._ts=Date.now(); t.updatedAt=t._ts; updates['leciona/temas/'+t.id]=t;
       });
-      // via pushBackSeguro (não direto) — mesmo com o loop de repararObjTema
-      // corrigido, esse é o caminho que grava em massa mais fácil de gerar
-      // muitas escritas seguidas, então mantém a proteção contra tempestade
-      // de sync como segunda linha de defesa.
-      if(Object.keys(updates).length) pushBackSeguro('migrate', updates);
+      if(Object.keys(updates).length) DB.ref().update(updates).catch(e=>toast('⚠ Falha ao sincronizar com o Firebase (mantido localmente). '+e.message,'err'));
     }
   }
   renderThemes();
@@ -1913,10 +1828,10 @@ function boot(){
   refreshTurmas();
   if(scope.turma && turmas[scope.turma]) document.getElementById('selTurma').value=scope.turma;
   onScopeChange();
-  let viewSalva='agenda';
-  try{ viewSalva=localStorage.getItem('leciona_lastview')||'agenda'; }catch(e){}
+  let viewSalva='hoje', offsetSalvo=0;
+  try{ viewSalva=localStorage.getItem('leciona_lastview')||'hoje'; offsetSalvo=parseInt(localStorage.getItem('leciona_hojeoffset'),10)||0; }catch(e){}
+  hojeOffset=offsetSalvo;
   setView(viewSalva);
-  avisarCalendarioDesatualizado();
   // sw.js não fornecido — Service Worker desabilitado até implementação
   document.addEventListener('keydown', projKeys);
   if(typeof prefetchPrebuiltEmSegundoPlano!=='undefined') prefetchPrebuiltEmSegundoPlano();
@@ -2505,7 +2420,7 @@ function openPartirMatriz(){
     '<div class="field"><label>Temas e subtemas</label><div id="pmList" class="pm-list"></div></div>'+
     '<div id="pmProg" class="statusdot"></div></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" id="pmBtn" onclick="criarPartirMatriz()">Criar selecionados</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   renderPmList();
   // pr\u00e9-pronto pode ainda n\u00e3o estar carregado (\u00e9 sob demanda, por
   // disciplina) \u2014 renderiza de novo quando chegar, pra acender os selos.
@@ -2884,7 +2799,7 @@ function excluirTodosDados(){
   closeModal();
 
   [LS_CONT,LS_TEMAS,LS_TURMAS,LS_REG,LS_ALUNOS,LS_ATVCTRL,LS_NOTAS,LS_OCORR,LS_CHAMADAS].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
-  conteudos={}; temas={}; turmas={}; registros={}; alunos={}; atividadesCtrl={}; notasCtrl={}; ocorrencias={}; chamadas={}; _temaIdx=null; _notaIdx=null;
+  conteudos={}; temas={}; turmas={}; registros={}; alunos={}; atividadesCtrl={}; notasCtrl={}; ocorrencias={}; chamadas={}; _temaIdx=null;
 
   if(DB){
     DB.ref('leciona').remove()
@@ -2941,7 +2856,7 @@ function abrirRelatorio3Bim(r){
     linha('Entradas de cronograma (só a entrada é removida — o conteúdo fica)',r.planejamentosAlvo,txtPlan)+
     '<div class="field" style="border-top:1px solid var(--line);padding-top:10px"><label style="color:#a06a2e">⚠ Compromissos no período — NÃO incluídos no botão abaixo, podem ser reunião/prazo real. Remova manualmente na Agenda se forem teste.</label>'+(r.compromissosAlvo.length?('<small>'+cortaLista(txtComp)+'</small>'):'<small style="color:var(--muted)">nenhum</small>')+'</div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" style="background:#c0392b;border-color:#c0392b;color:#fff" onclick="apagarDados3Bim()">Apagar itens acima</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function apagarDados3Bim(){
   const r=_auditoria3BimAtual; if(!r) return;
@@ -2957,7 +2872,7 @@ function apagarDados3Bim(){
   r.chamadasAlvo.forEach(x=>{ delete chamadas[x.id]; upd['leciona/chamadas/'+x.id]=null; });
   r.ocorrenciasAlvo.forEach(x=>{ delete ocorrencias[x.id]; upd['leciona/ocorrencias/'+x.id]=null; });
   r.atividadesAlvo.forEach(x=>{ delete atividadesCtrl[x.id]; upd['leciona/atividades_ctrl/'+x.id]=null; });
-  r.notasAlvo.forEach(x=>{ delete notasCtrl[x.id]; upd['leciona/notas_ctrl/'+x.id]=null; }); if(r.notasAlvo.length) _notaIdx=null;
+  r.notasAlvo.forEach(x=>{ delete notasCtrl[x.id]; upd['leciona/notas_ctrl/'+x.id]=null; });
   r.temasAplicadosAlvo.forEach(t=>{ t.status={}; upd['leciona/temas/'+t.id+'/status']=null; });
   r.planejamentosAlvo.forEach(({conteudoId,entry})=>{
     const c=conteudos[conteudoId]; if(!c||!c.planejamento) return;
@@ -2983,19 +2898,6 @@ function apagarDados3Bim(){
   _auditoria3BimAtual=null;
   renderThemes(); if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
-/* Carrega migracao-planejamento-3bim.js sob demanda (mesmo padrão de
-   ensurePrebuiltDiscLoaded) — não faz parte do boot normal do app, só é
-   baixado quando ela realmente usa o botão de importação em Configurações. */
-let _migracao3BimCarregada=false;
-function carregarEAbrirImportarPlano3Bim(){
-  if(_migracao3BimCarregada){ abrirImportarPlano3Bim(); return; }
-  toast('Carregando…','');
-  const s=document.createElement('script');
-  s.src='migracao-planejamento-3bim.js';
-  s.onload=()=>{ _migracao3BimCarregada=true; abrirImportarPlano3Bim(); };
-  s.onerror=()=>toast('Falha ao carregar o arquivo de migração.','err');
-  document.head.appendChild(s);
-}
 function abrirPopularSeletivo(){
   if(typeof PREBUILT_OBJ==='undefined'){ toast('O conteúdo pré-pronto ainda está carregando. Aguarde e tente de novo.','err'); return; }
   const turmasArr=Object.values(turmas).filter(t=>t&&!t._auto);
@@ -3009,7 +2911,7 @@ function abrirPopularSeletivo(){
     '<div class="field"><label>Bimestre</label><select id="popBim"><option value="">Todos os bimestres</option>'+BIMESTRES.map(b=>'<option value="'+esc(b)+'">'+esc(b)+'</option>').join('')+'</select></div>'+
     '<small style="color:var(--muted)">Temas que já existem não são alterados. Não gasta créditos de IA.</small>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="executarPopularSeletivo()">Popular agora</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function executarPopularSeletivo(){
   const filtro={
@@ -3233,16 +3135,6 @@ function abrirEditor(id){
   setSaveStatus('salvo');
   document.getElementById('editor').classList.remove('hidden');
 }
-/* Abre o tema já direto na aba "Registro" (editar/excluir aplicações) — usado
-   pelo modal do dia na Linha do Tempo, pra não deixar ela ter que descobrir
-   sozinha que essa aba existe (ela relatou não achar como editar/excluir um
-   registro depois de aplicado). */
-function abrirTemaNoRegistro(temaId){
-  abrirEditor(temaId);
-  activeObj='__registro';
-  renderObjTabs();
-  renderAbaRegistro();
-}
 function fecharEditor(){
   clearTimeout(_saveT);
   if(editing){ try{ saveActiveObj(); collectMeta(); persistTema(editing); }catch(e){} }   // salva pendências
@@ -3255,13 +3147,7 @@ function voltarHeader(){
   if(editing && ed && !ed.classList.contains('hidden')){ fecharEditor(); return; }
   const modal=document.getElementById('modalWrap');
   if(modal){ closeModal(); return; }
-  // Sem editor nem modal aberto: não há pra onde "voltar" dentro do app (as
-  // views trocam de classe CSS, não empilham no histórico do navegador), e
-  // history.back() literalmente fechava/saía do app com um toque só. Volta
-  // pra última view conhecida em vez disso.
-  let v='agenda';
-  try{ v=localStorage.getItem('leciona_lastview')||'agenda'; }catch(e){}
-  setView(v);
+  history.back();
 }
 let _saveT=null;
 function setSaveStatus(estado){
@@ -3347,7 +3233,7 @@ function abrirMarcarAplicado(){
     (aplicado?'<button class="btn ghost" onclick="desmarcarAplicado()">Desmarcar</button>':'')+
     '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarMarcarAplicado()">Salvar</button></div></div></div>';
-  abrirModal(h);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
 }
 function salvarMarcarAplicado(){
   if(!editing) return;
@@ -3407,7 +3293,7 @@ function openExportConteudo(cid){
     : '<small>Não há outra turma cadastrada. Crie a turma de destino em "+ turmas" primeiro.</small>';
   const foot = alvos.length ? '<button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="doExportConteudo(\''+cid+'\')">Copiar</button>' : '<button class="btn ghost" onclick="closeModal()">Fechar</button>';
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Copiar para outra(s) turma(s)</h3></div><div class="modal-b">'+inner+'</div><div class="modal-f">'+foot+'</div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function doExportConteudo(cid){
   const c=conteudos[cid]; if(!c) return;
@@ -3440,7 +3326,7 @@ function openExportTema(tid){
     : '<small>Não há outra turma cadastrada.</small>';
   const foot = alvos.length ? '<button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="doExportTema(\''+tid+'\')">Copiar aula</button>' : '<button class="btn ghost" onclick="closeModal()">Fechar</button>';
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Copiar aula para outra(s) turma(s)</h3></div><div class="modal-b">'+inner+'</div><div class="modal-f">'+foot+'</div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function doExportTema(tid){
   const t=temas[tid]; if(!t) return;
@@ -3484,14 +3370,12 @@ function renderCronograma(){
   const temasDoCont=temasDoConteudo(cid);
   const temaOpts=temasDoCont.map(t=>'<option value="'+t.id+'"'+(t.id===editing.id?' selected':'')+'>'+esc((t.nome||'(sem nome)').slice(0,40))+'</option>').join('');
   const objOpts=OBJ_DEFS.map(o=>'<option value="'+o.k+'">'+esc(o.label)+'</option>').join('');
-  const lista = plan.length ? plan.map((p,i)=>{
+  const lista = plan.length ? plan.map(p=>{
     const tm=temas[p.temaId];
     const objLabel=(OBJ_DEFS.find(o=>o.k===p.objeto)||{}).label||p.objeto||'—';
     const dataFmt=p.data?new Date(p.data+'T00:00:00').toLocaleDateString('pt-BR'):'—';
     return '<div class="turma-row"><span class="tn" style="flex:0 0 76px">'+esc(dataFmt)+'</span>'+
       '<span style="flex:1;font-size:12px">'+objIconHtml(p.objeto)+esc(tm?tm.nome:'(tema removido)')+' · '+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
-      '<button class="btn ghost sm" onclick="empurrarSequencia(\''+cid+'\',\''+p.id+'\')" title="Repetir este tema na próxima aula, empurrando os seguintes uma semana pra frente">⏩</button>'+
-      (i<plan.length-1?'<button class="btn ghost sm" onclick="resumirComProxima(\''+cid+'\',\''+p.id+'\')" title="Resumir com o próximo tema nesta mesma aula, puxando os seguintes uma semana pra mais cedo">⏪</button>':'')+
       '<button class="btn ghost sm" onclick="remPlanejamento(\''+p.id+'\')" title="Remover">✕</button></div>';
   }).join('') : '<p class="statusdot" style="font-size:12px">Nenhuma aula planejada ainda.</p>';
   box.innerHTML = lista+
@@ -3538,44 +3422,6 @@ function remPlanejamento(pid){
   persistConteudo(cont);
   renderCronograma();
 }
-/* Repete o tema desta aula na semana seguinte, empurrando toda a sequência
-   uma semana pra frente — pra quando um assunto toma mais aulas do que o
-   planejado (ex.: 2ª Guerra em 3 aulas em vez de 1). O último tema da
-   sequência ganha uma data nova, uma semana depois do que era o último. */
-function empurrarSequencia(cid, entryId){
-  const cont=conteudos[cid]; if(!cont||!Array.isArray(cont.planejamento)) return;
-  const plan=cont.planejamento.slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
-  const i=plan.findIndex(p=>p.id===entryId); if(i<0) return;
-  const temaIds=plan.slice(i).map(p=>p.temaId);
-  for(let k=plan.length-1;k>i;k--){ plan[k].temaId=temaIds[k-i-1]; }
-  const ultimo=plan[plan.length-1];
-  const novaData=new Date((ultimo.data||plan[i].data)+'T00:00:00');
-  novaData.setDate(novaData.getDate()+7);
-  cont.planejamento.push({id:uid(), data:isoLocal(novaData), temaId:temaIds[temaIds.length-1], objeto:plan[i].objeto||'quadro', obs:''});
-  persistConteudo(cont);
-  renderCronograma();
-  toast('Tema repetido — os seguintes empurraram uma semana.','ok');
-}
-/* Combina o tema desta aula com o da aula seguinte numa aula só (fica
-   anotado no campo observação), e puxa toda a sequência seguinte uma
-   semana pra mais cedo — pra recuperar o tempo perdido depois de empurrar
-   algo. A última aula da sequência antiga é removida (o tema dela já foi
-   absorvido pelo deslocamento, ninguém fica sem ser dado). */
-function resumirComProxima(cid, entryId){
-  const cont=conteudos[cid]; if(!cont||!Array.isArray(cont.planejamento)) return;
-  const plan=cont.planejamento.slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
-  const i=plan.findIndex(p=>p.id===entryId);
-  if(i<0||i>=plan.length-1){ toast('Não tem uma próxima aula pra combinar.','err'); return; }
-  const temaAtual=temas[plan[i].temaId], temaProximo=temas[plan[i+1].temaId];
-  if(!confirm('Combinar "'+(temaAtual?temaAtual.nome:'?')+'" com "'+(temaProximo?temaProximo.nome:'?')+'" nesta mesma aula? Os temas seguintes vão adiantar uma semana.')) return;
-  plan[i].obs=(plan[i].obs?plan[i].obs+' · ':'')+'Resumido junto com: '+(temaProximo?temaProximo.nome:'');
-  for(let k=i+1;k<plan.length-1;k++){ plan[k].temaId=plan[k+1].temaId; }
-  const ultimo=plan[plan.length-1];
-  cont.planejamento=cont.planejamento.filter(p=>p.id!==ultimo.id);
-  persistConteudo(cont);
-  renderCronograma();
-  toast('Temas combinados — os seguintes adiantaram uma semana.','ok');
-}
 /* Todas as aulas planejadas (em qualquer conteúdo/turma) para uma data. */
 function planejamentosDoDia(dataISO){
   const out=[];
@@ -3583,100 +3429,6 @@ function planejamentosDoDia(dataISO){
     (c.planejamento||[]).forEach(p=>{ if(p.data===dataISO){ const t=temas[p.temaId]; if(t) out.push({conteudo:c, entry:p, tema:t}); } });
   });
   return out;
-}
-/* Escolher/trocar o tema de uma aula específica (turma+data) direto da tela
-   Hoje/Agenda — antes só dava pra ver, não pra editar. entryId vazio = ainda
-   não tem tema nessa data (cria); entryId preenchido = já tem, troca. */
-/* candidatos de subtema com pré-pronto disponível pra essa disciplina/série,
-   em QUALQUER bimestre da matriz — não só o bimestre agendado. A matriz
-   organiza o conteúdo por bimestre "oficial", mas o ritmo real da turma
-   pode não bater com essa divisão (ex.: um código catalogado no 2º
-   Bimestre sendo dado de fato no 3º) — sem isso, o tema simplesmente não
-   aparecia pra escolher quando o bimestre real divergia do da matriz. */
-function candidatosPreProntoTodosBimestres(disc, serie, jaExistentesNomes){
-  const out=[]; const vistos=new Set();
-  BIMESTRES.forEach(b=>{
-    candidatosPreProntoDoRecorte(disc, serie, b).forEach(c=>{
-      if(jaExistentesNomes.has(c.nome) || vistos.has(c.nome)) return;
-      vistos.add(c.nome); out.push(c);
-    });
-  });
-  return out;
-}
-function abrirTrocarTema(turmaId, dataISO, entryId){
-  const tu=turmas[turmaId]; if(!tu) return;
-  const bim=bimAtivoAgora(dataISO)||scope.bim;
-  const conts=Object.values(conteudos).filter(c=>c.turmaId===turmaId&&c.bimestre===bim);
-  const temasDisp=[];
-  conts.forEach(c=>{ temasDoConteudo(c.id).forEach(t=>temasDisp.push(t)); });
-  const nomesExistentes=new Set(temasDisp.map(t=>t.nome));
-  window.__trocaTemaBim=bim;
-  window.__trocaCandidatos=candidatosPreProntoTodosBimestres(tu.disciplina, tu.serie, nomesExistentes);
-  const optsExistentes=temasDisp.map(t=>'<option value="'+t.id+'">'+esc((t.tituloExibicao||t.nome||'(sem nome)').slice(0,60))+(t.dcgo?' ['+t.dcgo+']':'')+'</option>').join('');
-  const optsCandidatos=window.__trocaCandidatos.map((c,i)=>'<option value="novo:'+i+'">✦ '+esc(c.nome.slice(0,60))+(c.dcgo?' ['+c.dcgo+']':'')+' — pré-pronto</option>').join('');
-  const opts=(optsExistentes?'<optgroup label="Temas já criados nesta turma/bimestre">'+optsExistentes+'</optgroup>':'')+
-    (optsCandidatos?'<optgroup label="Subtemas com conteúdo pronto (cria na hora)">'+optsCandidatos+'</optgroup>':'')+
-    '<option value="__livre__">✏️ Digitar um tema novo…</option>';
-  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
-    '<div class="modal-h"><h3>Tema da aula — '+esc(turmaNome(tu))+'</h3></div>'+
-    '<div class="modal-b">'+
-    '<div class="field"><label>Data</label><strong>'+esc(dataISO.split('-').reverse().join('/'))+'</strong></div>'+
-    '<div class="field"><label>Tema</label><select id="trocaTemaSel" onchange="document.getElementById(\'trocaTemaLivreWrap\').style.display=this.value===\'__livre__\'?\'\':\'none\'">'+opts+'</select></div>'+
-    '<div class="field" id="trocaTemaLivreWrap" style="display:none"><label>Nome do tema novo</label><input id="trocaTemaLivreNome" placeholder="ex.: Debate — desinformação nas redes"></div>'+
-    '</div><div class="modal-f">'+
-    (entryId?'<button class="btn ghost" style="color:#a8442f" onclick="removerTemaDoDia(\''+turmaId+'\',\''+entryId+'\')">Remover desta data</button>':'')+
-    '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
-    '<button class="btn primary" onclick="salvarTemaDoDia(\''+turmaId+'\',\''+dataISO+'\',\''+(entryId||'')+'\')">Salvar</button>'+
-    '</div></div></div>';
-  abrirModal(h);
-}
-function salvarTemaDoDia(turmaId, dataISO, entryId){
-  const sel=(document.getElementById('trocaTemaSel')||{}).value;
-  if(!sel){ toast('Escolha um tema.','err'); return; }
-  const tu=turmas[turmaId]; const bim=window.__trocaTemaBim||bimAtivoAgora(dataISO)||scope.bim;
-  let temaId=sel;
-  if(sel==='__livre__'){
-    const nomeLivre=(document.getElementById('trocaTemaLivreNome')||{}).value.trim();
-    if(!nomeLivre){ toast('Digite o nome do tema.','err'); return; }
-    const cont=acharOuCriarConteudoMatriz(turmaId, tu.disciplina, tu.serie, bim);
-    const novoTema=blankTema(cont.id,{turmaId,disciplina:tu.disciplina,serie:tu.serie,bimestre:bim,nome:nomeLivre.slice(0,80),ordem:nextOrdemTema(cont.id)});
-    persistTema(novoTema);
-    temaId=novoTema.id;
-  } else if(sel.indexOf('novo:')===0){
-    const cand=(window.__trocaCandidatos||[])[parseInt(sel.slice(5),10)];
-    if(!cand){ toast('Candidato não encontrado — tente reabrir o modal.','err'); return; }
-    const novoTema=criarTemaAPartirDePrePronto({nome:cand.nome, dcgo:cand.dcgo, habilidade:cand.habilidade, disc:tu.disciplina, serie:tu.serie, bim}, turmaId);
-    temaId=novoTema.id;
-  }
-  const tema=temas[temaId]; const cont=tema?conteudos[tema.conteudoId]:null;
-  if(!cont){ toast('Conteúdo deste tema não encontrado.','err'); return; }
-  if(entryId){
-    Object.values(conteudos).forEach(c=>{
-      if(!Array.isArray(c.planejamento)) return;
-      const antes=c.planejamento.length;
-      c.planejamento=c.planejamento.filter(p=>p.id!==entryId);
-      if(c.planejamento.length!==antes) persistConteudo(c);
-    });
-  }
-  if(!cont.planejamento) cont.planejamento=[];
-  cont.planejamento.push({id:uid(), data:dataISO, temaId, objeto:'quadro', obs:''});
-  persistConteudo(cont);
-  closeModal();
-  renderAgendaDia();
-  if(!document.getElementById('viewLinhaTempo').classList.contains('hidden')) renderLinhaDoTempo();
-  toast('Tema da aula atualizado.','ok');
-}
-function removerTemaDoDia(turmaId, entryId){
-  Object.values(conteudos).forEach(c=>{
-    if(c.turmaId!==turmaId||!Array.isArray(c.planejamento)) return;
-    const antes=c.planejamento.length;
-    c.planejamento=c.planejamento.filter(p=>p.id!==entryId);
-    if(c.planejamento.length!==antes) persistConteudo(c);
-  });
-  closeModal();
-  renderAgendaDia();
-  if(!document.getElementById('viewLinhaTempo').classList.contains('hidden')) renderLinhaDoTempo();
-  toast('Tema removido desta data.','ok');
 }
 /* Abre o editor já no tema certo, ajustando o escopo (disciplina/turma/bimestre)
    a partir do conteúdo — usado pelos atalhos do cronograma na tela Hoje. */
@@ -3916,6 +3668,23 @@ async function genObjFor(temaObj, objKey){
   const vazio=(Array.isArray(novo)&&!novo.length)||(typeof novo==='string'&&!novo.trim());
   return vazio?null:novo;
 }
+async function forcarPrebuilt(){
+  if(!editing){ toast('Abra um tema primeiro.','err'); return; }
+  if(typeof PREBUILT_OBJ==='undefined'){ toast('prebuilt.js não carregou. Verifique se o arquivo está no GitHub.','err'); return; }
+  if(typeof ensurePrebuiltDiscLoaded!=='undefined') await ensurePrebuiltDiscLoaded(editing.disciplina);
+  const pb=getPrebuilt(editing);
+  if(!pb){
+    const keys=Object.keys(PREBUILT_OBJ).slice(0,3).join(', ');
+    toast('Sem pré-pronto para: "'+editing.nome+'". Exemplos disponíveis: '+keys,'');
+    return;
+  }
+  if(!confirm('Isso vai substituir o conteúdo atual por conteúdo pré-pronto. Continuar?')) return;
+  editing.obj=Object.assign({},pb);
+  persistTema(editing);
+  renderObjTabs(); renderObjContent();
+  renderThemes();
+  toast('Conteúdo pré-pronto carregado.','ok');
+}
 function openGerarTudo(soloKey){
   if(!editing){ toast('Abra um tema primeiro.','err'); return; }
   const itens=[['quadro','Quadro'],['estudo','Estudo'],['slides','Slides'],['mapaMental','Mapa mental'],['avaliacao','Avaliação']];
@@ -3927,7 +3696,7 @@ function openGerarTudo(soloKey){
     '<div class="field"><label>Gerar</label><div class="gt-checks">'+checks+'</div></div>'+'<label class="check"><input type="checkbox" id="gtRegerar"> regerar objetos que j\u00e1 t\u00eam conte\u00fado (sen\u00e3o, pula os preenchidos e n\u00e3o gasta cr\u00e9dito \u00e0 toa)</label>'+
     '<div id="gtProg" class="statusdot"></div></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" id="gtBtn" onclick="gerarTudo()">Gerar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 async function genOne(key, foco){
   if(key==='avaliacao'){
@@ -4052,200 +3821,6 @@ async function callClaude(system,user,maxTokens){
 }
 async function callClaudeWeb(system,user){
   return chamarIA(system,[{role:'user',content:user}],{maxTokens:3000,useWeb:true});
-}
-
-/* Importa faltas/ocorrências da planilha do Arlan via Cloud Function
-   (importarPlanilhaAgora) — a function tem acesso de administrador ao banco,
-   então a escrita acontece lá, não no navegador. Mesma lógica também roda
-   sozinha todo dia útil à noite (importarPlanilhaAgendado). */
-async function importarPlanilhaArlan(){
-  const btn=event&&event.target;
-  const textoOriginal=btn?btn.textContent:'';
-  if(btn){ btn.disabled=true; btn.textContent='Importando…'; }
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('importarPlanilhaAgora');
-    const r=await fn({});
-    const d=r.data||{};
-    let msg=d.chamadasCriadas+' chamada(s) · '+d.faltasGravadas+' falta(s) · '+d.qualitativaCriada+' desconto(s) de qualitativa';
-    if(d.chamadasCorrigidas) msg+=' · '+d.chamadasCorrigidas+' chamada(s) corrigida(s) de dia (horário mudou)';
-    if(d.alunosAdicionados) msg+=' · '+d.alunosAdicionados+' aluno(s) novo(s) cadastrado(s) no fim da turma';
-    if(d.pendencias) msg+=' · '+d.pendencias+' pendência(s) de nome (veja em leciona/_importPendencias)';
-    toast(msg,'ok');
-  }catch(e){
-    toast('⚠ Falha ao importar planilha: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
-  }
-}
-
-/* Correção pontual: datas do calendário institucional do 3º bimestre pro
-   8º/9º ano (arquivo "CRONOGRAMA 3º BIMESTRE 2026.pdf" do Drive) — provas
-   SEDUC por área, datas comemorativas, recuperação, prazo do SIGE, conselho
-   de classe. Criadas como compromissos na Agenda, com [Fundamental] no
-   título e a fonte na descrição, pra não confundir com a agenda do Médio
-   (EFG). Decidido em 18/08/2026. */
-async function adicionarCalendarioFundamental(){
-  const btn=event&&event.target;
-  const textoOriginal=btn?btn.textContent:'';
-  if(btn){ btn.disabled=true; btn.textContent='Adicionando…'; }
-  const fonte='Fonte: CRONOGRAMA 3º BIMESTRE 2026 (8º/9º ano) — calendário SEDUC.';
-  const itens=[
-    ['31eed01d-89ad-417c-b7d8-140619aa6ff5','2026-08-07','Dia da Lei Maria da Penha [Fundamental]','Desenvolver alguma ação voltada para esse tema. '+fonte],
-    ['b4730117-e831-4718-b711-f10cbf43397b','2026-08-11','Dia do Estudante [Fundamental]',fonte],
-    ['5421ef44-2e85-4da6-bdbc-a3a0c7a1e695','2026-08-14','Comemoração ao Dia do Estudante [Fundamental]','Nos dois últimos horários, com participação de todos os professores. Local: quadra. '+fonte],
-    ['44881c94-f1ba-4f9f-a89b-64ddad94ea21','2026-08-25','Dia de conscientização e combate à violência contra a mulher [Fundamental]','Sugestão: roda de conversa. '+fonte],
-    ['ba70a0a2-c3bd-4e87-b820-1cfb05d2f4b0','2026-09-07','Feriado SEDUC [Fundamental]',fonte],
-    ['7f2b0593-66fc-4e7a-9294-066801d6fb0c','2026-09-14','Avaliação SEDUC — Produção de texto [Fundamental]',fonte],
-    ['21b62abf-95b6-42b1-a5b4-aba49ad16b47','2026-09-16','Trabalho coletivo SEDUC [Fundamental]',fonte],
-    ['6ac337e5-1d61-4e73-9398-1f2969c61ad3','2026-09-22','Avaliação SEDUC — Matemática e suas Tecnologias [Fundamental]',fonte],
-    ['23703bf5-7a46-452b-b1bb-c7121b0f5c32','2026-09-23','Avaliação SEDUC — Ciências Humanas e Sociais Aplicadas [Fundamental]','Área da História. '+fonte],
-    ['b1ea92db-626f-4b4b-8f06-e4aa2d4d7e8c','2026-09-24','Avaliação SEDUC — Linguagens e suas Tecnologias [Fundamental]',fonte],
-    ['94a4b78d-90d4-4616-a059-552acc45d491','2026-09-25','Avaliação SEDUC — Ciências da Natureza e suas Tecnologias [Fundamental]',fonte],
-    ['c9494584-3b38-4229-814d-1170c94964a3','2026-09-29','Início: Intensificação e recomposição das aprendizagens — Recuperação [Fundamental]','Período: 29/09 a 02/10. '+fonte],
-    ['4e0d43f3-b10a-4e4a-b120-6646e0a033f7','2026-10-01','Último dia de envio de notas para o SIGE [Fundamental]',fonte],
-    ['cd7d16fd-f330-416a-9d90-21cf11e2339c','2026-10-06','Avaliação diagnóstica [Fundamental]',fonte],
-    ['ecab817f-76ef-4359-ad1f-5ec674b2d3f7','2026-10-07','Conselho de classe [Fundamental]',fonte],
-  ];
-  const correcoes=itens.map(([id,data,titulo,descricao])=>({
-    path:'leciona/compromissos/'+id,
-    valor:{id,data,titulo,descricao,concluido:false,_ts:Date.now()}
-  }));
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('corrigirCampos');
-    const r=await fn({correcoes});
-    toast((r.data||{}).aplicadas+' compromisso(s) adicionado(s) na Agenda.','ok');
-  }catch(e){
-    toast('⚠ Falha ao adicionar: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
-  }
-}
-
-/* Correção pontual: datas do calendário institucional do 3º bimestre pro
-   Médio (EFG) — arquivo "CRONOGRAMA 3º BIMESTRE (1).pdf" do Drive. Blocos
-   de avaliação por matéria (Bloco 2 = Geografia+História; Bloco 6 =
-   Biologia+Sociologia+Filosofia — as duas últimas são da Malu), SEDUC,
-   recuperação, datas comemorativas, conselho de classe. Cada compromisso
-   fica na data da AVALIAÇÃO (a de entrega das questões vai na descrição).
-   Marcado [Médio] pra não confundir com o calendário do Fundamental.
-   Decidido em 18/08/2026. */
-async function adicionarCalendarioMedio(){
-  const btn=event&&event.target;
-  const textoOriginal=btn?btn.textContent:'';
-  if(btn){ btn.disabled=true; btn.textContent='Adicionando…'; }
-  const fonte='Fonte: CRONOGRAMA 3º BIMESTRE (1) — Médio (EFG).';
-  const itens=[
-    ['fbcdc9d5-2b23-4599-bc98-f6e2c11c4e1f','2026-08-10','Avaliação — Produção de Texto [Médio]','Entrega das questões: 03/08. '+fonte],
-    ['a1ed19c0-ec9c-4a04-a842-111f57f08d05','2026-08-17','Avaliação — Bloco 01: Língua Portuguesa (20 questões) [Médio]','Entrega das questões: 10/08. '+fonte],
-    ['353f63a7-952d-4056-aaba-ef8e8c67df14','2026-08-24','Avaliação — Bloco 2: Geografia e História (15 cada) [Médio]','Entrega das questões: 12/08. Inclui História — disciplina da Malu. '+fonte],
-    ['d1a12f60-2fdb-4a2a-8362-476e0943a428','2026-08-31','Avaliação — Bloco 3: Matemática (20 questões) [Médio]','Entrega das questões: 17/08. '+fonte],
-    ['e1ddd736-33f0-4115-91e0-586dd1a75ade','2026-09-07','Feriado SEDUC [Médio]',fonte],
-    ['87d3193e-b4c6-4e89-8864-2c1ec8125816','2026-09-08','Avaliação — Bloco 4: Inglês, Arte, Educação Física (10 cada) [Médio]','Entrega das questões: 24/08. '+fonte],
-    ['65d2ce64-80f1-4c77-a8b3-1e3fa045b174','2026-09-14','Avaliação SEDUC — Produção de texto [Médio]',fonte],
-    ['0f9c0cbb-ffd9-435a-9d67-6ded0f2fbd43','2026-09-16','Trabalho coletivo SEDUC [Médio]',fonte],
-    ['61e89ccd-c059-42f5-ba62-54b39add00e8','2026-09-21','Avaliação — Bloco 5: Física, Química (15 cada) [Médio]','Entrega das questões: 01/09. '+fonte],
-    ['4efadabb-e71e-4def-b476-c67bc231ee2a','2026-09-22','Avaliação SEDUC — Matemática e suas Tecnologias [Médio]',fonte],
-    ['df30ee76-517d-4416-a229-2cb553e0d216','2026-09-23','Avaliação SEDUC — Ciências Humanas e Sociais Aplicadas [Médio]','Área da História. '+fonte],
-    ['c959aa66-d83c-4aa8-8fd6-a1e2dda34db6','2026-09-24','Avaliação SEDUC — Linguagens e suas Tecnologias [Médio]',fonte],
-    ['664fb1a0-ff40-4571-8443-e96a4770d3d0','2026-09-25','Avaliação SEDUC — Ciências da Natureza e suas Tecnologias [Médio]',fonte],
-    ['4b04df43-cbfc-467f-9799-45917f09274e','2026-09-28','Avaliação — Bloco 6: Biologia, Sociologia, Filosofia [Médio]','Entrega das questões: 14/09. Sociologia e Filosofia — disciplinas da Malu. '+fonte],
-    ['ca963095-e747-4e8c-93f8-59e864587918','2026-09-29','Início: Intensificação e recomposição das aprendizagens — Recuperação [Médio]','Período: 29/09 a 02/10. '+fonte],
-    ['27d53798-d2d9-4893-a6de-cec1d29df837','2026-10-01','Último dia de envio de notas para o SIGE [Médio]',fonte],
-    ['301a4e87-6e71-4b07-8c1e-b4cc4edabb4e','2026-10-05','Encontro coletivo da tutoria [Médio]',fonte],
-    ['133d4ceb-01a7-4717-a7a4-608176bf7eaa','2026-10-06','Avaliação diagnóstica [Médio]',fonte],
-    ['c51edd31-8f61-4192-b76e-d6f347a924db','2026-10-07','Conselho de classe [Médio]',fonte],
-    ['9c44de43-a083-46ab-8c80-f021aa0c85d2','2026-08-07','Dia da Lei Maria da Penha [Médio]','Desenvolver alguma ação voltada para esse tema. '+fonte],
-    ['30a8bb84-6c44-4b46-8c2a-7c55a31c3867','2026-08-11','Feirão das Eletivas e Dia do Estudante [Médio]',fonte],
-    ['2abd24e0-d1c4-4485-ba9f-c6b5363cdf89','2026-08-14','Comemoração ao Dia do Estudante [Médio]','Nos dois últimos horários, com participação de todos os professores. Local: quadra. '+fonte],
-    ['dd66cfd9-5ce4-453d-befe-547bb182242a','2026-08-25','Dia de conscientização e combate à violência contra a mulher [Médio]','Sugestão: roda de conversa. '+fonte],
-  ];
-  const correcoes=itens.map(([id,data,titulo,descricao])=>({
-    path:'leciona/compromissos/'+id,
-    valor:{id,data,titulo,descricao,concluido:false,_ts:Date.now()}
-  }));
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('corrigirCampos');
-    const r=await fn({correcoes});
-    toast((r.data||{}).aplicadas+' compromisso(s) adicionado(s) na Agenda.','ok');
-  }catch(e){
-    toast('⚠ Falha ao adicionar: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
-  }
-}
-
-async function corrigirDuasDatas19_08(){
-  const btn=event&&event.target;
-  if(btn){ btn.disabled=true; btn.textContent='Aplicando…'; }
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('corrigirCampos');
-    const r=await fn({correcoes:[
-      {path:'leciona/conteudos/4814b7e8-71a3-4f63-9b43-5178f50c903f/planejamento/2/data', valor:'2026-08-19'},
-      {path:'leciona/conteudos/a61fe997-c349-4a77-97f7-6b5e2711586f/planejamento/2/data', valor:'2026-08-19'},
-    ]});
-    toast((r.data||{}).aplicadas+' data(s) corrigida(s). Recarregue a tela Hoje.','ok');
-  }catch(e){
-    toast('⚠ Falha ao corrigir: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent='🔧 Corrigir data de hoje (2ªA Sociologia e 1ªA História)'; }
-  }
-}
-
-async function reconstruirTemasOrfaos(){
-  const btn=event&&event.target;
-  const textoOriginal=btn?btn.textContent:'';
-  if(btn){ btn.disabled=true; btn.textContent='Reconstruindo…'; }
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('reconstruirTemasOrfaosAgora');
-    const r=await fn({});
-    const d=r.data||{};
-    let msg=d.temasRecriados+' tema(s) recriado(s) e religado(s)';
-    if(d.semCorrespondencia) msg+=' · '+d.semCorrespondencia+' sem correspondência no plano (veja console)';
-    if(d.detalheSemCorrespondencia&&d.detalheSemCorrespondencia.length) console.log('[reconstruir temas] sem correspondência:', d.detalheSemCorrespondencia);
-    toast(msg,'ok');
-  }catch(e){
-    toast('⚠ Falha ao reconstruir: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
-  }
-}
-
-async function preencherCronogramaCompleto(){
-  const btn=event&&event.target;
-  const textoOriginal=btn?btn.textContent:'';
-  if(btn){ btn.disabled=true; btn.textContent='Preenchendo…'; }
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('preencherCronogramaCompletoAgora');
-    const r=await fn({});
-    const d=r.data||{};
-    let msg=d.entradasCriadas+' aula(s) de cronograma criada(s)'+(d.temasCriados?' · '+d.temasCriados+' tema(s) novo(s)':'');
-    if(d.semCorrespondencia) msg+=' · '+d.semCorrespondencia+' sem correspondência (Estudo Orientado/fora do plano — veja console)';
-    if(d.detalheSemCorrespondencia&&d.detalheSemCorrespondencia.length) console.log('[completar cronograma] sem correspondência:', d.detalheSemCorrespondencia);
-    toast(msg,'ok');
-  }catch(e){
-    toast('⚠ Falha ao completar: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
-  }
-}
-
-async function atualizarQualitativaPlanilha(){
-  const btn=event&&event.target;
-  const textoOriginal=btn?btn.textContent:'';
-  if(btn){ btn.disabled=true; btn.textContent='Atualizando…'; }
-  try{
-    const fn=firebase.app().functions('southamerica-east1').httpsCallable('atualizarQualitativaPlanilhaAgora');
-    const r=await fn({});
-    const d=r.data||{};
-    let msg=d.celulasAtualizadas+' célula(s) atualizada(s) na planilha';
-    if(d.semMatch&&d.semMatch.length) msg+=' · '+d.semMatch.length+' aluno(s)/aba(s) sem match (veja console)';
-    if(d.semMatch&&d.semMatch.length) console.log('[qualitativa->planilha] sem match:', d.semMatch);
-    toast(msg,'ok');
-  }catch(e){
-    toast('⚠ Falha ao atualizar planilha: '+(e.message||e),'err');
-  }finally{
-    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
-  }
 }
 
 /* =========================================================
@@ -4427,7 +4002,13 @@ function executarFerramentaAssistente(nome, input){
       const tu=acharTurmaPorNome(input.turma); if(!tu) return {erro:'turma não encontrada'};
       if(!input.nome||!input.bimestre) return {erro:'faltam nome/bimestre'};
       const bim=input.bimestre;
-      const cont=acharOuCriarConteudoMatriz(tu.id, tu.disciplina, tu.serie, bim);
+      let cont=Object.values(conteudos).find(co=>co.turmaId===tu.id&&co.bimestre===bim&&co.nome==='Matriz — '+bim);
+      if(!cont){
+        const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===tu.id&&co.bimestre===bim);
+        const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
+        cont={id:uid(),disciplina:tu.disciplina,serie:tu.serie,turmaId:tu.id,bimestre:bim,nome:'Matriz — '+bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
+        persistConteudo(cont);
+      }
       const tema=blankTema(cont.id,{turmaId:tu.id,disciplina:tu.disciplina,serie:tu.serie,bimestre:bim,nome:String(input.nome).slice(0,80),resumo:input.resumo||'',ordem:nextOrdemTema(cont.id)});
       persistTema(tema);
       if(!document.getElementById('viewGestao').classList.contains('hidden')) renderThemes();
@@ -4492,7 +4073,7 @@ function openAssistente(){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="_chatMsgs=[];_chatApiMsgs=[];closeModal();">Encerrar conversa</button><button class="btn ghost" onclick="closeModal()">Fechar (manter conversa)</button></div>'+
   '</div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   renderChat();
 }
 function renderChat(){
@@ -4844,7 +4425,7 @@ function abrirOcorrenciaHoje(turmaId){
       listaAbertas+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   setTimeout(()=>document.getElementById('ocorrObs')?.focus(),50);
 }
 function editarOcorrenciaHoje(id){
@@ -4894,7 +4475,7 @@ function abrirModalRegistro(){
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarRegistro()">Salvar registro</button></div>'+
     '</div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function salvarRegistro(){
   if(!proj.tema){ closeModal(); return; }
@@ -4902,7 +4483,6 @@ function salvarRegistro(){
   const entrega=(document.getElementById('regEntrega')||{}).value||'sala';
   const data=(document.getElementById('regData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('regNota')||{}).value||'';
-  if(!avisoRegistroDuplicado(proj.tema.id, proj.tema.turmaId, data)) return;
   const r=novoRegistro(proj.tema.id, proj.tema.turmaId, objs, entrega, nota);
   r.data=data;
   persistRegistro(r);
@@ -4924,53 +4504,41 @@ function renderAbaRegistro(){
       regs.map(r=>{
         const tu2=turmas[r.turmaId]||{};
         return '<tr><td>'+r.data+'</td><td>'+esc(turmaNome(tu2))+'</td><td>'+esc((r.objetos||[]).join(', '))+'</td><td>'+esc(r.entrega||'')+'</td><td>'+esc(r.nota||'')+'</td>'+
-          '<td><button class="btn ghost sm" onclick="abrirModalRegistroEditor(\''+r.id+'\')" title="Editar">✎</button> '+
-          '<button class="btn ghost sm" onclick="removerRegistro(\''+r.id+'\');renderAbaRegistro()" title="Excluir">✕</button></td></tr>';
+          '<td><button class="btn ghost sm" data-rid="'+r.id+'" onclick="removerRegistro(this.getAttribute(\"data-rid\"));renderAbaRegistro()">✕</button></td></tr>';
       }).join('')+'</tbody></table>';
   }
   document.getElementById('objContent').innerHTML=h;
 }
-/* regId opcional: sem ele, cria um registro novo (comportamento antigo); com
-   ele, abre pra editar o registro existente (mesmo modal, campos
-   pré-preenchidos) — antes só dava pra excluir e recriar do zero. */
-function abrirModalRegistroEditor(regId){
+function abrirModalRegistroEditor(){
   if(!editing) return;
-  const existing = regId ? registros[regId] : null;
-  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>'<label class="check"><input type="checkbox" name="regObjE" value="'+o.k+'"'+((existing&&(existing.objetos||[]).includes(o.k))?' checked':'')+'>'+o.label+'</label>').join('');
-  const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'"'+(existing&&existing.entrega===e?' selected':'')+'>'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
-  const tuOpts=Object.values(turmas).filter(t=>t.disciplina===editing.disciplina).map(t=>'<option value="'+t.id+'"'+(t.id===(existing?existing.turmaId:editing.turmaId)?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('');
+  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjE" value="'+o.k+'">'+o.label+'</label>').join('');
+  const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
+  const tuOpts=Object.values(turmas).filter(t=>t.disciplina===editing.disciplina).map(t=>'<option value="'+t.id+'"'+(t.id===editing.turmaId?' selected':'')+'>'+esc(turmaNome(t))+'</option>').join('');
   const hoje=isoLocal(new Date());
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
-    '<div class="modal-h"><h3>'+(existing?'✎ Editar registro':'＋ Novo registro')+'</h3></div>'+
+    '<div class="modal-h"><h3>＋ Novo registro</h3></div>'+
     '<div class="modal-b">'+
     '<div class="field"><label>Turma</label><select id="regETurma">'+tuOpts+'</select></div>'+
     '<div class="field"><label>O que usou</label><div class="gt-checks">'+objChecks+'</div></div>'+
     '<div class="field"><label>Como foi entregue</label><select id="regEEntrega">'+entOpts+'</select></div>'+
-    '<div class="field"><label>Data</label><input type="date" id="regEData" value="'+(existing?existing.data:hoje)+'"></div>'+
-    '<div class="field"><label>Nota livre</label><input id="regENota" placeholder="observações…" value="'+esc(existing?(existing.nota||''):'')+'"></div>'+
+    '<div class="field"><label>Data</label><input type="date" id="regEData" value="'+hoje+'"></div>'+
+    '<div class="field"><label>Nota livre</label><input id="regENota" placeholder="observações…"></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
-    '<button class="btn primary" onclick="salvarRegistroEditor(\''+(regId||'')+'\')">Salvar</button></div></div></div>';
-  abrirModal(h);
+    '<button class="btn primary" onclick="salvarRegistroEditor()">Salvar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
 }
-function salvarRegistroEditor(regId){
+function salvarRegistroEditor(){
   const turmaId=(document.getElementById('regETurma')||{}).value||editing.turmaId;
   const objs=[...document.querySelectorAll('input[name=regObjE]:checked')].map(c=>c.value);
   const entrega=(document.getElementById('regEEntrega')||{}).value||'sala';
   const data=(document.getElementById('regEData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('regENota')||{}).value||'';
-  let r;
-  if(regId && registros[regId]){
-    r=registros[regId];
-    r.turmaId=turmaId; r.objetos=objs; r.entrega=entrega; r.data=data; r.nota=nota;
-  } else {
-    if(!avisoRegistroDuplicado(editing.id, turmaId, data)) return;
-    r=novoRegistro(editing.id, turmaId, objs, entrega, nota);
-    r.data=data;
-  }
+  const r=novoRegistro(editing.id, turmaId, objs, entrega, nota);
+  r.data=data;
   persistRegistro(r);
   closeModal();
   renderAbaRegistro();
-  toast(regId?'Registro atualizado.':'Registro salvo.','ok');
+  toast('Registro salvo.','ok');
   if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 /* Registrar aplicação direto do card na Gestão, sem entrar na projeção. */
@@ -4978,30 +4546,21 @@ let _regCardTemaId=null;
 function abrirModalRegistroCard(temaId){
   const t=temas[temaId]; if(!t){ toast('Tema não encontrado.','err'); return; }
   _regCardTemaId=temaId;
-  const objChecks=OBJ_DEFS.concat(REGISTRO_EXTRAS).map(o=>{
-    const toggleAtiv = o.k==='atividade' ? ' onchange="document.getElementById(\'regCAtivWrap\').style.display=this.checked?\'\':\'none\'"' : '';
-    return '<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'"'+toggleAtiv+'>'+o.label+'</label>';
-  }).join('');
+  const objChecks=OBJ_DEFS.map(o=>'<label class="check"><input type="checkbox" name="regObjC" value="'+o.k+'">'+o.label+'</label>').join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const tu=turmas[t.turmaId]||{};
   const hoje=isoLocal(new Date());
-  const tipoOpts=Object.entries(ATIV_TIPOS).map(([k,v])=>'<option value="'+k+'"'+(k==='atividade'?' selected':'')+' style="background:'+v.bg+'">'+v.label+'</option>').join('');
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
     '<div class="modal-h"><h3>✓ Registrar aplicação — '+esc((t.nome||'').slice(0,40))+'</h3></div>'+
     '<div class="modal-b">'+
     '<div class="field"><label>Turma</label><strong>'+esc(turmaNome(tu))+'</strong></div>'+
     '<div class="field"><label>O que usou</label><div class="gt-checks">'+objChecks+'</div></div>'+
-    '<div id="regCAtivWrap" style="display:none;background:var(--surface,#f6f6f6);border:1px solid var(--line,#e5e7eb);border-radius:8px;padding:10px;margin:8px 0">'+
-      '<div class="field"><label>Qual atividade? — lança direto em Notas, pronta pra você dar nota depois</label><input id="regCAtivNome" placeholder="ex.: Prova 1 — Taylorismo e Fordismo" value="'+esc(t.nome||'')+'"></div>'+
-      '<div class="field"><label>Tipo</label><select id="regCAtivTipo">'+tipoOpts+'</select></div>'+
-      '<div class="field"><label>Modo</label><div class="gt-checks"><label class="check"><input type="radio" name="regCAtivModo" value="nota" checked> Nota 0–10</label><label class="check"><input type="radio" name="regCAtivModo" value="check"> Checklist ✓/○</label></div></div>'+
-    '</div>'+
     '<div class="field"><label>Como foi entregue</label><select id="regCEntrega">'+entOpts+'</select></div>'+
     '<div class="field"><label>Data</label><input type="date" id="regCData" value="'+hoje+'"></div>'+
     '<div class="field"><label>Nota livre (opcional)</label><input id="regCNota" placeholder="ex.: maioria participou, 3 faltaram…"></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarRegistroCard()">Salvar registro</button></div></div></div>';
-  abrirModal(h);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
 }
 function salvarRegistroCard(){
   const t=temas[_regCardTemaId]; if(!t){ closeModal(); return; }
@@ -5010,31 +4569,13 @@ function salvarRegistroCard(){
   const entrega=(document.getElementById('regCEntrega')||{}).value||'sala';
   const data=(document.getElementById('regCData')||{}).value||isoLocal(new Date());
   const nota=(document.getElementById('regCNota')||{}).value||'';
-  if(!avisoRegistroDuplicado(t.id, t.turmaId, data)) return;
   const r=novoRegistro(t.id, t.turmaId, objs, entrega, nota);
   r.data=data;
   persistRegistro(r);
-
-  // Se marcou "Atividade" e deu um nome, já lança direto em Notas — sem
-  // precisar sair da Gestão pra abrir a turma em Notas e preencher tudo de
-  // novo (pedido dela: reduzir o caminho de ~12 cliques pra 2-3).
-  let ativCriada=false;
-  if(objs.includes('atividade')){
-    const nome=((document.getElementById('regCAtivNome')||{}).value||'').trim();
-    if(nome){
-      const tipo=(document.getElementById('regCAtivTipo')||{}).value||'atividade';
-      const modoEl=document.querySelector('input[name=regCAtivModo]:checked');
-      const checklist=modoEl?.value==='check';
-      const av={id:uid(),nome,tipo,data,peso:1,valorMax:10,checklist,turmaIds:[t.turmaId],disciplina:(turmas[t.turmaId]||{}).disciplina,bimestre:t.bimestre,recorrente:false,casa:false,extra:(tipo==='extra')};
-      persistAtivCtrl(av);
-      ativCriada=true;
-    }
-  }
-
   closeModal();
   _regCardTemaId=null;
   renderThemes();
-  toast('Aplicação registrada — '+esc(turmaNome(turmas[t.turmaId]||{}))+(ativCriada?' · atividade lançada em Notas':'')+'.','ok');
+  toast('Aplicação registrada — '+esc(turmaNome(turmas[t.turmaId]||{}))+'.','ok');
   if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 function fecharProjecao(){
@@ -5238,7 +4779,7 @@ function openImgModal(){
       '<div class="img-grid" id="imgResults" style="margin-top:12px"><div class="statusdot">Digite um termo (ou use "sugerir palavras"), clique em Buscar. Dá pra selecionar várias imagens e fazer quantas buscas quiser — tudo acumula no tema.</div></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button><button class="btn primary" id="imgAddBtn" onclick="imgAddSelected()" disabled>Fixar selecionadas (0)</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function imgAddChip(t){ const q=document.getElementById('imgQuery'); q.value=(q.value.trim()?q.value.trim()+' ':'')+t; q.focus(); }
 async function imgSugerir(){
@@ -5321,7 +4862,7 @@ function openTurmas(){
       '<button class="btn primary" onclick="addTurma()">Adicionar</button>'+
     '</div><small>Para a Eletiva, escolha a disciplina "Eletiva" e a série "—".</small></div></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   document.getElementById('ntDisc').value=scope.disc; document.getElementById('ntUnidade').value=scope.unidade||UNIDADES[0]; ntRefresh();
 }
 function ntRefresh(){
@@ -5371,7 +4912,7 @@ function excluirTurma(id){
   alunosDaT.forEach(a=>{ delete alunos[a.id]; if(DB) DB.ref('leciona/alunos/'+a.id).remove().catch(()=>{}); });
   if(alunosDaT.length) lsSet(LS_ALUNOS, JSON.stringify(alunos));
   notasDaT.forEach(n=>{ delete notasCtrl[n.id]; if(DB) DB.ref('leciona/notas_ctrl/'+n.id).remove().catch(()=>{}); });
-  if(notasDaT.length){ lsSet(LS_NOTAS, JSON.stringify(notasCtrl)); _notaIdx=null; }
+  if(notasDaT.length) lsSet(LS_NOTAS, JSON.stringify(notasCtrl));
   ativsAfetadas.forEach(av=>{
     av.turmaIds=(av.turmaIds||[]).filter(tid=>tid!==id);
     if(av.turmaIds.length) persistAtivCtrl(av);
@@ -5389,7 +4930,6 @@ function excluirTurma(id){
    RELATÓRIO / PDF (via impressão do navegador)
    ========================================================= */
 /* ================= FASE 2 — ABA BIMESTRE ================= */
-const CALENDARIO_ANO = 2026; // ano coberto por BIM_RANGES/FERIADOS_2026 — ver avisarCalendarioDesatualizado()
 const BIM_RANGES = {
   '1º Bimestre':['2026-01-20','2026-04-10'],
   '2º Bimestre':['2026-04-11','2026-06-30'],
@@ -5405,26 +4945,8 @@ const WD_NOMES = {1:'Segunda',2:'Terça',3:'Quarta',4:'Quinta',5:'Sexta'};
 // grades conhecidas do horário do CEPI Marajó (getDay: 2=Ter,3=Qua)
 const KNOWN_GRADES = { 'História|9º ano|A|CEPI Marajó':{2:1,3:2}, 'História|9º ano|C|CEPI Marajó':{2:2,3:1} };
 function bimAtivoAgora(dataISO){ const iso=dataISO||isoLocal(new Date()); for(const b in BIM_RANGES){ const r=BIM_RANGES[b]; if(iso>=r[0]&&iso<=r[1]) return b; } return null; }
-/* BIM_RANGES/FERIADOS_2026 são datas fixas digitadas à mão pra 2026 — sem
-   isso, o app simplesmente para de mostrar aulas/aplicar bimestre no ano
-   seguinte, sem nenhum aviso (bimAtivoAgora vira sempre null). Chamado uma
-   vez no boot: se o ano corrente já passou do coberto, avisa em vez de ficar
-   silenciosamente "vazio". Não dispara durante o recesso de julho — esse é
-   um null esperado, dentro do próprio ano configurado. */
-function avisarCalendarioDesatualizado(){
-  const anoAtual=new Date().getFullYear();
-  if(anoAtual>CALENDARIO_ANO) toast('⚠ O calendário escolar (bimestres/feriados) está configurado só até '+CALENDARIO_ANO+' — atualize BIM_RANGES e FERIADOS_'+CALENDARIO_ANO+' no código pra '+anoAtual+'.','err');
-}
-// Nome diferente de chaveTurma() de propósito — essa aqui é só pra bater com
-// KNOWN_GRADES (chave exata disciplina|serie|letra|unidade), não é a chave
-// fuzzy de deduplicação que chaveTurma() usa.
-function chaveHorarioTurma(t){ return [t.disciplina,t.serie,t.letra||'',t.unidade||''].join('|'); }
-/* SCHEDULE (o horário real, editado direto no arquivo) manda sempre que
-   cobrir a turma+disciplina — assim atualizar o horário lá já vale pra
-   Chamada na hora, sem precisar reconfigurar turma por turma. O grade
-   salvo manualmente (t.grade) só é usado pra turmas fora do SCHEDULE
-   (Estudo Orientado, Eletiva etc.). */
-function gradeDe(t){ return gradeDeSchedule(t) || (t&&t.grade) || KNOWN_GRADES[chaveHorarioTurma(t)] || {}; }
+function turmaKey(t){ return [t.disciplina,t.serie,t.letra||'',t.unidade||''].join('|'); }
+function gradeDe(t){ return (t&&t.grade) || KNOWN_GRADES[turmaKey(t)] || {}; }
 function isoLocal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function contarAulas(t, bim){
   const r=BIM_RANGES[bim]; const grade=gradeDe(t); if(!r) return {total:0,semanas:0};
@@ -5456,6 +4978,11 @@ function datasDoBimestre(t, bim){
 function datasDeAula(t, bim){
   const hoje=isoLocal(new Date());
   return datasDoBimestre(t, bim).filter(iso=>iso<=hoje);
+}
+/* true se hoje é dia de aula desta turma segundo o horário configurado. */
+function hojeTemAula(t){
+  const grade=gradeDe(t); const wd=new Date().getDay();
+  return !!(grade[wd] && !FERIADOS_2026.has(isoLocal(new Date())));
 }
 /* Aulas já dadas (fonte de verdade: chamadas lançadas), não previsão de
    calendário — usada no contador "Aula X/Y" junto de contarAulas() (Y). */
@@ -5638,56 +5165,24 @@ function recuperarSequencia(turmaId, bim){
   renderLinhaDoTempo();
 }
 
-/* Todas as entradas de cronograma da turma/bimestre, passadas e futuras,
-   em ordem de data — usado tanto pra renderizar a lista quanto pelos
-   botões ▲▼ (têm que enxergar exatamente a mesma lista/índices que a
-   tela mostra, senão movem a entrada errada). */
-function entradasPlanejamentoLT(turmaId, bim){
-  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===turmaId&&c.bimestre===bim);
-  const entradas=[];
-  conts.forEach(c=>(c.planejamento||[]).forEach(p=>entradas.push({c,p})));
-  entradas.sort((a,b)=>a.p.data.localeCompare(b.p.data));
-  return entradas;
-}
 function planejamentoSectionHtml(tu, bim, hoje){
-  const entradas=entradasPlanejamentoLT(tu.id, bim);
-  // Selo de metodologia por semana — detecta quando a MESMA metodologia se
-  // repete 3x ou mais na mesma semana (segunda a domingo) pra essa turma,
-  // pra evitar empilhar "texto" 3x sem perceber (pedido dela).
-  function semanaKey(iso){
-    const d=new Date(iso+'T00:00:00');
-    const dia=(d.getDay()+6)%7; // 0=segunda
-    d.setDate(d.getDate()-dia);
-    return isoLocal(d);
-  }
-  const contagemSemana={};
-  entradas.forEach(({p})=>{
-    if(!p.metodologia) return;
-    const k=semanaKey(p.data)+'::'+p.metodologia;
-    contagemSemana[k]=(contagemSemana[k]||0)+1;
-  });
-  let h='<div class="lt-planejamento"><div class="lt-plan-head"><h3>Planejamento do bimestre</h3>'+
+  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===tu.id&&c.bimestre===bim);
+  const entradas=[];
+  conts.forEach(c=>(c.planejamento||[]).forEach(p=>{ if(p.data>=hoje) entradas.push({c,p}); }));
+  entradas.sort((a,b)=>a.p.data.localeCompare(b.p.data));
+  let h='<div class="lt-planejamento"><div class="lt-plan-head"><h3>Planejamento (a partir de hoje)</h3>'+
     '<div><button class="btn ghost sm" onclick="recuperarSequencia(\''+tu.id+'\',\''+esc(bim)+'\')" title="Remapeia aulas planejadas que ficaram sem acontecer pras próximas datas disponíveis">🔁 recuperar</button> '+
     '<button class="btn ghost sm" onclick="imprimirPlanejamentoBimestre(\''+tu.id+'\',\''+esc(bim)+'\')" title="Abre o planejamento em papel timbrado, pronto pra imprimir/salvar em PDF">🖨 imprimir planejamento</button> '+
     '<button class="btn sm" onclick="gerarSequenciaAutomatica(\''+tu.id+'\',\''+esc(bim)+'\')">🪄 gerar sequência automática</button></div>'+
   '</div>';
-  if(!entradas.length){ h+='<p style="color:var(--muted);font-size:13px">Nenhuma aula planejada ainda neste bimestre — use "gerar sequência automática".</p></div>'; return h; }
+  if(!entradas.length){ h+='<p style="color:var(--muted);font-size:13px">Nenhuma aula planejada a partir de hoje ainda — use "gerar sequência automática".</p></div>'; return h; }
   h+='<div class="lt-plan-list">'+entradas.map(({c,p},i)=>{
     const t=temas[p.temaId]||{};
     const objLabel=(OBJ_DEFS.find(o=>o.k===p.objeto)||{}).label||p.objeto||'—';
-    const repete = p.metodologia && contagemSemana[semanaKey(p.data)+'::'+p.metodologia]>=3;
-    const metSelo = p.metodologia
-      ? '<span class="selo '+(repete?'met-repete':'met')+'" title="'+(repete?'Essa metodologia já aparece 3x ou mais nesta semana pra essa turma':'Metodologia desta aula')+'">🎯 '+esc(p.metodologia)+(repete?' ⚠':'')+'</span>'
-      : '';
-    const ehHoje=p.data===hoje;
-    const ehPassado=p.data<hoje;
-    return '<div class="lt-plan-row'+(ehHoje?' hoje':'')+(ehPassado?' passado':'')+'">'+
-      (ehHoje?'<span class="lt-plan-hoje-selo" title="Aula de hoje">HOJE</span>':'')+
+    return '<div class="lt-plan-row">'+
       '<span class="lt-plan-data">'+p.data.split('-').reverse().join('/')+'</span>'+
       '<span class="lt-plan-tema" onclick="abrirEditor(\''+p.temaId+'\')" title="Abrir tema">'+esc(t.tituloExibicao||t.nome||'(tema removido)')+'</span>'+
-      '<span class="lt-plan-obj" onclick="abrirEditarObjPlanejamento(\''+c.id+'\',\''+p.id+'\')" title="Clique pra mudar o tipo ou anotar o que rolou nessa aula (ex.: trecho de documentário)">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+'</span>'+
-      metSelo+
-      '<button class="btn ghost sm" onclick="abrirTrocarTema(\''+tu.id+'\',\''+p.data+'\',\''+p.id+'\')" title="Trocar o tema desta aula — escolher outro já criado, um subtema pronto ou digitar um novo">🔀</button>'+
+      '<span class="lt-plan-obj">'+objIconHtml(p.objeto)+esc(objLabel)+(p.obs?(' · '+esc(p.obs)):'')+(p.metodologia?(' · 🎯 '+esc(p.metodologia)):'')+'</span>'+
       '<button class="btn ghost sm" onclick="moverPlanejamentoLT(\''+tu.id+'\',\''+esc(bim)+'\','+i+',-1)"'+(i===0?' disabled':'')+'>▲</button>'+
       '<button class="btn ghost sm" onclick="moverPlanejamentoLT(\''+tu.id+'\',\''+esc(bim)+'\','+i+',1)"'+(i===entradas.length-1?' disabled':'')+'>▼</button>'+
       '<button class="btn ghost sm danger" onclick="removerPlanejamentoLT(\''+c.id+'\',\''+p.id+'\')">✕</button>'+
@@ -5696,7 +5191,10 @@ function planejamentoSectionHtml(tu, bim, hoje){
   return h;
 }
 function moverPlanejamentoLT(turmaId, bim, index, delta){
-  const entradas=entradasPlanejamentoLT(turmaId, bim);
+  const conts=Object.values(conteudos).filter(c=>c&&c.turmaId===turmaId&&c.bimestre===bim);
+  const hoje=isoLocal(new Date());
+  const entradas=[]; conts.forEach(c=>(c.planejamento||[]).forEach(p=>{ if(p.data>=hoje) entradas.push({c,p}); }));
+  entradas.sort((a,b)=>a.p.data.localeCompare(b.p.data));
   const j=index+delta;
   if(j<0||j>=entradas.length) return;
   const dataA=entradas[index].p.data, dataB=entradas[j].p.data;
@@ -5710,37 +5208,6 @@ function removerPlanejamentoLT(conteudoId, planejamentoId){
   c.planejamento=c.planejamento.filter(p=>p.id!==planejamentoId);
   persistConteudo(c);
   renderLinhaDoTempo();
-}
-/* Editar o "tipo" (quadro/estudo/slides/mapa mental/avaliação) e a
-   observação livre de uma aula já agendada, sem precisar apagar e
-   recriar a entrada do cronograma — pedido pra casos como "hoje resolvi
-   colocar um trecho de documentário no fim do 3º horário": não muda o
-   tema, só anota o que rolou de fato naquele dia. */
-function abrirEditarObjPlanejamento(conteudoId, planejamentoId){
-  const cont=conteudos[conteudoId]; if(!cont||!Array.isArray(cont.planejamento)) return;
-  const p=cont.planejamento.find(x=>x.id===planejamentoId); if(!p) return;
-  const objOpts=OBJ_DEFS.map(o=>'<option value="'+o.k+'"'+(o.k===p.objeto?' selected':'')+'>'+esc(o.label)+'</option>').join('');
-  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
-    '<div class="modal-h"><h3>O que rolou nessa aula</h3></div>'+
-    '<div class="modal-b">'+
-    '<div class="field"><label>Tipo</label><select id="epObjeto">'+objOpts+'</select></div>'+
-    '<div class="field"><label>Metodologia (o que de fato foi usado — pode divergir do planejado)</label><input id="epMetodologia" placeholder="ex.: aula expositiva, trabalho em grupo…" value="'+esc(p.metodologia||'')+'"></div>'+
-    '<div class="field"><label>Anotação (livre — ex.: "trecho de documentário no fim do horário")</label><textarea id="epObs" rows="2" placeholder="o que você quiser anotar sobre essa aula">'+esc(p.obs||'')+'</textarea></div>'+
-    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
-    '<button class="btn primary" onclick="salvarEditarObjPlanejamento(\''+conteudoId+'\',\''+planejamentoId+'\')">Salvar</button></div></div></div>';
-  abrirModal(h);
-}
-function salvarEditarObjPlanejamento(conteudoId, planejamentoId){
-  const cont=conteudos[conteudoId]; if(!cont||!Array.isArray(cont.planejamento)) return;
-  const p=cont.planejamento.find(x=>x.id===planejamentoId); if(!p) return;
-  p.objeto=(document.getElementById('epObjeto')||{}).value||p.objeto;
-  p.metodologia=(document.getElementById('epMetodologia')||{}).value.trim();
-  p.obs=(document.getElementById('epObs')||{}).value.trim();
-  persistConteudo(cont);
-  closeModal();
-  renderLinhaDoTempo();
-  if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
-  toast('Aula atualizada.','ok');
 }
 const DIAS_SEMANA_CURTO={0:'dom',1:'seg',2:'ter',3:'qua',4:'qui',5:'sex',6:'sáb'};
 /* Papel timbrado do planejamento — mesmo timbre SEDUC do relatório de
@@ -5794,10 +5261,8 @@ function renderLinhaDoTempo(){
   let html='<div class="acervo-filtros">'+
     '<select onchange="_ltTurma=this.value;renderLinhaDoTempo()">'+turmaOpts+'</select>'+
     '<select onchange="_ltBim=this.value;renderLinhaDoTempo()">'+bimOpts+'</select>'+
-    '<button class="btn ghost sm" style="margin-left:auto" onclick="togglePainelNoPlanejamento()">'+(_painelAbertoNoPlanejamento?'📊 Ocultar painel geral ▲':'📊 Ver painel geral ▾')+'</button>'+
-  '</div>'+
-  '<div id="painelInlineBody"'+(_painelAbertoNoPlanejamento?'':' class="hidden"')+' style="margin-bottom:16px"></div>';
-  if(!tu){ box.innerHTML=html+'<div class="empty"><p>Selecione uma turma.</p></div>'; if(_painelAbertoNoPlanejamento) renderPainel(); return; }
+  '</div>';
+  if(!tu){ box.innerHTML=html+'<div class="empty"><p>Selecione uma turma.</p></div>'; return; }
   const atrasada=turmaAtrasada(tu.id);
   const abertas=ocorrenciasAbertas(tu.id);
   const cont=contarAulas(tu,_ltBim), dadas=aulasDadas(tu,_ltBim);
@@ -5810,7 +5275,7 @@ function renderLinhaDoTempo(){
   const datas=datasDoBimestre(tu,_ltBim);
   if(!datas.length){
     html+='<div class="empty"><p>Essa turma não tem horário configurado, ou o bimestre está fora do calendário.</p></div>';
-    box.innerHTML=html; if(_painelAbertoNoPlanejamento) renderPainel(); return;
+    box.innerHTML=html; return;
   }
   html+='<div class="lt-strip-wrap"><div class="lt-strip">';
   datas.forEach(iso=>{
@@ -5842,33 +5307,17 @@ function renderLinhaDoTempo(){
       : '<p style="color:var(--muted);font-size:13px">Nenhum — tudo aplicado.</p>')+
   '</div>';
   box.innerHTML=html;
-  if(_painelAbertoNoPlanejamento) renderPainel();
-}
-function togglePainelNoPlanejamento(){
-  _painelAbertoNoPlanejamento=!_painelAbertoNoPlanejamento;
-  renderLinhaDoTempo();
 }
 function abrirDiaLinhaTempo(turmaId,dataISO){
   const tu=turmas[turmaId]||{};
   const chamada=chamadaDoDia(turmaId,dataISO);
   const regs=Object.values(registros).filter(r=>r&&r.turmaId===turmaId&&r.data===dataISO);
   const avulsas=aulasAvulsasDoDia(turmaId,dataISO);
-  // Entrada de planejamento (cronograma) desse dia, se existir — dias reservados
-  // pela sequência automática (revisão/recomposição no fim do bimestre) não
-  // ganham entrada nenhuma, então sem isso não tinha como definir/trocar o
-  // tema desses dias (ela relatou não achar como trocar tema da última aula).
-  let entryDoDia=null;
-  Object.values(conteudos).forEach(c=>{
-    if(c.turmaId!==turmaId||!Array.isArray(c.planejamento)) return;
-    const p=c.planejamento.find(x=>x.data===dataISO);
-    if(p) entryDoDia=p;
-  });
-  const temaDoDia=entryDoDia?(temas[entryDoDia.temaId]||{}):null;
   let corpo='';
   if(chamada) corpo+='<div class="lt-modal-item">📋 Chamada lançada nesse dia.</div>';
   regs.forEach(r=>{
     const t=temas[r.temaId]||{};
-    corpo+='<div class="lt-modal-item lt-modal-click" onclick="closeModal();abrirTemaNoRegistro(\''+r.temaId+'\')" title="Abre direto na aba de editar/excluir este registro">📗 '+esc(t.tituloExibicao||t.nome||'tema')+' — '+esc((r.objetos||[]).join(', '))+'</div>';
+    corpo+='<div class="lt-modal-item lt-modal-click" onclick="closeModal();abrirEditor(\''+r.temaId+'\')">📗 '+esc(t.tituloExibicao||t.nome||'tema')+' — '+esc((r.objetos||[]).join(', '))+'</div>';
   });
   avulsas.forEach(a=>{
     corpo+='<div class="lt-modal-item lt-modal-click" onclick="closeModal();editarAulaAvulsa(\''+a.id+'\')">✎ Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+' · '+esc(a.titulo)+' ('+(a.status==='executada'?'executada':'planejada')+')</div>';
@@ -5878,14 +5327,13 @@ function abrirDiaLinhaTempo(turmaId,dataISO){
       '<button class="btn ghost full" style="margin-top:6px" onclick="closeModal();abrirTodasChamadas()">📋 Lançar chamada</button>'+
       '<button class="btn ghost full" style="margin-top:6px" onclick="closeModal();abrirNovaAulaAvulsa(\''+dataISO+'\')">✎ Aula avulsa nesse dia</button>';
   }
-  corpo+='<button class="btn ghost full" style="margin-top:6px" onclick="closeModal();abrirTrocarTema(\''+turmaId+'\',\''+dataISO+'\',\''+(entryDoDia?entryDoDia.id:'')+'\')" title="Escolher/trocar o tema planejado pra esse dia — funciona mesmo em dias sem entrada no cronograma (ex.: revisão/recomposição no fim do bimestre)">🔀 '+(entryDoDia?('Trocar tema: '+esc(temaDoDia.tituloExibicao||temaDoDia.nome||'tema')):'Definir tema desta aula')+'</button>';
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:420px">'+
     '<div class="modal-h"><h3>'+esc(turmaNome(tu))+' — '+dataISO.split('-').reverse().join('/')+'</h3></div>'+
     '<div class="modal-b">'+corpo+'</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
-function persistChamada(c){ persistItem('chamadas', chamadas, LS_CHAMADAS, c, 'Falha ao gravar chamada no Firebase'); }
+function persistChamada(c){ c._ts=Date.now(); chamadas[c.id]=c; lsSet(LS_CHAMADAS,JSON.stringify(chamadas)); if(DB) DB.ref('leciona/chamadas/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar chamada no Firebase (mantida localmente). '+e.message,'err')); }
 function chamadaDoDia(turmaId,data){ return Object.values(chamadas).find(c=>c&&c.turmaId===turmaId&&c.data===data)||null; }
 function openBimestre(){
   if(!scope.turma){ toast('Selecione uma turma primeiro.','err'); return; }
@@ -5893,7 +5341,7 @@ function openBimestre(){
     '<div class="modal-h"><h3>Bimestre — aulas e distribuição</h3></div>'+
     '<div class="modal-b" id="bimBody"></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   renderBimBody();
 }
 function renderBimBody(){
@@ -6037,7 +5485,7 @@ function openRelatorio(){
     '<div style="display:flex;gap:6px;margin:6px 0"><button class="btn ghost sm" onclick="relTemasToggleAll(true)">✓ todos</button> <button class="btn ghost sm" onclick="relTemasToggleAll(false)">✗ nenhum</button><span id="relTemasContador" style="font-size:12px;color:var(--muted);align-self:center;margin-left:4px"></span></div>'+
     '<div id="relTemasList" class="rel-temas-list"></div></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="gerarRelatorio()">Gerar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   renderRelList();
   renderRelTemasList();
 }
@@ -6215,41 +5663,17 @@ function openConfig(){
         '<label>Manutenção</label>'+
         '<button class="btn primary" style="width:100%" onclick="abrirPopularSeletivo()">⚡ Popular conteúdo (escolher disciplina, escola, bimestre)</button>'+
         '<small>Cria os temas que faltam a partir da matriz oficial e já aplica o conteúdo pré-pronto disponível, em todas as suas turmas de uma vez. Não gasta créditos de IA. Não altera temas que já têm conteúdo.</small>'+
-        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="carregarEAbrirImportarPlano3Bim()">📋 Importar planejamento do 3º bimestre (documento de 24/08)</button>'+
-        '<small>Aplica de uma vez o plano completo do 3º bimestre (tema, código, metodologia e recorte por semana, 23 turmas), sem precisar clicar tema por tema. Mostra um preview — nada é gravado sem você confirmar. Não altera datas que já têm planejamento nem temas que já têm conteúdo.</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="manutencaoCompleta()">🧹 Verificar e corrigir tudo</button>'+
         '<small>Um único botão pra tudo: realinha referências desatualizadas, unifica turmas e conteúdos duplicados, remove temas repetidos e corrige conteúdo trocado por engano — na ordem certa, automaticamente. Não pode ser desfeito. Use quando notar algo estranho (temas repetidos, aula sumida etc.) — na dúvida, não faz mal rodar de novo.</small>'+
-        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="importarPlanilhaArlan()">📥 Importar frequência/ocorrências (planilha do Arlan)</button>'+
-        '<small>Puxa faltas e ocorrências direto da planilha (atualizada diariamente) e lança como chamada e desconto na qualitativa. Também roda sozinho todo dia útil à noite — não precisa clicar sempre. Nomes que não batem com ninguém da turma viram pendência (não é lançado errado).</small>'+
-        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="corrigirDuasDatas19_08()">🔧 Corrigir data de hoje (2ªA Sociologia e 1ªA História)</button>'+
-        '<button class="btn primary" style="width:100%;margin-top:8px;background:#a8442f;border-color:#a8442f" onclick="reconstruirTemasOrfaos()">🔧 Reconstruir temas apagados (46 aulas em 10 turmas)</button>'+
-        '<small>Correção pontual (18/08): muitas entradas do cronograma do 3º Bimestre apontavam pra temas que foram apagados (só sobrou a data). Recria o tema certo (nome, código, habilidade, foco) a partir do plano completo e religa.</small>'+
-        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="preencherCronogramaCompleto()">📅 Completar cronograma do 3º Bimestre (verde = azul)</button>'+
-        '<small>Correção pontual (18/08): cria a entrada de cronograma que falta em todo dia com aula prevista (03/08 a 07/10) que ainda não tinha nenhuma, pro Médio e Fundamental. "Estudo Orientado" e datas fora do plano ficam sem, porque não têm conteúdo da matriz.</small>'+
-        '<small>Correção pontual (19/08): as duas entradas desta semana ficaram na quinta em vez da quarta.</small>'+
-        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="atualizarQualitativaPlanilha()">📊 Atualizar planilha de qualitativa (coluna HIST)</button>'+
-        '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioFundamental()">📅 Adicionar calendário do Fundamental (8º/9º) na Agenda</button>'+
-        '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE 2026" do 8º/9º ano (avaliações SEDUC, datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Fundamental].</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioMedio()">📅 Adicionar calendário do Médio (EFG) na Agenda</button>'+
-        '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE (1)" do Médio (blocos de avaliação — Bloco 2 tem História, Bloco 6 tem Sociologia/Filosofia — datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Médio].</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
         '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
         '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
         '<small>Apaga TODOS os conteúdos, temas, turmas, registros, alunos e notas — local e no Firebase (se conectado). Suas configurações (modelo, credenciais) não são afetadas. <strong>Não pode ser desfeito.</strong></small></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveConfig()">Salvar</button></div></div></div>';
-  abrirModal(html);
-}
-function closeModal(){ _relTemasIncluidos=null; const w=document.getElementById('modalWrap'); if(w)w.remove(); }
-/* Ponto único pra abrir qualquer modal — antes eram 39 blocos copy-paste de
-   "criar div#modalWrap e anexar", cada um podendo divergir/esquecer de
-   fechar um modal anterior primeiro. closeModal() aqui garante que nunca
-   fica um #modalWrap empilhado embaixo do outro. */
-function abrirModal(html){
-  closeModal();
   const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
+function closeModal(){ _relTemasIncluidos=null; const w=document.getElementById('modalWrap'); if(w)w.remove(); }
 function saveConfig(){
   const model=document.getElementById('cfgModel').value.trim()||'claude-sonnet-4-6';
   const fb=document.getElementById('cfgFb').value.trim();
@@ -6264,6 +5688,13 @@ function saveConfig(){
   if(fbChanged){ toast('Configurações salvas. Recarregando…','ok'); setTimeout(()=>location.reload(),700); }
   else toast('Configurações salvas.','ok');
 }
+function exportBackup(){
+  const data=JSON.stringify({version:2,exportedAt:new Date().toISOString(),conteudos,temas,turmas},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='leciona-backup-'+isoLocal(new Date())+'.json'; a.click();
+  toast('Backup exportado.','ok');
+}
 function abrirExportarBackup(){
   closeModal();
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">'+
@@ -6277,7 +5708,7 @@ function abrirExportarBackup(){
       '</div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="executarExportarBackup()">Exportar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function executarExportarBackup(){
   const turmaId=document.getElementById('expTurma').value;
@@ -6381,68 +5812,123 @@ function importBackup(ev){
 /* ================= HOME "HOJE" ================= */
 const SERIE_NUM={1:'1ª série EM',2:'2ª série EM',3:'3ª série EM',9:'9º ano'};
 const DIAS_LONGO={0:'Domingo',1:'Segunda-feira',2:'Terça-feira',3:'Quarta-feira',4:'Quinta-feira',5:'Sexta-feira',6:'Sábado'};
-/* Cada linha do SCHEDULE carrega sua própria `unidade` — EFG (manhã) e CEPI
-   Marajó (tarde) caem nos mesmos dias da semana desde a grade definitiva de
-   2026/2, então não dá mais pra inferir a escola só pelo dia. */
-function unidadeDoDia(d){ const us=[...new Set(SCHEDULE.filter(x=>x.dia===d).map(x=>x.unidade))]; return us.join(' · '); }
-/* grade real (quadro "HORARIOfinal_24.08.pdf", 2026-08-24, substituindo a
-   versão "HORÁRIO final 18.08.pdf" de 2026-08-18 — mudou Filosofia 3ºA de
-   Segunda 12:25 pra Quinta 07:15, e trocou os horários de Filosofia 1ºB
-   com Sociologia 2ºA na Quarta; e CEPI Marajó "HORÁRIO_2026_FUNDAMENTAL",
-   ainda de 2026-08-12 — sem atualização mais recente), lida por dia da
-   semana: {dia, ini, fim, serie(nº), letra, disc, unidade}.
-   Desvio deliberado do quadro oficial: a Quarta 10:45–11:35 (1ªB) aparece
-   como Filosofia no quadro da escola, mas ela dá História de verdade nesse
-   horário pra essa turma (a 1ªB tinha 2 aulas de Filosofia e nenhuma de
-   História — pedido dela em 2026-08-24, aplicado na primeira das duas). */
+function unidadeDoDia(d){ return ({1:'EFG',4:'EFG',5:'EFG',2:'CEPI Marajó',3:'CEPI Marajó'})[d]||''; }
+/* grade real (print do quadro), lida por dia da semana: {dia, ini, fim, serie(nº), letra, disc} */
 const SCHEDULE=[
-  // Segunda — EFG
-  {dia:1,ini:'10:45',fim:'11:35',serie:2,letra:'B',disc:'Sociologia',unidade:'EFG'},
-  // Terça — EFG (manhã) + CEPI Marajó (tarde)
-  {dia:2,ini:'07:15',fim:'08:05',serie:3,letra:'B',disc:'História',unidade:'EFG'},
-  {dia:2,ini:'10:45',fim:'11:35',serie:3,letra:'C',disc:'História',unidade:'EFG'},
-  {dia:2,ini:'11:35',fim:'12:25',serie:2,letra:'A',disc:'História',unidade:'EFG'},
-  {dia:2,ini:'12:25',fim:'13:15',serie:3,letra:'A',disc:'História',unidade:'EFG'},
-  {dia:2,ini:'15:40',fim:'16:30',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
-  // Quarta — EFG (manhã) + CEPI Marajó (tarde)
-  {dia:3,ini:'07:15',fim:'08:05',serie:2,letra:'B',disc:'História',unidade:'EFG'},
-  {dia:3,ini:'08:05',fim:'08:55',serie:2,letra:'A',disc:'Sociologia',unidade:'EFG'},
-  {dia:3,ini:'08:55',fim:'09:45',serie:1,letra:'A',disc:'História',unidade:'EFG'},
-  {dia:3,ini:'09:45',fim:'10:35',serie:3,letra:'A',disc:'Sociologia',unidade:'EFG'},
-  {dia:3,ini:'10:45',fim:'11:35',serie:1,letra:'B',disc:'História',unidade:'EFG'},
-  {dia:3,ini:'14:00',fim:'14:50',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
-  {dia:3,ini:'14:50',fim:'15:40',serie:9,letra:'A',disc:'História',unidade:'CEPI Marajó'},
-  {dia:3,ini:'15:40',fim:'16:30',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
-  {dia:3,ini:'16:30',fim:'17:15',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
-  {dia:3,ini:'17:15',fim:'18:00',serie:9,letra:'C',disc:'História',unidade:'CEPI Marajó'},
+  {dia:1,ini:'08:41',fim:'10:30',serie:2,letra:'B',disc:'Estudo Orientado'},
   // Quinta — EFG
-  {dia:4,ini:'07:15',fim:'08:05',serie:3,letra:'A',disc:'Filosofia',unidade:'EFG'},
-  {dia:4,ini:'08:55',fim:'09:45',serie:2,letra:'B',disc:'Filosofia',unidade:'EFG'},
-  {dia:4,ini:'09:45',fim:'10:35',serie:3,letra:'B',disc:'Filosofia',unidade:'EFG'},
-  {dia:4,ini:'10:45',fim:'11:35',serie:2,letra:'A',disc:'Filosofia',unidade:'EFG'},
-  {dia:4,ini:'11:35',fim:'12:25',serie:1,letra:'B',disc:'Filosofia',unidade:'EFG'},
-  {dia:4,ini:'12:25',fim:'13:15',serie:1,letra:'A',disc:'Sociologia',unidade:'EFG'},
+  {dia:4,ini:'07:00',fim:'07:50',serie:1,letra:'B',disc:'História'},
+  {dia:4,ini:'07:51',fim:'08:40',serie:1,letra:'A',disc:'História'},
+  {dia:4,ini:'09:41',fim:'10:30',serie:2,letra:'A',disc:'História'},
+  {dia:4,ini:'10:31',fim:'11:20',serie:1,letra:'A',disc:'Sociologia'},
+  {dia:4,ini:'12:21',fim:'13:10',serie:2,letra:'B',disc:'História'},
+  {dia:4,ini:'13:11',fim:'14:00',serie:1,letra:'B',disc:'Sociologia'},
   // Sexta — EFG
-  {dia:5,ini:'07:15',fim:'08:05',serie:1,letra:'A',disc:'Filosofia',unidade:'EFG'},
-  {dia:5,ini:'08:05',fim:'08:55',serie:3,letra:'B',disc:'Sociologia',unidade:'EFG'},
-  {dia:5,ini:'09:45',fim:'10:35',serie:3,letra:'C',disc:'Sociologia',unidade:'EFG'},
-  {dia:5,ini:'10:45',fim:'11:35',serie:3,letra:'C',disc:'Filosofia',unidade:'EFG'},
-  {dia:5,ini:'12:25',fim:'13:15',serie:1,letra:'B',disc:'Sociologia',unidade:'EFG'},
+  {dia:5,ini:'07:00',fim:'07:50',serie:2,letra:'B',disc:'Filosofia'},
+  {dia:5,ini:'07:51',fim:'08:40',serie:3,letra:'C',disc:'Filosofia'},
+  {dia:5,ini:'08:41',fim:'09:30',serie:3,letra:'B',disc:'Filosofia'},
+  {dia:5,ini:'09:41',fim:'10:30',serie:3,letra:'A',disc:'Filosofia'},
+  {dia:5,ini:'10:31',fim:'11:20',serie:1,letra:'A',disc:'Filosofia'},
+  {dia:5,ini:'12:21',fim:'13:10',serie:1,letra:'B',disc:'Filosofia'},
+  {dia:5,ini:'13:11',fim:'14:00',serie:2,letra:'A',disc:'Filosofia'},
+  // Terça — CEPI Marajó
+  {dia:2,ini:'13:11',fim:'14:00',serie:1,letra:'A',disc:'Filosofia'},
+  {dia:2,ini:'14:56',fim:'15:45',serie:9,letra:'C',disc:'História'},
+  {dia:2,ini:'15:46',fim:'16:35',serie:9,letra:'C',disc:'História'},
+  {dia:2,ini:'17:26',fim:'18:15',serie:9,letra:'A',disc:'História'},
+  // Quarta — CEPI Marajó
+  {dia:3,ini:'07:51',fim:'08:40',serie:3,letra:'B',disc:'Filosofia'},
+  {dia:3,ini:'08:41',fim:'09:30',serie:3,letra:'A',disc:'Filosofia'},
+  {dia:3,ini:'10:31',fim:'11:20',serie:1,letra:'D',disc:'Filosofia'},
+  {dia:3,ini:'12:21',fim:'13:10',serie:1,letra:'C',disc:'Filosofia'},
+  {dia:3,ini:'13:11',fim:'14:00',serie:1,letra:'B',disc:'Filosofia'},
+  {dia:3,ini:'14:05',fim:'14:55',serie:9,letra:'A',disc:'História'},
+  {dia:3,ini:'15:46',fim:'16:35',serie:9,letra:'A',disc:'História'},
+  {dia:3,ini:'17:26',fim:'18:15',serie:9,letra:'C',disc:'História'},
 ];
-/* Deriva o horário da Chamada (dia da semana -> nº de aulas) direto do
-   SCHEDULE real, em vez de depender de configuração manual por turma — assim
-   atualizar o horário aqui (ou colar um horário novo) já vale pra Chamada
-   sem precisar clicar em "configurar horário" de novo em cada turma. */
-function gradeDeSchedule(t){
-  if(!t || !t.serie || !t.disciplina) return null;
-  const serieNum=parseInt(t.serie,10);
-  const entradas=SCHEDULE.filter(x=>x.serie===serieNum && x.letra===(t.letra||'') && x.disc===t.disciplina && x.unidade===(t.unidade||''));
-  if(!entradas.length) return null;
-  const grade={};
-  entradas.forEach(x=>{ grade[x.dia]=(grade[x.dia]||0)+1; });
-  return grade;
+function bimAtual(){ const iso=isoLocal(new Date()); for(const b in BIM_RANGES){ const r=BIM_RANGES[b]; if(iso>=r[0]&&iso<=r[1]) return b; } return scope.bim||'2º Bimestre'; }
+let hojeOffset=0;
+function hojeMudarDia(d){ hojeOffset+=d; try{ localStorage.setItem('leciona_hojeoffset', String(hojeOffset)); }catch(e){} renderHoje(); }
+function renderHoje(){
+  const box=document.getElementById('hojeBody'); if(!box) return;
+  const now=new Date(); now.setDate(now.getDate()+hojeOffset);
+  const dia=now.getDay(); const h=hojeOffset===0?now.getHours():12;
+  const saud=hojeOffset<0?'Você está vendo':hojeOffset>0?'Você está vendo':(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite');
+  const uni=unidadeDoDia(dia);
+  const aulas=SCHEDULE.filter(x=>x.dia===dia).sort((a,b)=>a.ini.localeCompare(b.ini));
+  const dataHojeISO=isoLocal(now);
+  const bimHoje=bimAtivoAgora(dataHojeISO);
+  const planejHoje=planejamentosDoDia(dataHojeISO);
+  let html='<div class="hoje-head"><h2>'+saud+(hojeOffset!==0?' — '+DIAS_LONGO[dia]:'!')+'</h2>'+
+    '<div class="hoje-nav"><button class="btn ghost sm" onclick="hojeMudarDia(-1)">‹ dia anterior</button>'+
+    (hojeOffset!==0?'<button class="btn ghost sm" onclick="hojeOffset=0;try{localStorage.setItem(\'leciona_hojeoffset\',\'0\')}catch(e){};renderHoje()">hoje</button>':'')+
+    '<button class="btn ghost sm" onclick="hojeMudarDia(1)">próximo dia ›</button>'+
+    '<button class="btn ghost sm" onclick="_agendaOrigin=\'hoje\';setView(\'agenda\')" title="Ver o mês inteiro, com aulas e compromissos">📅 Ver agenda do mês</button>'+
+    '<button class="btn ghost sm" onclick="abrirNovaAulaAvulsa(\''+dataHojeISO+'\')">+ Aula avulsa</button></div>'+
+    '<div class="hoje-data">'+DIAS_LONGO[dia]+' · '+now.toLocaleDateString('pt-BR')+(uni?(' · '+uni):'')+' · '+(bimHoje||'Recesso / sem bimestre ativo')+'</div></div>';
+  if(!bimHoje){
+    html+='<div class="empty"><p>Sem bimestre letivo ativo nesta data — período de recesso. 🎉</p></div>';
+    box.innerHTML=html; return;
+  }
+  if(planejHoje.length){
+    html+='<h3 style="font-family:var(--serif);font-size:15px;margin:4px 0 8px">📅 Cronograma de hoje</h3><div class="hoje-list" style="margin-bottom:22px">'+
+      planejHoje.map(({conteudo,entry,tema})=>{
+        const tu=turmas[conteudo.turmaId]||{};
+        const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
+        const nRegs=registrosDoTema(tema.id).filter(r=>r.turmaId===tu.id).length;
+        return '<div class="hoje-row">'+
+          '<div class="hoje-info"><b>'+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
+          '<div class="hoje-acoes">'+
+            '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+conteudo.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+            '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+conteudo.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
+            '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
+            '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
+            '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula hoje — pode repetir o mesmo tema quantas vezes quiser, cada vez com seus próprios objetos/data">✓ Registrar</button>'+
+          '</div></div>';
+      }).join('')+
+    '</div>';
+  }
+  const aulasAvulsasHoje=aulasAvulsasDoDiaGlobal(dataHojeISO);
+  if(aulasAvulsasHoje.length){
+    html+='<h3 style="font-family:var(--serif);font-size:15px;margin:4px 0 8px">✎ Aulas avulsas</h3><div class="hoje-list" style="margin-bottom:22px">'+
+      aulasAvulsasHoje.map(a=>{
+        const tu=turmas[a.turmaId]||{};
+        const cor=a.status==='executada'?'#2f6b5e':'#a06a2e';
+        return '<div class="hoje-row">'+
+          '<div class="hoje-info"><b style="color:'+cor+'">Aula avulsa — '+esc(AULA_AVULSA_TIPOS[a.tipo]||a.tipo)+'</b><span>'+esc(turmaNome(tu))+' · '+esc(a.titulo)+' · '+(a.status==='executada'?'executada':'planejada')+(a.observacoes?(' · '+esc(a.observacoes)):'')+'</span></div>'+
+          '<div class="hoje-acoes">'+
+            '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+a.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+            '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+a.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
+            (a.status!=='executada'?'<button class="btn ghost sm" onclick="marcarAulaAvulsaExecutada(\''+a.id+'\')">marcar executada</button>':'')+
+            '<button class="btn ghost sm" onclick="editarAulaAvulsa(\''+a.id+'\')">editar</button>'+
+            '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">remover</button>'+
+          '</div></div>';
+      }).join('')+
+    '</div>';
+  }
+  if(!aulas.length){ html+='<div class="empty"><p>Sem aulas neste dia. 🎉</p><p style="margin-top:10px"><button class="btn" onclick="setView(\'gestao\')">Ir para a Gestão</button></p></div>'; box.innerHTML=html; return; }
+  html+='<div class="hoje-list">'+aulas.map(x=>{
+    const serie=SERIE_NUM[x.serie]; const u=unidadeDoDia(x.dia);
+    const titulo=x.disc+' · '+serieCurta(serie)+x.letra;
+    // Verifica se há registro de aplicação para esta turma hoje
+    const tuHoje=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
+    const dataHoje=isoLocal(now);
+    const regHoje=tuHoje?Object.values(registros).filter(r=>r.turmaId===tuHoje.id&&r.data===dataHoje):[];
+    const badgeReg=regHoje.length?'<span class="reg-badge" title="'+regHoje.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
+    const badgeAtraso=(tuHoje&&turmaAtrasada(tuHoje.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
+    const acoes = x.disc==='Estudo Orientado'
+      ? '<span class="statusdot">sem planejamento</span>'
+      : '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+        '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
+        '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
+        '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
+        (tuHoje?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuHoje.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'');
+    return '<div class="hoje-row'+(regHoje.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
+      '<div class="hoje-info"><b>'+esc(titulo)+'</b><span>'+esc(u)+'</span>'+badgeReg+badgeAtraso+'</div>'+
+      '<div class="hoje-acoes">'+acoes+'</div></div>';
+  }).join('')+'</div>';
+  box.innerHTML=html;
 }
-function bimAtual(){ return bimAtivoAgora() || scope.bim || '2º Bimestre'; }
 /* ═══════════════════════════════════════════════════════════════════════
    AGENDA — visão de mês (grade) + dia (lista), juntando 3 fontes que já
    existem separadas: aulas reais da semana (SCHEDULE, mesma fonte da tela
@@ -6454,7 +5940,7 @@ function bimAtual(){ return bimAtivoAgora() || scope.bim || '2º Bimestre'; }
    tanto pela professora (textarea) quanto pelo assistente (ferramenta
    deixar_nota_geral). Mesma coleção pros dois lados, diferenciados só por
    `autor`. */
-function persistNotaGeral(n){ persistItem('notas_gerais', notasGerais, LS_NOTASGERAIS, n, 'Falha ao gravar a nota'); }
+function persistNotaGeral(n){ n._ts=Date.now(); notasGerais[n.id]=n; lsSet(LS_NOTASGERAIS,JSON.stringify(notasGerais)); if(DB) DB.ref('leciona/notas_gerais/'+n.id).set(n).catch(e=>toast('⚠ Falha ao gravar a nota (mantida localmente). '+e.message,'err')); }
 function removerNotaGeral(id){
   delete notasGerais[id];
   lsSet(LS_NOTASGERAIS,JSON.stringify(notasGerais));
@@ -6493,7 +5979,7 @@ function renderNotasGeraisAgenda(){
       '</div>'
     ).join('') : '<p style="color:var(--muted);font-size:13px">Nenhuma anotação ainda.</p>');
 }
-function persistCompromisso(c){ persistItem('compromissos', compromissos, LS_COMP, c, 'Falha ao gravar na agenda'); }
+function persistCompromisso(c){ c._ts=Date.now(); compromissos[c.id]=c; lsSet(LS_COMP,JSON.stringify(compromissos)); if(DB) DB.ref('leciona/compromissos/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar na agenda (mantido localmente). '+e.message,'err')); }
 function removerCompromisso(id){
   if(!confirm('Remover este compromisso da agenda?')) return;
   delete compromissos[id];
@@ -6512,7 +5998,7 @@ function toggleCompromissoConcluido(id){
    igual ao padrão do SIAP. Coleção própria, separada de `registros` (que
    exige temaId) — ver justificativa no plano de manutenção. ---------- */
 const AULA_AVULSA_TIPOS={explicacao:'Explicação',atividade:'Atividade',correcao:'Correção',recomposicao:'Recomposição de aprendizagem'};
-function persistAulaAvulsa(a){ persistItem('aulas_avulsas', aulasAvulsas, LS_AULASAVULSAS, a, 'Falha ao gravar aula avulsa'); }
+function persistAulaAvulsa(a){ a._ts=Date.now(); aulasAvulsas[a.id]=a; lsSet(LS_AULASAVULSAS,JSON.stringify(aulasAvulsas)); if(DB) DB.ref('leciona/aulas_avulsas/'+a.id).set(a).catch(e=>toast('⚠ Falha ao gravar aula avulsa (mantida localmente). '+e.message,'err')); }
 function removerAulaAvulsa(id){
   if(!confirm('Remover esta aula avulsa?')) return;
   delete aulasAvulsas[id];
@@ -6542,7 +6028,7 @@ function abrirNovaAulaAvulsa(dataISO){
     '<div class="field"><label>Data</label><input id="alData" type="date" value="'+esc(dataISO||isoLocal(new Date()))+'"></div>'+
     '<div class="field"><label>Observações (opcional)</label><textarea id="alObs" rows="2"></textarea></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarNovaAulaAvulsa()">Salvar como planejada</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function editarAulaAvulsa(id){
   const a=aulasAvulsas[id]; if(!a) return;
@@ -6557,7 +6043,7 @@ function editarAulaAvulsa(id){
     '<div class="field"><label>Data</label><input id="alData" type="date" value="'+esc(a.data||isoLocal(new Date()))+'"></div>'+
     '<div class="field"><label>Observações (opcional)</label><textarea id="alObs" rows="2">'+esc(a.observacoes||'')+'</textarea></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarNovaAulaAvulsa()">Salvar edição</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function confirmarNovaAulaAvulsa(){
   const turmaId=document.getElementById('alTurma').value;
@@ -6579,7 +6065,7 @@ function confirmarNovaAulaAvulsa(){
 }
 let _agendaMes=null;     // Date do 1º dia do mês em exibição
 let _agendaDiaSel=null;  // ISO do dia selecionado no painel
-let _agendaOrigin='';
+let _agendaOrigin='hoje';
 let _agendaGradeAberta=false; // calendário do mês vem recolhido por padrão (ex-tela Hoje)
 function toggleAgendaGrade(){ _agendaGradeAberta=!_agendaGradeAberta; renderAgenda(); }
 function mudarMesAgenda(delta){
@@ -6641,12 +6127,6 @@ function renderAgendaGrade(){
     html+='<div class="'+cls.join(' ')+'" onclick="selecionarDiaAgenda(\''+iso+'\')"><span class="agenda-num">'+dia+'</span><div class="agenda-pontos">'+pontos+'</div></div>';
   }
   html+='</div>';
-  html+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)">'+
-    '<span><span class="agenda-ponto aula" style="display:inline-block;vertical-align:middle;margin-right:3px"></span>aula prevista</span>'+
-    '<span><span class="agenda-ponto cron" style="display:inline-block;vertical-align:middle;margin-right:3px"></span>tema no cronograma</span>'+
-    '<span><span class="agenda-ponto comp" style="display:inline-block;vertical-align:middle;margin-right:3px"></span>compromisso</span>'+
-    '<span><span class="agenda-ponto avulsa" style="display:inline-block;vertical-align:middle;margin-right:3px"></span>aula avulsa</span>'+
-  '</div>';
   grade.innerHTML=html;
 }
 function selecionarDiaAgenda(iso){ _agendaDiaSel=iso; renderAgendaGrade(); renderAgendaDia(); }
@@ -6675,55 +6155,20 @@ function renderAgendaDia(){
     '<button class="btn ghost sm" onclick="agendaMudarDia(1)">próximo dia ›</button>'+
   '</div>'+
   '<h4 style="font-family:var(--serif);font-size:15px;margin:0 0 12px">'+(ehHoje?'Hoje, ':'')+esc(DIAS_LONGO[d.getDay()])+' · '+d.toLocaleDateString('pt-BR')+(bimDia?'':' · Recesso / sem bimestre ativo')+'</h4>';
-  // Cronograma + horário normal fundidos numa lista só, uma linha por aula
-  // real do dia — antes eram duas seções separadas (até 14 linhas pra 7
-  // aulas), pedido dela pra reduzir pra 7 linhas com tema/código/metodologia
-  // já na linha da aula.
-  const cronPorTurma={};
-  cron.forEach(c=>{ (cronPorTurma[c.conteudo.turmaId]=cronPorTurma[c.conteudo.turmaId]||[]).push(c); });
-  if(aulas.length){
-    html+='<div class="agenda-secao-tit">📅 Aulas do dia</div>';
-    aulas.forEach(x=>{
-      const serie=SERIE_NUM[x.serie]; const u=x.unidade;
-      const tuDia=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
-      const cronDaAula=tuDia?(cronPorTurma[tuDia.id]||[])[0]:null;
-      const regDia=tuDia?Object.values(registros).filter(r=>r.turmaId===tuDia.id&&r.data===iso):[];
-      const chamadaDia=tuDia?chamadaDoDia(tuDia.id,iso):null;
-      // Mesmo critério de "aplicado" da Linha do Tempo (chamada||registro||avulsa) —
-      // antes o badge daqui só olhava registro, então uma aula com chamada lançada
-      // mas sem registro de aplicação ficava sem indicação nenhuma de que rolou.
-      const aplicadoDia=regDia.length>0||!!chamadaDia;
-      const badgeReg=aplicadoDia?'<span class="reg-badge" title="'+(regDia.length?(regDia.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)'):'chamada lançada')+'">✓ aplicado</span>':'';
-      const badgeAtraso=(tuDia&&turmaAtrasada(tuDia.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
-      let infoHtml, acoesHtml;
-      if(cronDaAula){
-        const {conteudo,entry,tema}=cronDaAula;
-        const metSelo=entry.metodologia?'<span class="selo met">🎯 '+esc(entry.metodologia)+'</span>':'';
-        infoHtml='<b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+' — '+esc(tema.tituloExibicao||tema.nome||'')+(tema.dcgo?' <span class="codigo-inline">'+esc(tema.dcgo)+'</span>':'')+'</b>'+
-          '<span>'+esc(u)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span>'+metSelo+badgeReg+badgeAtraso;
-        acoesHtml='<div class="hoje-acoes">'+
+  if(cron.length){
+    html+='<div class="agenda-secao-tit">📅 Cronograma de conteúdo</div>';
+    cron.forEach(({conteudo,entry,tema})=>{
+      const tu=turmas[conteudo.turmaId]||{};
+      const objLabel=(OBJ_DEFS.find(o=>o.k===entry.objeto)||{}).label||entry.objeto||'—';
+      const nRegs=registrosDoTema(tema.id).filter(r=>r.turmaId===tu.id).length;
+      html+='<div class="hoje-row"><div class="hoje-info"><b>'+objIconHtml(entry.objeto)+esc(tema.tituloExibicao||tema.nome||'')+'</b><span>'+esc(turmaNome(tu))+' · '+esc(objLabel)+(entry.obs?(' · '+esc(entry.obs)):'')+(nRegs?(' · '+nRegs+' aplicaç'+(nRegs>1?'ões':'ão')+' já registrada'+(nRegs>1?'s':'')):'')+'</span></div>'+
+        '<div class="hoje-acoes">'+
           '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+conteudo.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
           '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasTurma(\''+conteudo.turmaId+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
-          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula — pode repetir quantas vezes quiser">✓ Registrar</button>'+
           '<button class="btn ghost sm" onclick="abrirTemaDoDia(\''+tema.id+'\')">abrir</button>'+
           '<button class="btn ghost sm" onclick="projetarTemaId(\''+tema.id+'\')">projetar</button>'+
-          '<button class="btn ghost sm" onclick="abrirTrocarTema(\''+conteudo.turmaId+'\',\''+iso+'\',\''+entry.id+'\')" title="Trocar o tema desta aula">🔄 trocar tema</button>'+
-          (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
-        '</div>';
-      } else {
-        infoHtml='<b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+'</b><span>'+esc(u)+'</span>'+badgeReg+badgeAtraso;
-        acoesHtml=(x.disc==='Estudo Orientado')?'<span class="statusdot">sem planejamento</span>':('<div class="hoje-acoes">'+
-          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
-          '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
-          '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
-          '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
-          (tuDia?'<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirTrocarTema(\''+tuDia.id+'\',\''+iso+'\',\'\')" title="Escolher o tema desta aula">+ tema</button>':'')+
-          (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
-        '</div>');
-      }
-      html+='<div class="hoje-row'+(aplicadoDia?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
-        '<div class="hoje-info">'+infoHtml+'</div>'+acoesHtml+
-      '</div>';
+          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirModalRegistroCard(\''+tema.id+'\')" title="Registra uma nova aplicação desta aula — pode repetir quantas vezes quiser">✓ Registrar</button>'+
+        '</div></div>';
     });
   }
   if(avulsas.length){
@@ -6739,6 +6184,26 @@ function renderAgendaDia(){
           '<button class="btn ghost sm" onclick="editarAulaAvulsa(\''+a.id+'\')">editar</button>'+
           '<button class="btn ghost sm danger" onclick="removerAulaAvulsa(\''+a.id+'\')">✕</button>'+
         '</div></div>';
+    });
+  }
+  if(aulas.length){
+    html+='<div class="agenda-secao-tit">Aulas do horário normal</div>';
+    aulas.forEach(x=>{
+      const serie=SERIE_NUM[x.serie]; const u=unidadeDoDia(x.dia);
+      const tuDia=Object.values(turmas).find(t=>t.disciplina===x.disc&&t.unidade===u&&t.serie===serie&&(t.letra||'')===x.letra);
+      const regDia=tuDia?Object.values(registros).filter(r=>r.turmaId===tuDia.id&&r.data===iso):[];
+      const badgeReg=regDia.length?'<span class="reg-badge" title="'+regDia.map(r=>(r.objetos||[]).join('+')).join(', ')+' registrado(s)">✓ aplicado</span>':'';
+      const badgeAtraso=(tuDia&&turmaAtrasada(tuDia.id))?'<span class="reg-badge" style="background:#a8442f" title="Tem ocorrência sem resolver — clique em ⚠ pra ver ou resolver">⚠ atrasada</span>':'';
+      html+='<div class="hoje-row'+(regDia.length?' aplicada':'')+'"><div class="hoje-hora">'+x.ini+'<small>'+x.fim+'</small></div>'+
+        '<div class="hoje-info"><b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+'</b><span>'+esc(u)+'</span>'+badgeReg+badgeAtraso+'</div>'+
+        (x.disc==='Estudo Orientado'?'<span class="statusdot">sem planejamento</span>':'<div class="hoje-acoes">'+
+          '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
+          '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirNotasAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')" title="Lançar nota direto, sem passar por outra tela">📝 Notas</button>'+
+          '<button class="btn ghost sm" onclick="abrirAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">abrir</button>'+
+          '<button class="btn ghost sm" onclick="projetarAula(\''+x.disc+'\',\''+u+'\',\''+serie+'\',\''+x.letra+'\')">projetar</button>'+
+          (tuDia?'<button class="btn ghost sm" onclick="abrirOcorrenciaHoje(\''+tuDia.id+'\')" title="Essa turma não teve aula normal (passeio, palestra, dispensa...)">⚠</button>':'')+
+        '</div>')+
+        '</div>';
     });
   }
   html+='<div class="agenda-secao-tit">Compromissos</div>';
@@ -6826,25 +6291,24 @@ function projetarAula(disc,uni,serie,letra){
   if(primeiro) projetarTemaId(primeiro.id);
   else { setView('gestao'); toast('Sem temas nesta turma ainda — crie ou use "Partir da matriz".',''); }
 }
-/* As antigas abas "Hoje" e "Painel" foram suprimidas (pedido da Malu):
-   "Hoje" virou só a Agenda aberta no dia atual (Agenda já abre em hoje por
-   padrão); "Painel" virou uma seção retrátil dentro de Planejamento (ver
-   togglePainelNoPlanejamento). Migração de valores antigos guardados em
-   localStorage['leciona_lastview'] pra quem já tinha o app aberto antes
-   dessa mudança. */
+/* A antiga aba "Hoje" foi suprimida (pedido da Malu) — v==='hoje' agora é
+   só um sinônimo de "Agenda, aberta no dia de hoje", pra não ter que caçar
+   toda chamada interna de setView('hoje')/_agendaOrigin='hoje' espalhada
+   pelo código. viewHoje/renderHoje() ficam sem uso (não removidos agora,
+   por segurança — várias chamadas ainda os referenciam indiretamente). */
 function setView(v){
   fecharProjecao();
-  if(v==='hoje') v='agenda';
-  if(v==='painel') v='linhaTempo';
-  const viewId = 'view'+v.charAt(0).toUpperCase()+v.slice(1);
-  ['viewAcervo','viewAgenda','viewNotas','viewGestao','viewLinhaTempo'].forEach(id=>{
+  const viewId = (v==='hoje') ? 'viewAgenda' : ('view'+v.charAt(0).toUpperCase()+v.slice(1));
+  ['viewHoje','viewPainel','viewAcervo','viewAgenda','viewNotas','viewGestao','viewLinhaTempo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('hidden', id!==viewId);
   });
-  const tabId = (v==='linhaTempo') ? 'tabLinhaTempo' : ('tab'+v.charAt(0).toUpperCase()+v.slice(1));
-  ['tabAcervo','tabAgenda','tabNotas','tabGestao','tabLinhaTempo'].forEach(id=>{
+  const tabId = (v==='hoje') ? 'tabHoje' : (v==='linhaTempo') ? 'tabLinhaTempo' : ('tab'+v.charAt(0).toUpperCase()+v.slice(1));
+  ['tabHoje','tabPainel','tabAcervo','tabAgenda','tabNotas','tabGestao','tabLinhaTempo'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.classList.toggle('active', id===tabId);
   });
   try{ localStorage.setItem('leciona_lastview', v); }catch(e){}
+  if(v==='hoje'){ _agendaMes=new Date(); _agendaDiaSel=isoLocal(new Date()); _agendaGradeAberta=false; renderAgenda(); }
+  if(v==='painel') renderPainel();
   if(v==='acervo') renderAcervo();
   if(v==='agenda') renderAgenda();
   if(v==='notas') renderNotas();
@@ -6885,7 +6349,7 @@ function abrirDuplicarAtividade(id){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="confirmarDuplicarAtividade(\''+id+'\')">Duplicar</button></div></div></div>';
-  abrirModal(h);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
 }
 function confirmarDuplicarAtividade(id){
   const av=atividadesCtrl[id]; if(!av) return;
@@ -6907,21 +6371,8 @@ function removerAtividade(id){
   // Remover notas associadas
   Object.keys(notasCtrl).forEach(nid=>{ if(notasCtrl[nid].atividadeId===id){ delete notasCtrl[nid]; } });
   lsSet(LS_NOTAS,JSON.stringify(notasCtrl));
-  _notaIdx=null;
   renderNotas();
   toast('Atividade removida.','ok');
-}
-function editarNomeAtividade(id){
-  const av=atividadesCtrl[id]; if(!av) return;
-  const novo=prompt('Novo nome da atividade:', av.nome);
-  if(novo==null) return;
-  const nome=novo.trim();
-  if(!nome){ toast('Nome não pode ficar vazio.','err'); return; }
-  if(nome===av.nome) return;
-  av.nome=nome;
-  persistAtivCtrl(av);
-  renderNotas();
-  toast('Nome atualizado.','ok');
 }
 
 /* Lançar objeto de aula no controle de notas */
@@ -6958,7 +6409,7 @@ function abrirLancarNotas(objetoKey){
       '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
       '<button class="btn primary" onclick="executarLancarNotas()">Criar atividade</button>'+
     '</div></div></div>';
-  abrirModal(h);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
 }
 
 function executarLancarNotas(){
@@ -7091,7 +6542,7 @@ function abrirRelatorioTurma(){
       '<button class="btn ghost" onclick="exportarRelatorioCSV()">↓ CSV</button>'+
       '<button class="btn ghost" onclick="closeModal()">Fechar</button>'+
     '</div></div></div>';
-  abrirModal(h);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
 }
 
 function exportarRelatorioCSV(){
@@ -7118,9 +6569,8 @@ let _acervoBusca='', _acervoDisc='', _acervoSerie='', _acervoBim='';
    Pensado pra quem tem muitas turmas/disciplinas: mostra % aplicado por
    turma num bimestre, destaca quem está atrasada (ocorrência sem resolver)
    e dá um atalho direto pra abrir aquela turma na Gestão. */
-let _painelBim = null, _painelDisc = '';
+let _painelBim = null, _painelDisc = '', _painelOrigin = 'gestao';
 let _painelExpandidas = new Set();
-let _painelAbertoNoPlanejamento = false; // seção retrátil dentro de Planejamento (ex-aba Painel)
 function togglePainelTurma(turmaId){
   if(_painelExpandidas.has(turmaId)) _painelExpandidas.delete(turmaId); else _painelExpandidas.add(turmaId);
   renderPainel();
@@ -7149,7 +6599,7 @@ function painelRosterHtml(turmaId){
   '</div>';
 }
 function renderPainel(){
-  const box=document.getElementById('painelInlineBody'); if(!box) return;
+  const box=document.getElementById('painelBody'); if(!box) return;
   if(_painelBim==null) _painelBim = bimAtual();
   const discs=[...new Set(turmasAtivas().map(t=>t.disciplina).filter(Boolean))].sort();
 
@@ -7178,7 +6628,8 @@ function renderPainel(){
   const comConteudo = linhas.filter(l=>l.total>0);
   const pctMedio = comConteudo.length ? Math.round(comConteudo.reduce((s,l)=>s+l.pct,0)/comConteudo.length) : 0;
 
-  let html = '<div class="acervo-filtros">'+
+  let html = '<button class="btn ghost sm" style="margin-bottom:10px" onclick="setView(\''+_painelOrigin+'\')">← Voltar'+(_painelOrigin==='notas'?' pra Notas':' pra Gestão')+'</button>'+
+    '<div class="acervo-filtros">'+
     '<select onchange="_painelDisc=this.value;renderPainel()"><option value="">Todas disciplinas</option>'+
       discs.map(d=>'<option value="'+esc(d)+'"'+(d===_painelDisc?' selected':'')+'>'+esc(d)+'</option>').join('')+
     '</select>'+
@@ -7500,29 +6951,20 @@ function abrirUsarPrePronto(i){
     '<div class="modal-b"><small>'+esc(c.disc)+' · '+esc(c.serie)+' · '+esc(c.bim)+(c.dcgo?' · '+esc(c.dcgo):'')+'</small>'+
     '<div class="field" style="margin-top:10px"><label>Em qual turma</label><select id="upTurma">'+opts+'</select></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarUsarPrePronto('+i+')">Adicionar</button></div></div></div>';
-  abrirModal(html);
-}
-/* Acha (ou cria) o conteúdo "Matriz — <bimestre>" de uma turma+bimestre —
-   mesmo critério usado em 3 lugares (trocar tema por "livre", criar tema
-   livre via assistente, criar tema a partir de pré-pronto); extraído aqui
-   pra não divergir entre as cópias (cada uma calculava a `ordem` do próximo
-   conteúdo do próprio jeito). */
-function acharOuCriarConteudoMatriz(turmaId, disciplina, serie, bim){
-  let cont=Object.values(conteudos).find(co=>co.turmaId===turmaId&&co.bimestre===bim&&co.nome==='Matriz — '+bim);
-  if(!cont){
-    const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===turmaId&&co.bimestre===bim);
-    const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
-    cont={id:uid(),disciplina,serie,turmaId,bimestre:bim,nome:'Matriz — '+bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
-    persistConteudo(cont);
-  }
-  return cont;
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 /* Cria (ou reaproveita, se já existir) um tema a partir de um candidato
    pré-pronto da matriz, numa turma. Compartilhado entre o Acervo e a
    Gestão — mesmo critério de dedup do criarPartirMatriz(): nunca duplica
    se já existe um tema com mesmo dcgo+nome neste conteúdo. */
 function criarTemaAPartirDePrePronto(c, turmaId){
-  const cont=acharOuCriarConteudoMatriz(turmaId, c.disc, c.serie, c.bim);
+  let cont=Object.values(conteudos).find(co=>co.turmaId===turmaId&&co.bimestre===c.bim&&co.nome==='Matriz — '+c.bim);
+  if(!cont){
+    const contsDaTurmaBim=Object.values(conteudos).filter(co=>co.turmaId===turmaId&&co.bimestre===c.bim);
+    const ordemCont=contsDaTurmaBim.length?Math.max(...contsDaTurmaBim.map(co=>co.ordem||0))+1:0;
+    cont={id:uid(),disciplina:c.disc,serie:c.serie,turmaId,bimestre:c.bim,nome:'Matriz — '+c.bim,resumo:'',ordem:ordemCont,updatedAt:Date.now()};
+    persistConteudo(cont);
+  }
   const jaExiste=temasDoConteudo(cont.id).find(t=>t.dcgo===c.dcgo&&t.nome===String(c.nome).slice(0,80));
   const tema=jaExiste||blankTema(cont.id,{turmaId,disciplina:c.disc,serie:c.serie,bimestre:c.bim,nome:String(c.nome).slice(0,80),dcgo:c.dcgo,habilidade:c.habilidade,resumo:c.habilidade,ordem:nextOrdemTema(cont.id)});
   applyPrebuiltIfEmpty(tema);
@@ -7589,9 +7031,9 @@ const ATIV_TIPOS={
 const OBJ_TIPO_PADRAO={quadro:'texto',estudo:'texto',slides:'debate',mapaMental:'mapa',avaliacao:'atividade'};
 
 // ── Persist ──────────────────────────────────────────────────────────────
-function persistAluno(a){ persistItem('alunos', alunos, LS_ALUNOS, a, 'Falha ao gravar dados do aluno'); }
-function persistAtivCtrl(av){ persistItem('atividades_ctrl', atividadesCtrl, LS_ATVCTRL, av, 'Falha ao gravar atividade'); }
-function persistNota(n){ persistItem('notas_ctrl', notasCtrl, LS_NOTAS, n, 'Falha ao gravar nota'); _notaIdx=null; }
+function persistAluno(a){ a._ts=Date.now(); alunos[a.id]=a; lsSet(LS_ALUNOS,JSON.stringify(alunos)); if(DB) DB.ref('leciona/alunos/'+a.id).set(a).catch(e=>console.warn(e)); }
+function persistAtivCtrl(av){ av._ts=Date.now(); atividadesCtrl[av.id]=av; lsSet(LS_ATVCTRL,JSON.stringify(atividadesCtrl)); if(DB) DB.ref('leciona/atividades_ctrl/'+av.id).set(av).catch(e=>console.warn(e)); }
+function persistNota(n){ n._ts=Date.now(); notasCtrl[n.id]=n; lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); if(DB) DB.ref('leciona/notas_ctrl/'+n.id).set(n).catch(e=>console.warn(e)); }
 function removerAluno(id){
   const al=alunos[id]; if(!al) return;
   if(!confirm('Remover "'+(al.nome||'este aluno')+'"? As notas lançadas para ele também serão removidas. Não pode ser desfeito.')) return;
@@ -7601,7 +7043,7 @@ function removerAluno(id){
   // notas lançadas pra esse aluno ficariam órfãs (sem aluno pra aparecer) — limpa junto
   const notasApagar=Object.keys(notasCtrl).filter(nid=>notasCtrl[nid].alunoId===id);
   notasApagar.forEach(nid=>{ delete notasCtrl[nid]; if(DB) DB.ref('leciona/notas_ctrl/'+nid).remove().catch(()=>{}); });
-  if(notasApagar.length){ lsSet(LS_NOTAS,JSON.stringify(notasCtrl)); _notaIdx=null; }
+  if(notasApagar.length) lsSet(LS_NOTAS,JSON.stringify(notasCtrl));
   renderNotas();
   toast('Aluno removido.','ok');
 }
@@ -7659,7 +7101,20 @@ function abrirBoletimAluno(id){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button>'+
     '<button class="btn primary" onclick="salvarEdicaoAluno(\''+id+'\')">Salvar dados</button></div></div></div>';
-  abrirModal(h);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+}
+function abrirEditarAluno(id){
+  const al=alunos[id]; if(!al) return;
+  const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
+    '<div class="modal-h"><h3>Editar aluno</h3></div>'+
+    '<div class="modal-b">'+
+      '<div class="field"><label>Nome completo</label><input id="alunoEdNome" value="'+esc(al.nome||'')+'" autofocus></div>'+
+      '<div class="field"><label>Número (opcional)</label><input id="alunoEdNum" type="number" value="'+esc(al.numero!=null?String(al.numero):'')+'" placeholder="ex.: 1"></div>'+
+    '</div>'+
+    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
+    '<button class="btn primary" onclick="salvarEdicaoAluno(\''+id+'\')">Salvar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
+  setTimeout(()=>document.getElementById('alunoEdNome')?.focus(),50);
 }
 function salvarEdicaoAluno(id){
   const al=alunos[id]; if(!al) return;
@@ -7693,19 +7148,13 @@ function perfisNecessariosDaTurma(turmaId){
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-function alunosDaTurma(turmaId){ return Object.values(alunos).filter(a=>a&&a.turmaId===turmaId&&a.ativo!==false).sort((a,b)=>(a.numero||999)-(b.numero||999)||(a.nome||'').localeCompare(b.nome||'')); }
+function alunosDaTurma(turmaId){ return Object.values(alunos).filter(a=>a.turmaId===turmaId&&a.ativo!==false).sort((a,b)=>(a.numero||999)-(b.numero||999)||(a.nome||'').localeCompare(b.nome||'')); }
 function atividadesDaTurma(turmaId){
   return Object.values(atividadesCtrl)
-    .filter(av=>av&&av.turmaIds&&av.turmaIds.includes(turmaId))
+    .filter(av=>av.turmaIds&&av.turmaIds.includes(turmaId))
     .sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.nome||'').localeCompare(b.nome||''));
 }
-/* Índice notasCtrl por "alunoId|atividadeId" (mesmo padrão do _temaIdx) —
-   notaDoAluno() é chamada em loop pra cada aluno×atividade em renderNotas,
-   médias, CSV, ranking… sem índice isso é uma busca linear em notasCtrl
-   inteiro por chamada, o que fica visivelmente lento conforme o ano avança
-   e o número de notas cresce. */
-function _buildNotaIdx(){ _notaIdx={}; Object.values(notasCtrl).forEach(n=>{ if(n) _notaIdx[n.alunoId+'|'+n.atividadeId]=n; }); }
-function notaDoAluno(alunoId,atividadeId){ if(!_notaIdx) _buildNotaIdx(); return _notaIdx[alunoId+'|'+atividadeId]||null; }
+function notaDoAluno(alunoId,atividadeId){ return Object.values(notasCtrl).find(n=>n.alunoId===alunoId&&n.atividadeId===atividadeId)||null; }
 function mediaAtividade(atividadeId,turmaId){
   const av=atividadesCtrl[atividadeId]||{};
   const als=alunosDaTurma(turmaId);
@@ -7761,7 +7210,7 @@ const QUALITATIVA_MOTIVOS=[
   {k:'dormindo', label:'Dormindo em sala', valor:-0.1},
   {k:'outro', label:'Outro', valor:-0.1},
 ];
-function persistQualitativa(q){ persistItem('qualitativa', qualitativa, LS_QUALITATIVA, q, 'Falha ao gravar'); }
+function persistQualitativa(q){ q._ts=Date.now(); qualitativa[q.id]=q; lsSet(LS_QUALITATIVA,JSON.stringify(qualitativa)); if(DB) DB.ref('leciona/qualitativa/'+q.id).set(q).catch(e=>toast('⚠ Falha ao gravar (mantido localmente). '+e.message,'err')); }
 function removerQualitativa(id){
   delete qualitativa[id];
   lsSet(LS_QUALITATIVA,JSON.stringify(qualitativa));
@@ -7772,13 +7221,8 @@ function notaQualitativa(alunoId, turmaId){
   const total=10+qualitativaDoAluno(alunoId,turmaId).reduce((s,q)=>s+(q.valor||0),0);
   return Math.max(0, Math.min(10, total));
 }
-/* Conteúdo de dentro do modal (nota + form + histórico), separado do
-   wrapper — assim dá pra atualizar só isso depois de lançar/remover um
-   desconto, em vez de destruir e recriar o modal inteiro. Recriar o
-   modal do zero fazia ele "pular pro início" a cada clique (era um
-   <div id="modalWrap"> novo por cima do antigo, sem fechar o de antes). */
-function qualitativaBodyHtml(alunoId){
-  const al=alunos[alunoId]; const turmaId=scope.turma; const tu=turmas[turmaId]; if(!al||!tu) return '';
+function abrirQualitativaAluno(alunoId){
+  const al=alunos[alunoId]; const turmaId=scope.turma; const tu=turmas[turmaId]; if(!al||!tu) return;
   const eventos=qualitativaDoAluno(alunoId,turmaId);
   const nota=notaQualitativa(alunoId,turmaId);
   const motivoOpts=QUALITATIVA_MOTIVOS.map(m=>'<option value="'+m.k+'" data-valor="'+m.valor+'">'+esc(m.label)+'</option>').join('');
@@ -7787,10 +7231,13 @@ function qualitativaBodyHtml(alunoId){
     return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line,#e5e7eb);font-size:13px">'+
       '<span>'+(q.data?esc(q.data.split('-').reverse().join('/'))+' — ':'')+esc(q.motivo||motivoLabel)+'</span>'+
       '<span style="display:flex;align-items:center;gap:8px"><b style="color:#a8442f">'+(q.valor>0?'+':'')+q.valor.toFixed(1)+'</b>'+
-      '<button class="btn ghost sm" onclick="removerQualitativa(\''+q.id+'\');refreshQualitativaModal(\''+alunoId+'\')">✕</button></span></div>';
+      '<button class="btn ghost sm" onclick="removerQualitativa(\''+q.id+'\');abrirQualitativaAluno(\''+alunoId+'\')">✕</button></span></div>';
   }).join('') : '<p style="color:var(--muted);font-size:13px">Nenhum desconto lançado — nota cheia.</p>';
   const hoje=isoLocal(new Date());
-  return '<div style="text-align:center;margin-bottom:12px"><span style="font-size:32px;font-weight:700;color:'+(nota>=7?'#2f6b5e':nota>=5?'#a06a2e':'#a8442f')+'">'+nota.toFixed(1)+'</span><span style="color:var(--muted);font-size:13px"> / 10 — '+esc(turmaNome(tu))+'</span></div>'+
+  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
+    '<div class="modal-h"><h3>Qualitativa — '+esc(al.nome)+'</h3></div>'+
+    '<div class="modal-b">'+
+    '<div style="text-align:center;margin-bottom:12px"><span style="font-size:32px;font-weight:700;color:'+(nota>=7?'#2f6b5e':nota>=5?'#a06a2e':'#a8442f')+'">'+nota.toFixed(1)+'</span><span style="color:var(--muted);font-size:13px"> / 10 — '+esc(turmaNome(tu))+'</span></div>'+
     '<div class="field"><label>Novo desconto</label><div style="display:flex;gap:6px">'+
       '<select id="qualMotivo" style="flex:1" onchange="document.getElementById(\'qualValor\').value=this.selectedOptions[0].dataset.valor">'+motivoOpts+'</select>'+
       '<input id="qualValor" type="number" step="0.1" value="-0.1" style="width:70px">'+
@@ -7798,22 +7245,9 @@ function qualitativaBodyHtml(alunoId){
     '<div class="field"><label>Observação (opcional)</label><input id="qualObs" placeholder="detalhe, se quiser"></div>'+
     '<div class="field"><label>Data</label><input id="qualData" type="date" value="'+hoje+'"></div>'+
     '<button class="btn primary full" onclick="confirmarQualitativa(\''+alunoId+'\')">Lançar desconto</button>'+
-    '<div class="field" style="border-top:1px solid var(--line,#e5e7eb);padding-top:10px;margin-top:14px"><label>Histórico</label>'+historico+'</div>';
-}
-function abrirQualitativaAluno(alunoId){
-  const al=alunos[alunoId]; const tu=turmas[scope.turma]; if(!al||!tu) return;
-  const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
-    '<div class="modal-h"><h3>Qualitativa — '+esc(al.nome)+'</h3></div>'+
-    '<div class="modal-b" id="qualBody">'+qualitativaBodyHtml(alunoId)+'</div>'+
-    '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
-  abrirModal(html);
-}
-/* Atualiza só o miolo do modal (nota + histórico), preservando o modal
-   aberto e a posição de rolagem — em vez de fechar/reabrir tudo. */
-function refreshQualitativaModal(alunoId){
-  const body=document.getElementById('qualBody');
-  if(!body){ abrirQualitativaAluno(alunoId); return; }
-  body.innerHTML=qualitativaBodyHtml(alunoId);
+    '<div class="field" style="border-top:1px solid var(--line,#e5e7eb);padding-top:10px;margin-top:14px"><label>Histórico</label>'+historico+'</div>'+
+    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button></div></div></div>';
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function confirmarQualitativa(alunoId){
   const motivoKey=document.getElementById('qualMotivo').value;
@@ -7825,7 +7259,7 @@ function confirmarQualitativa(alunoId){
   persistQualitativa(q);
   toast('Desconto lançado.','ok');
   renderNotas();
-  refreshQualitativaModal(alunoId);
+  abrirQualitativaAluno(alunoId);
 }
 /* CSV pronta pra digitar no SIAP (sem API — o SIAP não integra automaticamente) */
 function exportarQualitativaCSV(){
@@ -7853,14 +7287,7 @@ function setMediaModo(turmaId,modo){
 }
 function mediaAluno(alunoId,atvs,turmaId){
   const modo = getMediaModo(turmaId || (atvs[0]&&atvs[0].turmaIds&&atvs[0].turmaIds[0]));
-  // Atividade extra/bônus (tipo "extra" ou marcada com a estrela ⭐ no
-  // modal, igual à casinha 🏠 do dever de casa) NÃO entra no cálculo da
-  // média — em vez disso soma décimos direto no resultado final, depois
-  // do cálculo das obrigatórias. Feito = av.peso décimos (checklist) ou
-  // o valor digitado (nota) somado como está, sem normalizar pra 0–10.
-  const normais=atvs.filter(av=>!(av.tipo==='extra'||av.extra===true));
-  const extras=atvs.filter(av=>av.tipo==='extra'||av.extra===true);
-  const pares=normais.map(av=>{
+  const pares=atvs.map(av=>{
     const n=notaDoAluno(alunoId,av.id);
     let notaEm10;
     if(av.checklist===true){
@@ -7876,20 +7303,10 @@ function mediaAluno(alunoId,atvs,turmaId){
     const peso = modo==='aritmetica' ? 1 : (av.peso||1);
     return {v:notaEm10, p:peso};
   });
-  if(!pares.length && !extras.length) return null; // turma sem nenhuma atividade ainda
-  let base=null;
-  if(pares.length){
-    const total=pares.reduce((s,x)=>s+x.v*x.p,0);
-    const pesos=pares.reduce((s,x)=>s+x.p,0);
-    base = pesos>0?total/pesos:null;
-  }
-  const bonusDecimos=extras.reduce((s,av)=>{
-    const n=notaDoAluno(alunoId,av.id);
-    if(av.checklist===true) return s+((n&&n.valor>0)?(av.peso||1):0);
-    return s+((n&&n.valor!=null)?n.valor:0);
-  },0);
-  if(base==null && !bonusDecimos) return null;
-  return Math.min(10, (base||0)+bonusDecimos);
+  if(!pares.length) return null; // turma sem nenhuma atividade ainda
+  const total=pares.reduce((s,x)=>s+x.v*x.p,0);
+  const pesos=pares.reduce((s,x)=>s+x.p,0);
+  return pesos>0?total/pesos:null;
 }
 function mediaGeralTurma(turmaId){
   const als=alunosDaTurma(turmaId), atvs=atividadesDaTurma(turmaId);
@@ -8171,19 +7588,10 @@ function abrirTodasChamadas(){
     '<div class="modal-h"><h3>📋 Chamada — '+esc(turmaNome(tu))+'</h3></div>'+
     '<div class="modal-b" id="todasChamadasBody">'+renderChamadaBody(tu, als)+'</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal();renderNotas()">Fechar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function renderNotas(){
   const box=document.getElementById('notasBody'); if(!box) return;
-  // renderNotas() roda de novo a cada escrita em notasCtrl que volta do
-  // Firebase (o listener .on('value') chama isso) — inclusive quando é a
-  // própria professora marcando um checkbox de atividade. Como .notas-table-wrap
-  // é recriado do zero a cada vez e é ele mesmo quem rola (pro cabeçalho
-  // fixo), sem isso a rolagem voltava pro topo a cada clique — precisando
-  // procurar o aluno de novo pra marcar a próxima atividade.
-  const wrapAntigo=box.querySelector('.notas-table-wrap');
-  const scrollSalvo=wrapAntigo?{top:wrapAntigo.scrollTop,left:wrapAntigo.scrollLeft}:null;
-  const restaurarScroll=()=>{ if(!scrollSalvo) return; const w=box.querySelector('.notas-table-wrap'); if(w){ w.scrollTop=scrollSalvo.top; w.scrollLeft=scrollSalvo.left; } };
   const turmaId=scope.turma;
   const todasTurmasInit=Object.values(turmas).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b)));
   if(!turmaId||!todasTurmasInit.length){
@@ -8220,7 +7628,7 @@ function renderNotas(){
     '</select>'+
     '<button class="btn ghost sm" onclick="abrirExportarCSV()">↓ CSV</button>'+
     '<button class="btn sm" style="border-color:var(--ochre);color:var(--ochre)" onclick="abrirRanking()">🏆 Ranking</button>'+
-    '<button class="btn ghost sm" onclick="_painelBim=scope.bim;_painelAbertoNoPlanejamento=true;_ltTurma=scope.turma;_ltBim=scope.bim;setView(\'linhaTempo\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
+    '<button class="btn ghost sm" onclick="_painelOrigin=\'notas\';_painelBim=scope.bim;setView(\'painel\')" title="Painel de progresso de todas as turmas">📈 Painel geral</button>'+
     '<button class="btn ghost sm" onclick="_agendaOrigin=\'notas\';setView(\'agenda\')" title="Agenda — aulas, cronograma e compromissos por dia">📅 Agenda</button>'+
   '</div>';
 
@@ -8270,12 +7678,9 @@ function renderNotas(){
       const tp=ATIV_TIPOS[av.tipo]||{label:av.tipo,cor:'#888',bg:'#f5f5f5'};
       const isCheck=av.checklist===true; // respeita só o que foi salvo explicitamente
       const ehCasa=av.tipo==='casa'||av.casa===true;
-      const ehExtra=av.tipo==='extra'||av.extra===true;
-      return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+' — '+esc(tp.label||av.tipo)+(isCheck?' (checklist)':' (nota)')+(ehCasa?' · também dever de casa':'')+(ehExtra?' · extra/bônus, soma décimos e não entra na média':'')+'" data-avid="'+av.id+'">'+
+      return '<th style="background:'+tp.bg+';border-bottom:3px solid '+tp.cor+'" title="'+esc(av.nome)+' — '+esc(tp.label||av.tipo)+(isCheck?' (checklist)':' (nota)')+(ehCasa?' · também dever de casa':'')+'" data-avid="'+av.id+'">'+
         (ehCasa?'<span title="Também atribuída como dever de casa">🏠</span> ':'')+
-        (ehExtra?'<span title="Extra/bônus — soma décimos na média final, não entra no cálculo">⭐</span> ':'')+
         '<span class="atv-col-header">'+esc(av.nome)+'</span>'+
-        '<button class="atv-dup-btn" onclick="event.stopPropagation();editarNomeAtividade(\''+av.id+'\')" title="Renomear esta atividade">✎</button>'+
         (av.recorrente?'<button class="atv-dup-btn" onclick="event.stopPropagation();abrirDuplicarAtividade(\''+av.id+'\')" title="Duplicar pra outra turma/data, sem redigitar">⧉</button>':'')+
         '<button class="atv-del-btn" onclick="event.stopPropagation();removerAtividade(\''+av.id+'\')" title="Remover esta atividade (e as notas lançadas)">✕</button>'+
         '<span class="atv-tipo">peso '+av.peso+(isCheck?' &middot; &check;':'')+'</span>'+
@@ -8312,10 +7717,9 @@ function renderNotas(){
           'onchange="salvarNotaCheck(this)"></td>';
       }
       const val=n&&n.valor!=null?n.valor:'';
-      const vmax=av.valorMax||10;
-      const cls=val===''?'':(val>=vmax*0.7?'alta':val<vmax*0.5?'baixa':'');
-      return '<td style="background:'+tp.bg+'20"><input class="nota-input '+cls+'" type="number" min="0" max="'+vmax+'" step="0.5" value="'+esc(String(val))+'" '+
-        'data-al="'+al.id+'" data-av="'+av.id+'" data-tu="'+turmaId+'" data-max="'+vmax+'" '+
+      const cls=val===''?'':(val>=7?'alta':val<5?'baixa':'');
+      return '<td style="background:'+tp.bg+'20"><input class="nota-input '+cls+'" type="number" min="0" max="10" step="0.5" value="'+esc(String(val))+'" '+
+        'data-al="'+al.id+'" data-av="'+av.id+'" data-tu="'+turmaId+'" '+
         'onchange="salvarNota(this)" onblur="salvarNota(this)"></td>';
     }).join('')+
     '<td><span class="nota-media '+medCls+'">'+medStr+'</span></td>'+
@@ -8334,22 +7738,20 @@ function renderNotas(){
 
   h+='</tbody></table></div>';
   box.innerHTML=h;
-  restaurarScroll();
 }
 
 function salvarNota(input){
   const alunoId=input.dataset.al, atividadeId=input.dataset.av, turmaId=input.dataset.tu;
-  const vmax=parseFloat(input.dataset.max)||10;
   const val=input.value.trim();
   // Encontrar ou criar nota
   let n=notaDoAluno(alunoId,atividadeId);
   if(!n) n={id:uid(),alunoId,atividadeId,turmaId};
-  n.valor=val===''?null:Math.min(vmax,Math.max(0,parseFloat(val)||0));
+  n.valor=val===''?null:Math.min(10,Math.max(0,parseFloat(val)||0));
   persistNota(n);
   // Atualizar cor
-  input.className='nota-input '+(n.valor==null?'':(n.valor>=vmax*0.7?'alta':n.valor<vmax*0.5?'baixa':''));
+  input.className='nota-input '+(n.valor==null?'':(n.valor>=7?'alta':n.valor<5?'baixa':''));
   // Recalcular médias sem re-render completo
-  const atvs=atividadesDaTurma(turmaId);
+  const al=alunos[alunoId], atvs=atividadesDaTurma(turmaId);
   const med=mediaAluno(alunoId,atvs,turmaId);
   const row=input.closest('tr');
   if(row){ const medCell=row.querySelector('.nota-media'); if(medCell){ medCell.textContent=med!=null?med.toFixed(1):'-'; medCell.className='nota-media '+(med==null?'':(med>=6?'aprovado':'reprovado')); } }
@@ -8366,7 +7768,7 @@ function abrirAddAluno(){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarAluno()">Adicionar</button></div></div></div>';
-  abrirModal(h);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
   setTimeout(()=>document.getElementById('alunoNome')?.focus(),50);
 }
 
@@ -8391,7 +7793,7 @@ function abrirAddAlunoLista(){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="importarListaAlunos()">Importar</button></div></div></div>';
-  abrirModal(h);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
   document.getElementById('alunoLista').addEventListener('input',function(){
     const nomes=parseLista(this.value);
     document.getElementById('alunoPreview').textContent=nomes.length+' aluno(s) detectado(s)';
@@ -8434,7 +7836,6 @@ function abrirAddAtividade(){
       '<div class="field"><label>Valor máximo</label><input id="atvMax" type="number" value="10" min="1" max="100" step="0.5"></div>'+
       '<div class="field"><label>Modo</label><div class="gt-checks"><label class="check"><input type="radio" name="atvModo" value="nota" checked> Nota 0–10</label><label class="check"><input type="radio" name="atvModo" value="check"> Checklist ✓/○</label></div></div>'+
       '<div class="field"><label class="check"><input type="checkbox" id="atvCasa"> 🏠 Também atribuída como dever de casa</label></div>'+
-      '<div class="field"><label class="check"><input type="checkbox" id="atvExtra"> ⭐ Atividade extra/bônus — soma décimos na média final, não entra no cálculo</label></div>'+
       '<div class="field"><label class="check"><input type="checkbox" id="atvRecorrente" onchange="document.getElementById(\'atvPeriodicidadeWrap\').style.display=this.checked?\'\':\'none\'"> Atividade recorrente</label>'+
         '<small style="color:var(--muted)">Marque se esse tipo de atividade se repete (ex.: quiz semanal) — habilita duplicar pra outras turmas/datas sem redigitar.</small></div>'+
       '<div class="field" id="atvPeriodicidadeWrap" style="display:none"><label>Repetir automaticamente</label><select id="atvPeriodicidade">'+
@@ -8446,7 +7847,7 @@ function abrirAddAtividade(){
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarAtividade()">Adicionar</button></div></div></div>';
-  abrirModal(h);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=h; document.body.appendChild(w);
   setTimeout(()=>document.getElementById('atvNome')?.focus(),50);
 }
 
@@ -8461,10 +7862,9 @@ function salvarAtividade(){
   if(!turmaIds.length){ toast('Selecione pelo menos uma turma.','err'); return; }
   const modoEl=document.querySelector('input[name=atvModo]:checked'); const checklist=modoEl?.value==='check';
   const casa=(document.getElementById('atvCasa')||{}).checked||false;
-  const extra=(document.getElementById('atvExtra')||{}).checked||false;
   const recorrente=(document.getElementById('atvRecorrente')||{}).checked||false;
   const passoDias=parseInt((document.getElementById('atvPeriodicidade')||{}).value,10)||0;
-  const av={id:uid(),nome,tipo,data,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente,casa,extra};
+  const av={id:uid(),nome,tipo,data,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente,casa};
   persistAtivCtrl(av);
   let geradas=0;
   if(recorrente&&passoDias){
@@ -8476,7 +7876,7 @@ function salvarAtividade(){
       const iso=isoLocal(cur);
       if(iso>fimBim) break;
       if(FERIADOS_2026.has(iso)) continue;
-      persistAtivCtrl({id:uid(),nome,tipo,data:iso,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente:true,casa,extra});
+      persistAtivCtrl({id:uid(),nome,tipo,data:iso,peso,valorMax:max,checklist,turmaIds,disciplina:scope.disc,bimestre:scope.bim,recorrente:true,casa});
       geradas++;
     }
   }
@@ -8495,7 +7895,7 @@ function abrirExportarCSV(){
       '<button class="btn ghost full" style="margin-bottom:8px" onclick="closeModal();exportarNotasTodasTurmasCSV()">Notas — toda '+esc(tu.disciplina||'a disciplina')+'</button>'+
       '<button class="btn ghost full" onclick="closeModal();exportarQualitativaCSV()">Qualitativa — '+esc(turmaNome(tu))+' <small style="opacity:.7">(pronta pro SIAP)</small></button>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 function exportarNotasCSV(){
   const turmaId=scope.turma;
@@ -8832,7 +8232,7 @@ function abrirAdaptacoesTurma(){
       (copiaveis.length?'<button class="btn" onclick="executarCopiarTodasAdaptacoes()">Copiar '+copiaveis.length+' — grátis</button>':'')+
       (gerar.length?'<button class="btn primary" onclick="executarGerarTodasAdaptacoes()">Gerar '+gerar.length+' via IA</button>':'')+
     '</div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
   window.__adaptTurmaItens=itens;
 }
 function executarCopiarTodasAdaptacoes(){
@@ -8903,7 +8303,7 @@ function openAdaptar(){
     cards+
     '<div id="adProg" class="statusdot"></div></div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Fechar</button><button class="btn primary" id="adBtn" onclick="gerarAdaptado()">Gerar adaptações</button></div></div></div>';
-  abrirModal(html);
+  const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 
 async function gerarAdaptado(){
@@ -8996,7 +8396,7 @@ function verAdaptado(perfK){
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-h"><h3>Adaptação \u2014 '+esc(pl)+'</h3></div>'+
     '<div class="modal-b">'+(body||'<p>Sem conteúdo.</p>')+'</div>'+
     '<div class="modal-f"><label class="check" style="margin:0 8px 0 0"><input type="checkbox" id="timbreAdaptChk" checked> timbre SEDUC</label><button class="btn ghost" onclick="openAdaptar()">Voltar</button><button class="btn primary" onclick="imprimirAdaptado(\''+perfK+'\', document.getElementById(\'timbreAdaptChk\').checked)">&#128424; imprimir folha do aluno</button></div></div></div>';
-  abrirModal(html);
+  closeModal(); const w=document.createElement('div'); w.id='modalWrap'; w.innerHTML=html; document.body.appendChild(w);
 }
 
 function removerAdaptado(perfK){
