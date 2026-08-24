@@ -1505,7 +1505,7 @@ const PLANO_3BIM_2026 = [
 function prepararImportacaoPlano3Bim(){
   const bim = BIM_PLANO_2026;
   const plano = {
-    turmasFaltando: [],      // {disc,serie,letra,unidade}
+    turmasCriadas: [],       // objetos turma novos, prontos pra inserir (ela pediu pra criar em vez de só listar)
     temasNovos: [],          // objetos tema completos, prontos pra inserir
     temasReaproveitados: [], // {id,nome,dcgo,turmaNome}
     temasSemPrebuilt: [],    // subconjunto de temasNovos sem conteúdo pré-pronto encontrado
@@ -1518,10 +1518,19 @@ function prepararImportacaoPlano3Bim(){
 
   PLANO_3BIM_2026.forEach(turmaPlano=>{
     const { disc, serie, letra, unidade, temas: temasPlano } = turmaPlano;
-    const turma = Object.values(turmas).find(t=>t && t.disciplina===disc && Number(t.serie)===serie && (t.letra||'')===letra && t.unidade===unidade);
+    // turma.serie é guardado como o rótulo por extenso ("1ª série EM", "9º
+    // ano" — ver addTurma()/SCHEDULE), não o número puro que o documento usa
+    // internamente pra ordenar; SERIE_NUM (já global, definido no index.html
+    // pra cruzar com o SCHEDULE) faz essa conversão.
+    const serieLabel = SERIE_NUM[serie] || serie;
+    let turma = Object.values(turmas).find(t=>t && t.disciplina===disc && t.serie===serieLabel && (t.letra||'')===letra && t.unidade===unidade);
     if(!turma){
-      plano.turmasFaltando.push({disc,serie,letra,unidade});
-      return;
+      // só existe dentro do plano até a confirmação — datasDoBimestre() recebe
+      // o objeto direto, não precisa estar no mapa global turmas pra funcionar,
+      // então o preview nunca "vaza" uma turma fantasma pro resto do app.
+      turma = {id:uid(), disciplina:disc, unidade, serie:serieLabel, letra, updatedAt:Date.now()};
+      turma.nome = turmaNome(turma);
+      plano.turmasCriadas.push(turma);
     }
 
     // datas candidatas: bimestre inteiro (não só daqui pra frente), na ordem
@@ -1550,7 +1559,7 @@ function prepararImportacaoPlano3Bim(){
         if(!contMatriz){
           const chave = 'novo:'+turma.id;
           if(!plano.novosConteudos[chave]){
-            plano.novosConteudos[chave] = {id:uid(), disciplina:disc, serie, turmaId:turma.id, bimestre:bim, nome:'Matriz — '+bim, resumo:'', ordem:0, updatedAt:Date.now()};
+            plano.novosConteudos[chave] = {id:uid(), disciplina:disc, serie:serieLabel, turmaId:turma.id, bimestre:bim, nome:'Matriz — '+bim, resumo:'', ordem:0, updatedAt:Date.now()};
           }
           contMatriz = plano.novosConteudos[chave];
         }
@@ -1559,7 +1568,7 @@ function prepararImportacaoPlano3Bim(){
           ordemPorConteudo[conteudoAlvoId] = conteudos[conteudoAlvoId] ? nextOrdemTema(conteudoAlvoId) : 0;
         }
         const novoTema = blankTema(conteudoAlvoId, {
-          turmaId: turma.id, disciplina: disc, serie, bimestre: bim,
+          turmaId: turma.id, disciplina: disc, serie: serieLabel, bimestre: bim,
           nome: temaPlano.nome.slice(0,80), dcgo: temaPlano.dcgo,
           habilidade: temaPlano.habilidade, resumo: temaPlano.habilidade,
           ordem: ordemPorConteudo[conteudoAlvoId]++
@@ -1603,15 +1612,15 @@ function renderPreviewImportacaoPlano3Bim(plano){
   let html = '<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:560px">'+
     '<div class="modal-h"><h3>📋 Importar planejamento do 3º Bimestre — preview</h3></div>'+
     '<div class="modal-b">'+
-    '<p><b>'+plano.temasNovos.length+'</b> tema(s) novo(s) · <b>'+plano.temasReaproveitados.length+'</b> reaproveitado(s) · <b>'+plano.totalAulas+'</b> aula(s) de planejamento a criar.</p>';
+    '<p>'+(plano.turmasCriadas.length?('<b>'+plano.turmasCriadas.length+'</b> turma(s) nova(s) · '):'')+'<b>'+plano.temasNovos.length+'</b> tema(s) novo(s) · <b>'+plano.temasReaproveitados.length+'</b> reaproveitado(s) · <b>'+plano.totalAulas+'</b> aula(s) de planejamento a criar.</p>';
 
   if(plano.temasSemPrebuilt.length){
     html += '<div class="field"><label>⚠ Sem conteúdo pré-pronto ainda ('+plano.temasSemPrebuilt.length+') — tema é criado vazio, precisa de conteúdo depois</label>'+
       li(plano.temasSemPrebuilt, x=>'<li>'+esc(x.turmaNome)+' — '+esc(x.nome)+' ['+esc(x.dcgo)+']</li>')+'</div>';
   }
-  if(plano.turmasFaltando.length){
-    html += '<div class="field"><label>⚠ Turmas do documento que não existem no Leciona ('+plano.turmasFaltando.length+') — nada foi criado pra elas</label>'+
-      li(plano.turmasFaltando, x=>'<li>'+esc(x.disc)+' · '+x.serie+'ª/º'+esc(x.letra)+' — '+esc(x.unidade)+'</li>')+'</div>';
+  if(plano.turmasCriadas.length){
+    html += '<div class="field"><label>➕ Turmas novas, que ainda não existiam no Leciona ('+plano.turmasCriadas.length+') — vão ser criadas junto</label>'+
+      li(plano.turmasCriadas, x=>'<li>'+esc(turmaNome(x))+'</li>')+'</div>';
   }
   if(plano.conflitos.length){
     html += '<div class="field"><label>⚠ Aulas do documento sem data livre sobrando ('+plano.conflitos.length+') — não foram agendadas</label>'+
@@ -1629,6 +1638,7 @@ function confirmarImportacaoPlano3Bim(){
   closeModal();
 
   const updates = {};
+  plano.turmasCriadas.forEach(tu=>{ turmas[tu.id]=tu; updates['leciona/turmas/'+tu.id]=tu; });
   Object.values(plano.novosConteudos).forEach(c=>{ conteudos[c.id]=c; updates['leciona/conteudos/'+c.id]=c; });
   plano.temasNovos.forEach(t=>{ temas[t.id]=t; updates['leciona/temas/'+t.id]=t; });
 
@@ -1643,14 +1653,16 @@ function confirmarImportacaoPlano3Bim(){
   });
 
   _temaIdx = null;
+  if(plano.turmasCriadas.length) lsSet(LS_TURMAS, JSON.stringify(turmas));
   lsSet(LS_CONT, JSON.stringify(conteudos));
   lsSet(LS_TEMAS, JSON.stringify(temas));
   if(DB && Object.keys(updates).length){
     DB.ref().update(updates).catch(e=>toast('⚠ Gravado localmente, mas falhou ao sincronizar com o Firebase: '+e.message,'err'));
   }
 
+  if(plano.turmasCriadas.length && typeof refreshTurmas==='function') refreshTurmas();
   renderThemes();
   if(document.getElementById('viewLinhaTempo') && !document.getElementById('viewLinhaTempo').classList.contains('hidden')) renderLinhaDoTempo();
-  toast('Planejamento do 3º bimestre importado: '+plano.temasNovos.length+' tema(s) novo(s), '+plano.totalAulas+' aula(s) agendada(s).', 'ok');
+  toast('Planejamento do 3º bimestre importado: '+(plano.turmasCriadas.length?(plano.turmasCriadas.length+' turma(s) nova(s), '):'')+plano.temasNovos.length+' tema(s) novo(s), '+plano.totalAulas+' aula(s) agendada(s).', 'ok');
   _planoImportCache = null;
 }
