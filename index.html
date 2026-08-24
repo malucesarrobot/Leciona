@@ -2983,6 +2983,19 @@ function apagarDados3Bim(){
   _auditoria3BimAtual=null;
   renderThemes(); if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
+/* Carrega migracao-planejamento-3bim.js sob demanda (mesmo padrão de
+   ensurePrebuiltDiscLoaded) — não faz parte do boot normal do app, só é
+   baixado quando ela realmente usa o botão de importação em Configurações. */
+let _migracao3BimCarregada=false;
+function carregarEAbrirImportarPlano3Bim(){
+  if(_migracao3BimCarregada){ abrirImportarPlano3Bim(); return; }
+  toast('Carregando…','');
+  const s=document.createElement('script');
+  s.src='migracao-planejamento-3bim.js';
+  s.onload=()=>{ _migracao3BimCarregada=true; abrirImportarPlano3Bim(); };
+  s.onerror=()=>toast('Falha ao carregar o arquivo de migração.','err');
+  document.head.appendChild(s);
+}
 function abrirPopularSeletivo(){
   if(typeof PREBUILT_OBJ==='undefined'){ toast('O conteúdo pré-pronto ainda está carregando. Aguarde e tente de novo.','err'); return; }
   const turmasArr=Object.values(turmas).filter(t=>t&&!t._auto);
@@ -6202,6 +6215,8 @@ function openConfig(){
         '<label>Manutenção</label>'+
         '<button class="btn primary" style="width:100%" onclick="abrirPopularSeletivo()">⚡ Popular conteúdo (escolher disciplina, escola, bimestre)</button>'+
         '<small>Cria os temas que faltam a partir da matriz oficial e já aplica o conteúdo pré-pronto disponível, em todas as suas turmas de uma vez. Não gasta créditos de IA. Não altera temas que já têm conteúdo.</small>'+
+        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="carregarEAbrirImportarPlano3Bim()">📋 Importar planejamento do 3º bimestre (documento de 24/08)</button>'+
+        '<small>Aplica de uma vez o plano completo do 3º bimestre (tema, código, metodologia e recorte por semana, 23 turmas), sem precisar clicar tema por tema. Mostra um preview — nada é gravado sem você confirmar. Não altera datas que já têm planejamento nem temas que já têm conteúdo.</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="manutencaoCompleta()">🧹 Verificar e corrigir tudo</button>'+
         '<small>Um único botão pra tudo: realinha referências desatualizadas, unifica turmas e conteúdos duplicados, remove temas repetidos e corrige conteúdo trocado por engano — na ordem certa, automaticamente. Não pode ser desfeito. Use quando notar algo estranho (temas repetidos, aula sumida etc.) — na dúvida, não faz mal rodar de novo.</small>'+
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="importarPlanilhaArlan()">📥 Importar frequência/ocorrências (planilha do Arlan)</button>'+
