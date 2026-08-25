@@ -7158,12 +7158,16 @@ function abrirRelatorioTurma(){
   // Tabela 1: Objetos aplicados por tema × turma
   const conts=conteudosDoScope();
   let todosTemasNomes=[];
-  conts.forEach(c=>temasDoConteudo(c.id).forEach(t=>todosTemasNomes.push({id:t.id,nome:t.nome})));
+  conts.forEach(c=>temasDoConteudo(c.id).forEach(t=>todosTemasNomes.push({id:t.id,nome:t.nome,resumo:t.resumo||''})));
 
-  const tHead='<tr><th>Tema</th>'+turmasComp.map(t=>'<th>'+esc(turmaNome(t))+'</th>').join('')+'</tr>';
-  const tBody=todosTemasNomes.map(({id,nome})=>{
+  // turmaNomeEscola (não turmaNome) nos cabeçalhos — turmaNome sozinho dá só
+  // "3A", que pode ser a turma da EFG OU da CEPI Marajó (mesma letra, escola
+  // diferente); sem a escola no cabeçalho, colunas de turmas diferentes
+  // pareciam a mesma turma "duplicada" ou confundiam com outra disciplina.
+  const tHead='<tr><th>Tema</th>'+turmasComp.map(t=>'<th>'+esc(turmaNomeEscola(t))+'</th>').join('')+'</tr>';
+  const tBody=todosTemasNomes.map(({id,nome,resumo})=>{
     const raizBase=origemRaizTema(id);
-    return '<tr><td>'+esc(nome)+'</td>'+
+    return '<tr><td><div>'+esc(nome)+'</div>'+(resumo?'<div style="font-size:11px;color:var(--muted);font-weight:400;white-space:pre-wrap;margin-top:2px">'+esc(resumo.length>160?resumo.slice(0,160)+'…':resumo)+'</div>':'')+'</td>'+
       turmasComp.map(tu=>{
         // Encontrar tema equivalente nesta turma: primeiro por vínculo de
         // cópia (confiável mesmo se renomeado), só cai pro nome se não achar.
@@ -7187,7 +7191,7 @@ function abrirRelatorioTurma(){
 
   // Tabela 2: Médias por atividade × turma
   const atvAll=Object.values(atividadesCtrl).filter(av=>av.disciplina===disc&&av.bimestre===scope.bim);
-  const tHead2='<tr><th>Atividade</th>'+turmasComp.map(t=>'<th>'+esc(turmaNome(t))+'</th>').join('')+'</tr>';
+  const tHead2='<tr><th>Atividade</th>'+turmasComp.map(t=>'<th>'+esc(turmaNomeEscola(t))+'</th>').join('')+'</tr>';
   const tBody2=atvAll.length?atvAll.map(av=>{
     const tp=ATIV_TIPOS[av.tipo]||{bg:'#fff'};
     return '<tr><td style="background:'+tp.bg+'">'+esc(av.nome)+'</td>'+
