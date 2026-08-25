@@ -252,6 +252,7 @@ header.topbar{display:flex;align-items:center;gap:16px;padding:10px 18px;backgro
 .selo.adapt-falta:hover{background:#f9d9d5}
 .selo.met{background:#e3ecf7;color:#2a4d8a;text-transform:none}
 .selo.met-repete{background:#fdecea;color:#a8442f;text-transform:none;font-weight:700}
+.selo.origem{background:#e9edf5;color:#3a4a8a;text-transform:none;font-weight:600}
 .codigo-inline{font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:var(--muted);background:var(--surface,#f0ead9);padding:1px 5px;border-radius:4px}
 
 .tlist{display:grid;gap:8px}
@@ -1188,6 +1189,7 @@ let notasGerais = {};         // { id: {texto,autor:'professora'|'assistente',ts
 let qualitativa = {};         // { id: {alunoId,turmaId,data,motivo,valor,_ts} } — descontos da nota qualitativa (começa em 10, não entra na média de atividades)
 let _pendingWrites = {};      // { 'leciona/colecao/id': item } — escritas via persistItem() ainda não confirmadas pelo Firebase; sobrevive a reload (localStorage) e é reenviada em replayPendingWrites(), pra não perder chamada/nota feita offline se o app recarregar antes de sincronizar
 let _buscaTerm = '';          // termo de busca atual (sincronizado via setBusca)
+let _filtroPendentes = false; // Gestão: mostrar só temas sem registro nesta turma
 let temas = {};
 let turmas = {};            // turmas reais (9º A, 9º B...)
 let scope = {disc:'História', unidade:'CEPI Marajó', serie:'9º ano', turma:'', bim:'3º Bimestre'};
@@ -1979,7 +1981,12 @@ function onScopeChange(){
   refreshTurmas(turmaEscolhidaPeloUsuario);
   scope.bim=document.getElementById('selBim').value;
   setBusca(''); // garantir busca limpa na troca de turma/bimestre
+  _filtroPendentes=false; // idem pro filtro de pendentes
   saveScope();
+  renderThemes();
+}
+function toggleFiltroPendentes(){
+  _filtroPendentes=!_filtroPendentes;
   renderThemes();
 }
 
@@ -2234,6 +2241,32 @@ function selosConteudo(c){
   if(g)h+='<span class="selo goiastec">GoiásTec</span>';
   return h;
 }
+/* Selos de proveniência — de onde este tema/conteúdo veio (se é cópia de
+   outra turma) e pra onde ele já foi replicado, usando origemId gravado por
+   doExportTema/doExportConteudo. Sem isso, depois de replicar uma aula pra
+   3-4 turmas não tinha como ver de relance o que já tinha sido feito. */
+function origemBadgeTema(t){
+  let h='';
+  const orig=t.origemId?temas[t.origemId]:null;
+  if(orig) h+='<span class="selo origem" title="Esta aula é uma cópia — editar aqui não altera a original">↪ cópia de '+esc(turmaNome(turmas[orig.turmaId]))+'</span>';
+  const copias=Object.values(temas).filter(x=>x&&x.origemId===t.id);
+  if(copias.length){
+    const nomes=[...new Set(copias.map(x=>turmaNome(turmas[x.turmaId])))].join(', ');
+    h+='<span class="selo origem" title="Já replicada nestas turmas — cada cópia é independente">⇉ replicada em '+esc(nomes)+'</span>';
+  }
+  return h;
+}
+function origemBadgeConteudo(c){
+  let h='';
+  const orig=c.origemId?conteudos[c.origemId]:null;
+  if(orig) h+='<span class="selo origem" title="Este conteúdo é uma cópia — editar aqui não altera o original">↪ cópia de '+esc(turmaNome(turmas[orig.turmaId]))+'</span>';
+  const copias=Object.values(conteudos).filter(x=>x&&x.origemId===c.id);
+  if(copias.length){
+    const nomes=[...new Set(copias.map(x=>turmaNome(turmas[x.turmaId])))].join(', ');
+    h+='<span class="selo origem" title="Já replicado nestas turmas">⇉ replicado em '+esc(nomes)+'</span>';
+  }
+  return h;
+}
 
 /* ---------- Listagem Conteúdo > Tema ---------- */
 function conteudosDoScope(){
@@ -2294,6 +2327,10 @@ function renderThemes(){
   }
   const busca=_buscaTerm;
   let html=''; let totalFiltrado=0;
+  if(_filtroPendentes){
+    html+='<div class="busca-bar" style="margin-bottom:10px"><span>Mostrando só temas pendentes (sem aplicação registrada) nesta turma.</span>'+
+      '<button class="btn ghost sm" onclick="toggleFiltroPendentes()">ver todos</button></div>';
+  }
   conts.forEach((c,ci)=>{
     const open = expanded[c.id]!==false;
     let ts=temasDoConteudo(c.id);
@@ -2318,8 +2355,11 @@ function renderThemes(){
       }).filter(x=>x.todasBateram && x.score>0)
         .sort((a,b)=>b.score-a.score)
         .map(x=>x.t);
-      if(!ts.length) return;
     }
+    if(_filtroPendentes){
+      ts=ts.filter(t=>!registrosDoTema(t.id).some(r=>r.turmaId===t.turmaId));
+    }
+    if((busca||_filtroPendentes) && !ts.length) return;
     totalFiltrado+=ts.length;
     html+='<div class="conteudo">';
     html+='<div class="conteudo-head">'+
@@ -2328,9 +2368,9 @@ function renderThemes(){
         '<button title="Descer" onclick="moverConteudo(\''+c.id+'\',1)">▼</button>'+
       '</div>'+
       '<div class="cname" onclick="toggleConteudo(\''+c.id+'\')">'+(open?'▾ ':'▸ ')+esc(c.nome||'(sem nome)')+'</div>'+
-      '<div class="selos">'+selosConteudo(c)+'</div>'+
+      '<div class="selos">'+selosConteudo(c)+origemBadgeConteudo(c)+'</div>'+
       '<button class="btn ghost sm" onclick="editarConteudo(\''+c.id+'\')">renomear</button>'+
-      '<button class="btn ghost sm" onclick="openExportConteudo(\''+c.id+'\')" title="Copiar para outra turma">→ turma</button>'+
+      '<button class="btn ghost sm" onclick="openExportConteudo(\''+c.id+'\')" title="Replicar para outra turma (cópia independente, com ordem própria)">→ turma</button>'+
       '<button class="btn ghost sm danger" onclick="excluirConteudo(\''+c.id+'\')">excluir</button>'+
     '</div>';
     if(open){
@@ -2338,17 +2378,17 @@ function renderThemes(){
       if(ts.length){
         html+='<div class="tlist">';
         ts.forEach((t,ti)=>{
-          html+='<div class="tcard st-'+((t.status&&t.status.estado)||'none')+'" onclick="abrirEditor(\''+t.id+'\')">'+
+          html+='<div class="tcard st-'+(registrosDoTema(t.id).some(r=>r.turmaId===t.turmaId)?'aplicado':'none')+'" onclick="abrirEditor(\''+t.id+'\')">'+
             '<div class="ordbtns" onclick="event.stopPropagation()">'+
               '<button title="Subir" onclick="moverTema(\''+t.id+'\',-1)">▲</button>'+
               '<button title="Descer" onclick="moverTema(\''+t.id+'\',1)">▼</button>'+
             '</div>'+
             '<div class="tmeta">'+
               '<div><span class="tcode">'+esc(t.dcgo||'')+'</span><span class="tname">'+esc(t.tituloExibicao||t.nome)+'</span>'+(t.revisaGoias?'<span class="selo-revisa" title="Este conteúdo aparece no Revisa Goiás deste bimestre">📘 Revisa Goiás</span>':'')+'</div>'+
-              '<div class="tsub">'+selosHtml(t.disciplina,t.serie,t.bimestre,t.dcgo)+adaptSeloHtml(t)+deverCasaSeloHtml(t)+statusResumo(t)+'</div>'+
+              '<div class="tsub">'+selosHtml(t.disciplina,t.serie,t.bimestre,t.dcgo)+adaptSeloHtml(t)+deverCasaSeloHtml(t)+statusResumo(t)+origemBadgeTema(t)+'</div>'+
             '</div>'+
             objStatusHtml(t.id, scope.turma)+
-            '<button class="btn ghost sm" onclick="event.stopPropagation();openExportTema(\''+t.id+'\')" title="Copiar esta aula para outra turma">→</button>'+
+            '<button class="btn ghost sm" onclick="event.stopPropagation();openExportTema(\''+t.id+'\')" title="Replicar esta aula para outra turma (cópia independente, com ordem própria)">→</button>'+
             '<button class="btn ghost sm" onclick="event.stopPropagation();projetarTemaId(\''+t.id+'\')">▶</button>'+
             '<button class="btn ghost sm" onclick="event.stopPropagation();abrirModalRegistroCard(\''+t.id+'\')" title="Registrar aplicação (sem projetar)">✓</button>'+
             '<button class="btn ghost sm danger" onclick="event.stopPropagation();excluirTema(\''+t.id+'\')" title="Excluir esta aula">✕</button>'+
@@ -2364,6 +2404,9 @@ function renderThemes(){
     }
     html+='</div>';
   });
+  if(_filtroPendentes && !totalFiltrado){
+    html+='<div class="empty"><p>🎉 Nada pendente nesta turma/bimestre — tudo aplicado.</p></div>';
+  }
   body.innerHTML=html+'<div id="preprontosScope"></div>';
   renderProgressoBar();
   renderPreProntosDoScope();
@@ -2410,19 +2453,17 @@ function usarPreProntoGestao(i){
   toast('"'+c.nome+'" adicionado.','ok');
   renderThemes();
 }
+/* Única fonte de verdade pro status do tema: existe registro de aplicação
+   pra esta turma? (mesmo critério usado por renderProgressoBar). O chip não
+   cicla mais estados por conta própria — ele só reflete o registro e abre o
+   mesmo modal do botão ✓ pra marcar/desmarcar, pra nunca ficar dessincronizado
+   da barra de progresso como acontecia com o status solto de antes. */
 function statusResumo(t){
-  const st=t.status||{}; const e=st.estado||'';
-  const lbl = e==='aplicado' ? ('✓ Aplicado'+(st.data?(' '+st.data.split('-').reverse().join('/')):'')) : e==='planejado' ? '◔ Planejado' : '○ status';
-  return '<button class="stchip st-'+(e||'none')+'" onclick="event.stopPropagation();cycleStatus(\''+t.id+'\')" title="Tocar para alternar: — → Planejado → Aplicado">'+lbl+'</button>';
-}
-function cycleStatus(tid){
-  const t=temas[tid]; if(!t) return;
-  const cur=(t.status&&t.status.estado)||'';
-  const nxt = cur==='' ? 'planejado' : cur==='planejado' ? 'aplicado' : '';
-  t.status={estado:nxt, data: nxt==='aplicado'? isoLocal(new Date()) : ''};
-  persistTema(t);
-  if(!DB) renderThemes();
-  toast(nxt? ('Marcado como '+nxt+'.') : 'Status removido.','ok');
+  const regs=registrosDoTema(t.id).filter(r=>r.turmaId===t.turmaId);
+  const aplicado=regs.length>0;
+  const ultima=aplicado?regs.reduce((a,b)=>(a.data>b.data?a:b)):null;
+  const lbl = aplicado ? ('✓ Aplicado'+(ultima&&ultima.data?(' '+ultima.data.split('-').reverse().join('/')):'')) : '○ pendente';
+  return '<button class="stchip st-'+(aplicado?'aplicado':'none')+'" onclick="event.stopPropagation();abrirModalRegistroCard(\''+t.id+'\')" title="'+(aplicado?'Ver, editar ou desmarcar a aplicação desta aula':'Marcar aula como aplicada')+'">'+lbl+'</button>';
 }
 function isFilled(t,k){
   if(!t||!t.obj) return false;
@@ -3418,11 +3459,11 @@ function doExportConteudo(cid){
   let feitas=0;
   destIds.forEach(dest=>{
     const dt=turmas[dest]; if(!dt) return;
-    const novoC=JSON.parse(JSON.stringify(c)); novoC.id=uid(); novoC.turmaId=dest; novoC.disciplina=dt.disciplina; novoC.serie=dt.serie; novoC._avulsos=false; novoC.ordem=99; novoC.updatedAt=Date.now();
+    const novoC=JSON.parse(JSON.stringify(c)); novoC.id=uid(); novoC.turmaId=dest; novoC.disciplina=dt.disciplina; novoC.serie=dt.serie; novoC._avulsos=false; novoC.ordem=99; novoC.origemId=c.id; novoC.updatedAt=Date.now();
     novoC.planejamento=[]; // cronograma referencia temaIds da origem — não faz sentido na cópia
     persistConteudo(novoC);
     temasDoConteudo(cid).forEach((t,i)=>{
-      const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=novoC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=i; nt.updatedAt=Date.now();
+      const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=novoC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=i; nt.origemId=t.id; nt.updatedAt=Date.now();
       persistTema(nt);
     });
     feitas++;
@@ -3453,8 +3494,8 @@ function doExportTema(tid){
   destIds.forEach(dest=>{
     const dt=turmas[dest]; if(!dt) return;
     let destC=Object.values(conteudos).find(c=>c.turmaId===dest && c.bimestre===t.bimestre && c.nome===nomeC);
-    if(!destC){ destC={id:uid(),disciplina:dt.disciplina,serie:dt.serie,turmaId:dest,bimestre:t.bimestre,nome:nomeC,resumo:'',ordem:99,updatedAt:Date.now()}; persistConteudo(destC); }
-    const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=destC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=nextOrdemTema(destC.id); nt.updatedAt=Date.now();
+    if(!destC){ destC={id:uid(),disciplina:dt.disciplina,serie:dt.serie,turmaId:dest,bimestre:t.bimestre,nome:nomeC,resumo:'',ordem:99,origemId:(srcC?srcC.id:undefined),updatedAt:Date.now()}; persistConteudo(destC); }
+    const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=destC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=nextOrdemTema(destC.id); nt.origemId=t.id; nt.updatedAt=Date.now();
     persistTema(nt);
     feitas++;
   });
@@ -4984,10 +5025,14 @@ function abrirModalRegistroCard(temaId){
   }).join('');
   const entOpts=['sala','grupo','híbrido','assíncrono'].map(e=>'<option value="'+e+'">'+e.charAt(0).toUpperCase()+e.slice(1)+'</option>').join('');
   const tu=turmas[t.turmaId]||{};
-  const hoje=isoLocal(new Date());
+  const regsExistentes=registrosDoTema(t.id).filter(r=>r.turmaId===t.turmaId);
+  const jaAplicado=regsExistentes.length>0;
+  const ultimoReg=jaAplicado?regsExistentes.reduce((a,b)=>(a.data>b.data?a:b)):null;
+  const hoje=(ultimoReg&&ultimoReg.data)||isoLocal(new Date());
   const tipoOpts=Object.entries(ATIV_TIPOS).map(([k,v])=>'<option value="'+k+'"'+(k==='atividade'?' selected':'')+' style="background:'+v.bg+'">'+v.label+'</option>').join('');
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:460px">'+
-    '<div class="modal-h"><h3>✓ Registrar aplicação — '+esc((t.nome||'').slice(0,40))+'</h3></div>'+
+    '<div class="modal-h"><h3>✓ '+(jaAplicado?'Aplicação já registrada':'Registrar aplicação')+' — '+esc((t.nome||'').slice(0,40))+'</h3></div>'+
+    (jaAplicado?'<div class="modal-b" style="padding-top:0"><small style="color:var(--muted)">Já aplicada em '+esc(ultimoReg.data.split('-').reverse().join('/'))+'. Desmarque abaixo se foi engano, ou preencha pra registrar mais uma aplicação (ex.: uma turma dividida em 2 dias).</small></div>':'')+
     '<div class="modal-b">'+
     '<div class="field"><label>Turma</label><strong>'+esc(turmaNome(tu))+'</strong></div>'+
     '<div class="field"><label>O que usou</label><div class="gt-checks">'+objChecks+'</div></div>'+
@@ -4999,9 +5044,25 @@ function abrirModalRegistroCard(temaId){
     '<div class="field"><label>Como foi entregue</label><select id="regCEntrega">'+entOpts+'</select></div>'+
     '<div class="field"><label>Data</label><input type="date" id="regCData" value="'+hoje+'"></div>'+
     '<div class="field"><label>Nota livre (opcional)</label><input id="regCNota" placeholder="ex.: maioria participou, 3 faltaram…"></div>'+
-    '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
+    '</div><div class="modal-f">'+
+    (jaAplicado?'<button class="btn ghost" onclick="desmarcarAplicadoCard()">Desmarcar</button>':'')+
+    '<button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarRegistroCard()">Salvar registro</button></div></div></div>';
   abrirModal(h);
+}
+/* Desmarcar direto do card — mesma lógica de desmarcarAplicado() do editor,
+   mas usando _regCardTemaId (contexto do card na lista, sem abrir o editor). */
+function desmarcarAplicadoCard(){
+  const t=temas[_regCardTemaId]; if(!t){ closeModal(); return; }
+  if(!confirm('Desmarcar esta aula como aplicada nesta turma? Isso remove o(s) registro(s) de aplicação salvos aqui (as notas já lançadas no controle de notas não são apagadas).')) return;
+  registrosDoTema(t.id).filter(r=>r.turmaId===t.turmaId).forEach(r=>removerRegistro(r.id));
+  t.status={estado:'',data:''};
+  persistTema(t);
+  closeModal();
+  _regCardTemaId=null;
+  renderThemes();
+  toast('Aplicação desmarcada.','ok');
+  if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
 }
 function salvarRegistroCard(){
   const t=temas[_regCardTemaId]; if(!t){ closeModal(); return; }
@@ -5014,6 +5075,11 @@ function salvarRegistroCard(){
   const r=novoRegistro(t.id, t.turmaId, objs, entrega, nota);
   r.data=data;
   persistRegistro(r);
+  // Mantém tema.status em sincronia com o registro — antes esses dois
+  // caminhos (chip da lista vs botão ✓) gravavam coisas diferentes e
+  // ficavam dessincronizados; agora os dois sempre andam juntos.
+  t.status={estado:'aplicado',data};
+  persistTema(t);
 
   // Se marcou "Atividade" e deu um nome, já lança direto em Notas — sem
   // precisar sair da Gestão pra abrir a turma em Notas e preencher tudo de
@@ -7021,9 +7087,12 @@ function renderProgressoBar(){
     const n=objContadores[k];
     return '<span class="prog-obj'+(n>0?' feito':'')+'" title="'+label+(n?' — '+n+'x':'')+'">'+label+(n?' ×'+n:'')+'</span>';
   }).join('');
+  const pendentes=totalTemas-temasComReg;
   box.innerHTML=avisoAtraso+notasFixadasHtml+'<div class="notas-progresso">'+
     '<div class="prog-titulo">'+
-      '<span>'+esc(turmaNome(tu))+' · '+esc(scope.bim)+' · '+temasComReg+'/'+totalTemas+' temas aplicados</span>'+
+      '<span>'+esc(turmaNome(tu))+' · '+esc(scope.bim)+' · '+temasComReg+'/'+totalTemas+' temas aplicados'+
+        (pendentes>0?' · <a href="#" onclick="event.preventDefault();toggleFiltroPendentes()" style="color:inherit;text-decoration:underline">'+(_filtroPendentes?'ver todos':'ver '+pendentes+' pendente'+(pendentes!==1?'s':''))+'</a>':'')+
+      '</span>'+
       '<button class="btn ghost sm" onclick="abrirRelatorioTurma()">📈 Relatório</button>'+
     '</div>'+
     '<div class="prog-barra-wrap"><div class="prog-barra" style="width:'+pct+'%"></div></div>'+
@@ -7033,6 +7102,17 @@ function renderProgressoBar(){
 }
 
 /* ── Modal Relatório da Turma ──────────────────────────────────────────── */
+/* Segue a cadeia de origemId (gravado ao replicar um tema pra outra turma,
+   ver doExportTema/doExportConteudo) até a cópia mais antiga — usado pra
+   casar "a mesma aula" entre turmas mesmo que tenha sido renomeada numa
+   delas depois de copiada. Casar só por nome (como era antes) perdia esse
+   vínculo silenciosamente nesse caso, fazendo o relatório mostrar "—" pra
+   uma aula que na verdade já tinha sido dada. */
+function origemRaizTema(id){
+  let cur=temas[id], guard=0;
+  while(cur && cur.origemId && temas[cur.origemId] && guard<50){ cur=temas[cur.origemId]; guard++; }
+  return cur?cur.id:id;
+}
 function abrirRelatorioTurma(){
   const turmaId=scope.turma;
   if(!turmaId){ toast('Selecione uma turma.','err'); return; }
@@ -7047,15 +7127,20 @@ function abrirRelatorioTurma(){
 
   const tHead='<tr><th>Tema</th>'+turmasComp.map(t=>'<th>'+esc(turmaNome(t))+'</th>').join('')+'</tr>';
   const tBody=todosTemasNomes.map(({id,nome})=>{
+    const raizBase=origemRaizTema(id);
     return '<tr><td>'+esc(nome)+'</td>'+
       turmasComp.map(tu=>{
-        // Encontrar tema equivalente nesta turma
-        let temaEquiv=null;
+        // Encontrar tema equivalente nesta turma: primeiro por vínculo de
+        // cópia (confiável mesmo se renomeado), só cai pro nome se não achar.
+        const candidatos=[];
         Object.values(conteudos).filter(c=>c.turmaId===tu.id&&c.bimestre===scope.bim).forEach(c=>{
-          const temaNome=nome.toLowerCase().trim();
-        const eq=temasDoConteudo(c.id).find(t=>(t.nome||'').toLowerCase().trim()===temaNome);
-          if(eq) temaEquiv=eq;
+          temasDoConteudo(c.id).forEach(t=>candidatos.push(t));
         });
+        let temaEquiv=candidatos.find(t=>origemRaizTema(t.id)===raizBase)||null;
+        if(!temaEquiv){
+          const temaNome=nome.toLowerCase().trim();
+          temaEquiv=candidatos.find(t=>(t.nome||'').toLowerCase().trim()===temaNome)||null;
+        }
         if(!temaEquiv) return '<td style="color:var(--muted)">—</td>';
         const regs=registrosDoTema(temaEquiv.id).filter(r=>r.turmaId===tu.id);
         const objFeitos=[...new Set(regs.flatMap(r=>r.objetos||[]))];
