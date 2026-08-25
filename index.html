@@ -1551,6 +1551,31 @@ function persistRegistro(r){
   // de nota correspondente na tabela daquela turma (peso 1, sem duplicar).
   try{ if((r.objetos||[]).includes('avaliacao')) criarColunaAvaliacao(r.temaId, r.turmaId); }catch(e){ console.warn('coluna aval:',e); }
 }
+/* Marcar/desmarcar aplicado grava registro + status do tema juntos — usa
+   uma única escritura multi-path (DB.ref().update) em vez de duas chamadas
+   .set() separadas (persistRegistro + persistTema), pra não dobrar o volume
+   de writes quando a professora marca vários temas em sequência (cada
+   .set() extra aumenta a chance de bater no limite do pushBackSeguro). */
+function persistRegistroEStatus(r, tema, statusNovo){
+  r._ts=Date.now(); registros[r.id]=r; lsSet(LS_REG, JSON.stringify(registros));
+  tema.status=statusNovo; tema._ts=Date.now(); tema.updatedAt=tema._ts; temas[tema.id]=tema; _temaIdx=null;
+  _lsTemasPendente=true; _agendarFlushLocal();
+  if(DB){
+    const upd={}; upd['leciona/registros/'+r.id]=r; upd['leciona/temas/'+tema.id]=tema;
+    DB.ref().update(upd).catch(e=>console.warn('registro+status Firebase:',e));
+  }
+  try{ if((r.objetos||[]).includes('avaliacao')) criarColunaAvaliacao(r.temaId, r.turmaId); }catch(e){ console.warn('coluna aval:',e); }
+}
+function removerRegistrosEStatus(regs, tema){
+  regs.forEach(r=>{ delete registros[r.id]; });
+  lsSet(LS_REG, JSON.stringify(registros));
+  tema.status={estado:'',data:''}; tema._ts=Date.now(); tema.updatedAt=tema._ts; temas[tema.id]=tema; _temaIdx=null;
+  _lsTemasPendente=true; _agendarFlushLocal();
+  if(DB){
+    const upd={}; regs.forEach(r=>upd['leciona/registros/'+r.id]=null); upd['leciona/temas/'+tema.id]=tema;
+    DB.ref().update(upd).catch(e=>toast('⚠ Removido localmente, mas falhou ao sincronizar com o Firebase: '+e.message,'err'));
+  }
+}
 /* Cria (se ainda não existir) uma coluna de nota para a Avaliação de um tema
    aplicado numa turma. Idempotente: registrar o mesmo tema de novo não duplica. */
 function criarColunaAvaliacao(temaId, turmaId){
@@ -3399,9 +3424,8 @@ function salvarMarcarAplicado(){
   const nota=(document.getElementById('aplNota')||{}).value||'';
   const r=novoRegistro(editing.id, editing.turmaId, objs, entrega, nota);
   r.data=data;
-  persistRegistro(r);
-  editing.status={estado:'aplicado', data};
-  persistTema(editing); dirty=false;
+  persistRegistroEStatus(r, editing, {estado:'aplicado', data});
+  dirty=false;
   closeModal();
   renderStatusEditor(); renderObjTabs();
   if(!DB) renderThemes();
@@ -3411,9 +3435,9 @@ function salvarMarcarAplicado(){
 function desmarcarAplicado(){
   if(!editing) return;
   if(!confirm('Desmarcar esta aula como aplicada nesta turma? Isso remove o(s) registro(s) de aplicação salvos aqui (as notas já lançadas no controle de notas não são apagadas).')) return;
-  registrosDoTema(editing.id).filter(r=>r.turmaId===editing.turmaId).forEach(r=>removerRegistro(r.id));
-  editing.status={estado:'',data:''};
-  persistTema(editing); dirty=false;
+  const regsAlvo=registrosDoTema(editing.id).filter(r=>r.turmaId===editing.turmaId);
+  removerRegistrosEStatus(regsAlvo, editing);
+  dirty=false;
   closeModal();
   renderStatusEditor(); renderObjTabs();
   if(!DB) renderThemes();
@@ -3456,18 +3480,25 @@ function doExportConteudo(cid){
   if(!destIds.length){ toast('Marque ao menos uma turma de destino.','err'); return; }
   const nomes=destIds.map(id=>turmaNome(turmas[id])).join(', ');
   if(!confirm('Copiar "'+c.nome+'" e todos os seus temas para: '+nomes+'?\nCada cópia será independente da turma de origem.')) return;
-  let feitas=0;
+  // Uma única escritura multi-path pra tudo (em vez de 1 write por
+  // conteúdo/tema copiado) — copiar um conteúdo com muitos temas pra várias
+  // turmas de uma vez facilmente passava de 8 writes em 10s e acionava o
+  // pushBackSeguro no meio da cópia.
+  const upd={}; let feitas=0;
   destIds.forEach(dest=>{
     const dt=turmas[dest]; if(!dt) return;
     const novoC=JSON.parse(JSON.stringify(c)); novoC.id=uid(); novoC.turmaId=dest; novoC.disciplina=dt.disciplina; novoC.serie=dt.serie; novoC._avulsos=false; novoC.ordem=99; novoC.origemId=c.id; novoC.updatedAt=Date.now();
     novoC.planejamento=[]; // cronograma referencia temaIds da origem — não faz sentido na cópia
-    persistConteudo(novoC);
+    conteudos[novoC.id]=novoC; upd['leciona/conteudos/'+novoC.id]=novoC;
     temasDoConteudo(cid).forEach((t,i)=>{
-      const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=novoC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=i; nt.origemId=t.id; nt.updatedAt=Date.now();
-      persistTema(nt);
+      const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=novoC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=i; nt.origemId=t.id; nt._ts=Date.now(); nt.updatedAt=nt._ts;
+      temas[nt.id]=nt; upd['leciona/temas/'+nt.id]=nt;
     });
     feitas++;
   });
+  _temaIdx=null;
+  lsSet(LS_CONT, JSON.stringify(conteudos)); lsSet(LS_TEMAS, JSON.stringify(temas));
+  if(DB && Object.keys(upd).length) DB.ref().update(upd).catch(e=>toast('⚠ Copiado localmente, mas falhou ao sincronizar com o Firebase: '+e.message,'err'));
   closeModal(); if(!DB) renderThemes();
   toast('Conteúdo copiado para '+feitas+' turma(s).','ok');
 }
@@ -3490,15 +3521,23 @@ function doExportTema(tid){
   const nomes=destIds.map(id=>turmaNome(turmas[id])).join(', ');
   if(!confirm('Copiar a aula "'+t.nome+'" para: '+nomes+'?')) return;
   const srcC=conteudos[t.conteudoId]; const nomeC=srcC?srcC.nome:'Aulas importadas';
-  let feitas=0;
+  // Mesma lógica de doExportConteudo: uma escritura multi-path só, pra não
+  // acionar o pushBackSeguro replicando uma aula pra várias turmas de uma vez.
+  const upd={}; let feitas=0;
   destIds.forEach(dest=>{
     const dt=turmas[dest]; if(!dt) return;
     let destC=Object.values(conteudos).find(c=>c.turmaId===dest && c.bimestre===t.bimestre && c.nome===nomeC);
-    if(!destC){ destC={id:uid(),disciplina:dt.disciplina,serie:dt.serie,turmaId:dest,bimestre:t.bimestre,nome:nomeC,resumo:'',ordem:99,origemId:(srcC?srcC.id:undefined),updatedAt:Date.now()}; persistConteudo(destC); }
-    const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=destC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=nextOrdemTema(destC.id); nt.origemId=t.id; nt.updatedAt=Date.now();
-    persistTema(nt);
+    if(!destC){
+      destC={id:uid(),disciplina:dt.disciplina,serie:dt.serie,turmaId:dest,bimestre:t.bimestre,nome:nomeC,resumo:'',ordem:99,origemId:(srcC?srcC.id:undefined),updatedAt:Date.now()};
+      conteudos[destC.id]=destC; upd['leciona/conteudos/'+destC.id]=destC;
+    }
+    const nt=JSON.parse(JSON.stringify(t)); nt.id=uid(); nt.conteudoId=destC.id; nt.turmaId=dest; nt.disciplina=dt.disciplina; nt.serie=dt.serie; nt.status={estado:'',data:''}; nt.ordem=nextOrdemTema(destC.id); nt.origemId=t.id; nt._ts=Date.now(); nt.updatedAt=nt._ts;
+    temas[nt.id]=nt; upd['leciona/temas/'+nt.id]=nt;
     feitas++;
   });
+  _temaIdx=null;
+  lsSet(LS_CONT, JSON.stringify(conteudos)); lsSet(LS_TEMAS, JSON.stringify(temas));
+  if(DB && Object.keys(upd).length) DB.ref().update(upd).catch(e=>toast('⚠ Copiado localmente, mas falhou ao sincronizar com o Firebase: '+e.message,'err'));
   closeModal(); if(!DB) renderThemes();
   toast('Aula copiada para '+feitas+' turma(s).','ok');
 }
@@ -5055,9 +5094,8 @@ function abrirModalRegistroCard(temaId){
 function desmarcarAplicadoCard(){
   const t=temas[_regCardTemaId]; if(!t){ closeModal(); return; }
   if(!confirm('Desmarcar esta aula como aplicada nesta turma? Isso remove o(s) registro(s) de aplicação salvos aqui (as notas já lançadas no controle de notas não são apagadas).')) return;
-  registrosDoTema(t.id).filter(r=>r.turmaId===t.turmaId).forEach(r=>removerRegistro(r.id));
-  t.status={estado:'',data:''};
-  persistTema(t);
+  const regsAlvo=registrosDoTema(t.id).filter(r=>r.turmaId===t.turmaId);
+  removerRegistrosEStatus(regsAlvo, t);
   closeModal();
   _regCardTemaId=null;
   renderThemes();
@@ -5074,12 +5112,9 @@ function salvarRegistroCard(){
   if(!avisoRegistroDuplicado(t.id, t.turmaId, data)) return;
   const r=novoRegistro(t.id, t.turmaId, objs, entrega, nota);
   r.data=data;
-  persistRegistro(r);
-  // Mantém tema.status em sincronia com o registro — antes esses dois
-  // caminhos (chip da lista vs botão ✓) gravavam coisas diferentes e
-  // ficavam dessincronizados; agora os dois sempre andam juntos.
-  t.status={estado:'aplicado',data};
-  persistTema(t);
+  // Registro + status do tema numa escritura só (ver persistRegistroEStatus)
+  // — mantém os dois em sincronia sem dobrar o número de writes.
+  persistRegistroEStatus(r, t, {estado:'aplicado',data});
 
   // Se marcou "Atividade" e deu um nome, já lança direto em Notas — sem
   // precisar sair da Gestão pra abrir a turma em Notas e preencher tudo de
