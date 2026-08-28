@@ -597,6 +597,7 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
       <button id="tabAcervo" class="hidden" onclick="setView('acervo')">📚 Acervo</button>
       <button id="tabAgenda" class="active" onclick="_agendaOrigin='';setView('agenda')">📅 Agenda</button>
       <button id="tabLinhaTempo" onclick="_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">🗓️ Planejamento</button>
+      <button title="Painel geral — % de entrega por turma ou por tema, todas as turmas de uma vez" onclick="_painelBim=scope.bim;_painelAbertoNoPlanejamento=true;_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">📊 Painel</button>
     </nav>
     <span class="conn" id="conn" onclick="location.reload()" style="cursor:pointer" title="Toque para recarregar o app"><span class="led"></span><span id="connTxt">Local</span></span>
     <button class="icon-btn" title="Assistente (chat livre com IA)" onclick="openAssistente()">&#128172;</button>
@@ -1940,9 +1941,9 @@ function boot(){
   refreshTurmas();
   if(scope.turma && turmas[scope.turma]) document.getElementById('selTurma').value=scope.turma;
   onScopeChange();
-  let viewSalva='agenda';
-  try{ viewSalva=localStorage.getItem('leciona_lastview')||'agenda'; }catch(e){}
-  setView(viewSalva);
+  // Pedido da Malu: login sempre abre direto na Agenda, nunca na última view
+  // usada (isso é só pro botão "voltar" do header, ver voltarHeader()).
+  setView('agenda');
   avisarCalendarioDesatualizado();
   // sw.js não fornecido — Service Worker desabilitado até implementação
   document.addEventListener('keydown', projKeys);
@@ -2394,9 +2395,16 @@ function renderThemes(){
       '</div>'+
       '<div class="cname" onclick="toggleConteudo(\''+c.id+'\')">'+(open?'▾ ':'▸ ')+esc(c.nome||'(sem nome)')+'</div>'+
       '<div class="selos">'+selosConteudo(c)+origemBadgeConteudo(c)+'</div>'+
-      '<button class="btn ghost sm" onclick="editarConteudo(\''+c.id+'\')">renomear</button>'+
-      '<button class="btn ghost sm" onclick="openExportConteudo(\''+c.id+'\')" title="Replicar para outra turma (cópia independente, com ordem própria)">→ turma</button>'+
-      '<button class="btn ghost sm danger" onclick="excluirConteudo(\''+c.id+'\')">excluir</button>'+
+      // Pedido dela: aba Gestão tinha campo/botão demais sempre visível pra
+      // ações de uso raro (renomear/mover pra outra turma/excluir são coisa
+      // de configuração inicial, não do dia a dia) — agora ficam atrás de
+      // um "⋯" só, em vez de 3 botões permanentes na linha.
+      '<div style="position:relative"><button class="btn ghost sm" onclick="event.stopPropagation();toggleConteudoMenu(\''+c.id+'\')" title="Mais opções">⋯</button>'+
+        '<div id="conteudoMenu-'+c.id+'" class="hidden" style="position:absolute;right:0;top:100%;z-index:5;background:var(--bg,#fff);border:1px solid var(--bd,#ddd);border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.12);padding:4px;display:flex;flex-direction:column;min-width:150px" onclick="event.stopPropagation()">'+
+          '<button class="btn ghost sm" style="justify-content:flex-start" onclick="fecharConteudoMenus();editarConteudo(\''+c.id+'\')">renomear</button>'+
+          '<button class="btn ghost sm" style="justify-content:flex-start" onclick="fecharConteudoMenus();openExportConteudo(\''+c.id+'\')" title="Replicar para outra turma (cópia independente, com ordem própria)">→ replicar pra turma</button>'+
+          '<button class="btn ghost sm danger" style="justify-content:flex-start" onclick="fecharConteudoMenus();excluirConteudo(\''+c.id+'\')">excluir</button>'+
+        '</div></div>'+
     '</div>';
     if(open){
       html+='<div class="conteudo-body">';
@@ -2502,6 +2510,15 @@ function isFilled(t,k){
   return String(v).trim().length>0;
 }
 function toggleConteudo(id){ expanded[id]=!(expanded[id]!==false); renderThemes(); }
+function fecharConteudoMenus(){ document.querySelectorAll('[id^="conteudoMenu-"]').forEach(el=>el.classList.add('hidden')); }
+function toggleConteudoMenu(id){
+  const alvo=document.getElementById('conteudoMenu-'+id);
+  const jaAberto=alvo && !alvo.classList.contains('hidden');
+  fecharConteudoMenus();
+  if(alvo && !jaAberto) alvo.classList.remove('hidden');
+}
+// Fecha o menu "⋯" se clicar em qualquer outro lugar da página.
+document.addEventListener('click', fecharConteudoMenus);
 
 /* ---------- Reordenar ---------- */
 function moverConteudo(id,dir){
@@ -5812,6 +5829,20 @@ function removerPlanejamentoLT(conteudoId, planejamentoId){
   persistConteudo(c);
   renderLinhaDoTempo();
 }
+// Atalhos de 1 clique pro mini-modal "O que rolou nessa aula" — pedido dela:
+// clicar no tema (ou no selo de metodologia) na Agenda abre isso direto, com
+// as opções contextuais mais comuns (filme, passeio, palestra...) já como
+// botão, sem precisar digitar. Cada um seta metodologia + o "tipo" mais
+// próximo e salva na hora; o formulário completo abaixo continua disponível
+// pra qualquer coisa fora desses presets.
+const METODOLOGIA_PRESETS=[
+  {label:'🎬 Filme',            metodologia:'Análise de vídeos e filmes', objeto:'estudo'},
+  {label:'🚌 Passeio',          metodologia:'Aula de campo',              objeto:'estudo'},
+  {label:'🎤 Palestra',         metodologia:'Palestra',                   objeto:'estudo'},
+  {label:'📝 Prova/Avaliação',  metodologia:'Avaliação',                  objeto:'avaliacao'},
+  {label:'👥 Trabalho em grupo',metodologia:'Trabalho em grupo',          objeto:'estudo'},
+  {label:'💬 Debate',           metodologia:'Debate',                     objeto:'estudo'},
+];
 /* Editar o "tipo" (quadro/estudo/slides/mapa mental/avaliação) e a
    observação livre de uma aula já agendada, sem precisar apagar e
    recriar a entrada do cronograma — pedido pra casos como "hoje resolvi
@@ -5821,15 +5852,31 @@ function abrirEditarObjPlanejamento(conteudoId, planejamentoId){
   const cont=conteudos[conteudoId]; if(!cont||!Array.isArray(cont.planejamento)) return;
   const p=cont.planejamento.find(x=>x.id===planejamentoId); if(!p) return;
   const objOpts=OBJ_DEFS.map(o=>'<option value="'+o.k+'"'+(o.k===p.objeto?' selected':'')+'>'+esc(o.label)+'</option>').join('');
+  const presetsHtml=METODOLOGIA_PRESETS.map(pr=>
+    '<button class="btn ghost sm" onclick="aplicarMetodologiaPreset(\''+conteudoId+'\',\''+planejamentoId+'\','+METODOLOGIA_PRESETS.indexOf(pr)+')">'+pr.label+'</button>'
+  ).join('');
   const h='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:380px">'+
     '<div class="modal-h"><h3>O que rolou nessa aula</h3></div>'+
     '<div class="modal-b">'+
-    '<div class="field"><label>Tipo</label><select id="epObjeto">'+objOpts+'</select></div>'+
+    '<div class="field"><label>Atalho rápido</label><div style="display:flex;flex-wrap:wrap;gap:6px">'+presetsHtml+'</div></div>'+
+    '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:12px;margin-top:4px"><label>Tipo</label><select id="epObjeto">'+objOpts+'</select></div>'+
     '<div class="field"><label>Metodologia (o que de fato foi usado — pode divergir do planejado)</label><input id="epMetodologia" placeholder="ex.: aula expositiva, trabalho em grupo…" value="'+esc(p.metodologia||'')+'"></div>'+
     '<div class="field"><label>Anotação (livre — ex.: "trecho de documentário no fim do horário")</label><textarea id="epObs" rows="2" placeholder="o que você quiser anotar sobre essa aula">'+esc(p.obs||'')+'</textarea></div>'+
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button>'+
     '<button class="btn primary" onclick="salvarEditarObjPlanejamento(\''+conteudoId+'\',\''+planejamentoId+'\')">Salvar</button></div></div></div>';
   abrirModal(h);
+}
+function aplicarMetodologiaPreset(conteudoId, planejamentoId, presetIdx){
+  const cont=conteudos[conteudoId]; if(!cont||!Array.isArray(cont.planejamento)) return;
+  const p=cont.planejamento.find(x=>x.id===planejamentoId); if(!p) return;
+  const preset=METODOLOGIA_PRESETS[presetIdx]; if(!preset) return;
+  p.metodologia=preset.metodologia;
+  p.objeto=preset.objeto;
+  persistConteudo(cont);
+  closeModal();
+  renderLinhaDoTempo();
+  if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgendaDia();
+  toast('Aula marcada como "'+preset.label.replace(/^\S+\s/,'')+'".','ok');
 }
 function salvarEditarObjPlanejamento(conteudoId, planejamentoId){
   const cont=conteudos[conteudoId]; if(!cont||!Array.isArray(cont.planejamento)) return;
@@ -6322,21 +6369,25 @@ function openConfig(){
         '<small>Um único botão pra tudo: realinha referências desatualizadas, unifica turmas e conteúdos duplicados, remove temas repetidos e corrige conteúdo trocado por engano — na ordem certa, automaticamente. Não pode ser desfeito. Use quando notar algo estranho (temas repetidos, aula sumida etc.) — na dúvida, não faz mal rodar de novo.</small>'+
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="importarPlanilhaArlan()">📥 Importar frequência/ocorrências (planilha do Arlan)</button>'+
         '<small>Puxa faltas e ocorrências direto da planilha (atualizada diariamente) e lança como chamada e desconto na qualitativa. Também roda sozinho todo dia útil à noite — não precisa clicar sempre. Nomes que não batem com ninguém da turma viram pendência (não é lançado errado).</small>'+
+        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="atualizarQualitativaPlanilha()">📊 Atualizar planilha de qualitativa (coluna HIST)</button>'+
+        '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
+        '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
+        '<small>Apaga TODOS os conteúdos, temas, turmas, registros, alunos e notas — local e no Firebase (se conectado). Suas configurações (modelo, credenciais) não são afetadas. <strong>Não pode ser desfeito.</strong></small>'+
+        '<details style="margin-top:16px;border-top:1px solid var(--bd,#ddd);padding-top:10px"><summary style="cursor:pointer;color:var(--muted,#888);font-size:13px">Correções pontuais já aplicadas (arquivo)</summary>'+
+        '<div style="margin-top:10px">'+
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="corrigirDuasDatas19_08()">🔧 Corrigir data de hoje (2ªA Sociologia e 1ªA História)</button>'+
         '<button class="btn primary" style="width:100%;margin-top:8px;background:#a8442f;border-color:#a8442f" onclick="reconstruirTemasOrfaos()">🔧 Reconstruir temas apagados (46 aulas em 10 turmas)</button>'+
         '<small>Correção pontual (18/08): muitas entradas do cronograma do 3º Bimestre apontavam pra temas que foram apagados (só sobrou a data). Recria o tema certo (nome, código, habilidade, foco) a partir do plano completo e religa.</small>'+
         '<button class="btn primary" style="width:100%;margin-top:8px" onclick="preencherCronogramaCompleto()">📅 Completar cronograma do 3º Bimestre (verde = azul)</button>'+
         '<small>Correção pontual (18/08): cria a entrada de cronograma que falta em todo dia com aula prevista (03/08 a 07/10) que ainda não tinha nenhuma, pro Médio e Fundamental. "Estudo Orientado" e datas fora do plano ficam sem, porque não têm conteúdo da matriz.</small>'+
         '<small>Correção pontual (19/08): as duas entradas desta semana ficaram na quinta em vez da quarta.</small>'+
-        '<button class="btn primary" style="width:100%;margin-top:8px" onclick="atualizarQualitativaPlanilha()">📊 Atualizar planilha de qualitativa (coluna HIST)</button>'+
-        '<small>Escreve o total de desconto de cada aluno na coluna HIST das abas 9A/9C, com a justificativa como nota da célula. Também roda sozinho toda sexta às 20h. Precisa a planilha estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioFundamental()">📅 Adicionar calendário do Fundamental (8º/9º) na Agenda</button>'+
         '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE 2026" do 8º/9º ano (avaliações SEDUC, datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Fundamental].</small>'+
         '<button class="btn" style="width:100%;margin-top:8px" onclick="adicionarCalendarioMedio()">📅 Adicionar calendário do Médio (EFG) na Agenda</button>'+
         '<small>Correção pontual (18/08): datas do "CRONOGRAMA 3º BIMESTRE (1)" do Médio (blocos de avaliação — Bloco 2 tem História, Bloco 6 tem Sociologia/Filosofia — datas comemorativas, recuperação, conselho de classe) como compromissos na Agenda, marcados [Médio].</small>'+
         '<button class="btn" style="width:100%;margin-top:8px;border-color:#c0392b;color:#c0392b" onclick="auditarDados3Bim()">🧹 Ver dados de teste do 3º bimestre</button>'+
-        '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre (registros, chamadas, ocorrências, notas, temas marcados aplicados) — como o 3º bimestre ainda não começou, é lançamento de teste. 1º/2º bimestre nunca são afetados.</small>'+
-        '<button class="btn" style="width:100%;margin-top:16px;background:#c0392b;border-color:#c0392b;color:#fff" onclick="excluirTodosDados()">🗑 Excluir todos os dados</button>'+
+        '<small>Mostra (sem apagar nada) tudo que já foi lançado com data do 3º bimestre. Descrição original ficou desatualizada (o 3º bimestre já começou) — mantido aqui só como diagnóstico manual se precisar.</small>'+
+        '</div></details>'+
         '<small>Apaga TODOS os conteúdos, temas, turmas, registros, alunos e notas — local e no Firebase (se conectado). Suas configurações (modelo, credenciais) não são afetadas. <strong>Não pode ser desfeito.</strong></small></div>'+
     '</div>'+
     '<div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveConfig()">Salvar</button></div></div></div>';
@@ -6660,6 +6711,15 @@ function editarAulaAvulsa(id){
     '</div><div class="modal-f"><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="confirmarNovaAulaAvulsa()">Salvar edição</button></div></div></div>';
   abrirModal(html);
 }
+/* Acha a próxima data livre (sem planejamento de tema já nela) pra essa
+   turma dentro do bimestre da data de referência — mesma lógica de
+   recuperarSequencia(), só que pra 1 entrada avulsa em vez de um lote. */
+function proximaDataLivre(turmaId, apartirDe, bim){
+  const tu=turmas[turmaId]; if(!tu) return null;
+  const ocupadas=new Set();
+  Object.values(conteudos).forEach(c=>{ if(c.turmaId===turmaId) (c.planejamento||[]).forEach(p=>ocupadas.add(p.data)); });
+  return datasDoBimestre(tu,bim).find(d=>d>apartirDe && !ocupadas.has(d)) || null;
+}
 function confirmarNovaAulaAvulsa(){
   const turmaId=document.getElementById('alTurma').value;
   const titulo=document.getElementById('alTitulo').value.trim();
@@ -6667,6 +6727,26 @@ function confirmarNovaAulaAvulsa(){
   const data=document.getElementById('alData').value;
   const observacoes=document.getElementById('alObs').value.trim();
   if(!turmaId||!titulo||!data){ toast('Preencha turma, título e data.','err'); return; }
+  // Pedido da Malu: ficava ambíguo se a aula avulsa reorganizava ou ignorava
+  // o tema já planejado pra esse mesmo dia/turma — os dois eram só
+  // renderizados em seções separadas, sem aviso nenhum. Agora, se já existe
+  // um tema planejado nesse dia pra essa turma, pergunta explicitamente se
+  // é pra empurrar ele pra próxima data livre do bimestre ou manter os dois.
+  const conflitos=planejamentosDoDia(data).filter(x=>x.conteudo.turmaId===turmaId);
+  let moverPara=null;
+  if(conflitos.length && (!_editandoAulaAvulsaId || aulasAvulsas[_editandoAulaAvulsaId]?.data!==data)){
+    const nomes=conflitos.map(x=>x.tema.tituloExibicao||x.tema.nome||'(sem título)').join(', ');
+    const bim=bimAtivoAgora(data)||scope.bim;
+    const proxima=proximaDataLivre(turmaId,data,bim);
+    const msg='Essa turma já tem "'+nomes+'" planejado pra este dia.\n\n'+
+      (proxima
+        ? 'Empurrar pra próxima data livre do bimestre ('+new Date(proxima+'T00:00:00').toLocaleDateString('pt-BR')+')?\n\nOK = empurra o tema · Cancelar = mantém os dois nesse dia'
+        : 'Não há data livre à frente no bimestre pra empurrar — os dois vão ficar registrados nesse mesmo dia.');
+    if(proxima && confirm(msg)) moverPara=proxima;
+  }
+  if(moverPara){
+    conflitos.forEach(({conteudo,entry})=>{ entry.data=moverPara; persistConteudo(conteudo); });
+  }
   const editId=_editandoAulaAvulsaId;
   const existente=editId?aulasAvulsas[editId]:null;
   const a=existente
@@ -6675,7 +6755,7 @@ function confirmarNovaAulaAvulsa(){
   persistAulaAvulsa(a);
   closeModal();
   _editandoAulaAvulsaId=null;
-  toast(existente?'Aula avulsa atualizada.':'Aula avulsa salva.','ok');
+  toast((existente?'Aula avulsa atualizada.':'Aula avulsa salva.')+(moverPara?' Tema planejado movido pra '+new Date(moverPara+'T00:00:00').toLocaleDateString('pt-BR')+'.':''),'ok');
   renderAgenda();
 }
 let _agendaMes=null;     // Date do 1º dia do mês em exibição
@@ -6799,8 +6879,12 @@ function renderAgendaDia(){
       let infoHtml, acoesHtml;
       if(cronDaAula){
         const {conteudo,entry,tema}=cronDaAula;
-        const metSelo=entry.metodologia?'<span class="selo met">🎯 '+esc(entry.metodologia)+'</span>':'';
-        infoHtml='<b>'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+' — '+esc(tema.tituloExibicao||tema.nome||'')+(tema.dcgo?' <span class="codigo-inline">'+esc(tema.dcgo)+'</span>':'')+'</b>'+
+        // Pedido dela: o selo de metodologia e o próprio título do tema viram
+        // botão clicável direto na linha — abre o mini-modal "O que rolou
+        // nessa aula" (com atalhos tipo filme/passeio/palestra) sem precisar
+        // passar por "trocar tema" ou entrar na turma.
+        const metSelo='<span class="selo met" style="cursor:pointer" onclick="abrirEditarObjPlanejamento(\''+conteudo.id+'\',\''+entry.id+'\')" title="Clique pra marcar o que rolou de fato nessa aula (filme, passeio, palestra…)">🎯 '+(entry.metodologia?esc(entry.metodologia):'definir metodologia')+'</span>';
+        infoHtml='<b style="cursor:pointer" onclick="abrirEditarObjPlanejamento(\''+conteudo.id+'\',\''+entry.id+'\')" title="Clique pra marcar o que rolou de fato nessa aula (filme, passeio, palestra…)">'+esc(x.disc+' · '+serieCurta(serie)+x.letra)+' — '+esc(tema.tituloExibicao||tema.nome||'')+(tema.dcgo?' <span class="codigo-inline">'+esc(tema.dcgo)+'</span>':'')+'</b>'+
           '<span>'+esc(u)+(entry.obs?(' · '+esc(entry.obs)):'')+'</span>'+metSelo+badgeReg+badgeAtraso;
         acoesHtml='<div class="hoje-acoes">'+
           '<button class="btn sm" style="border-color:var(--green);color:var(--green)" onclick="abrirChamadaTurma(\''+conteudo.turmaId+'\')" title="Chamada — o essencial da aula, em 1 toque">📋 Chamada</button>'+
@@ -7245,6 +7329,7 @@ let _acervoBusca='', _acervoDisc='', _acervoSerie='', _acervoBim='';
 let _painelBim = null, _painelDisc = '';
 let _painelExpandidas = new Set();
 let _painelAbertoNoPlanejamento = false; // seção retrátil dentro de Planejamento (ex-aba Painel)
+let _painelModo = 'turma'; // 'turma' (padrão) | 'tema' — pedido dela: ver % de entrega por tema (nome+código), sem entrar turma por turma
 function togglePainelTurma(turmaId){
   if(_painelExpandidas.has(turmaId)) _painelExpandidas.delete(turmaId); else _painelExpandidas.add(turmaId);
   renderPainel();
@@ -7309,6 +7394,10 @@ function renderPainel(){
     '<select onchange="_painelBim=this.value;renderPainel()">'+
       BIMESTRES.map(b=>'<option value="'+esc(b)+'"'+(b===_painelBim?' selected':'')+'>'+esc(b)+'</option>').join('')+
     '</select>'+
+    // Pedido dela: % de entrega por tema (nome+código) sem entrar turma por
+    // turma — alterna a lista de cards por turma pra uma tabela achatada
+    // com todos os temas do filtro atual.
+    '<button class="btn ghost sm" style="margin-left:auto" onclick="_painelModo=(_painelModo===\'tema\'?\'turma\':\'tema\');renderPainel()">'+(_painelModo==='tema'?'👥 ver por turma':'📄 ver por tema')+'</button>'+
   '</div>';
 
   html += '<div class="notas-stats">'+
@@ -7316,6 +7405,31 @@ function renderPainel(){
     '<div class="stat-box"><strong style="'+(nAtrasadas?'color:#a8442f':'')+'">'+nAtrasadas+'</strong><span>atrasada(s)</span></div>'+
     '<div class="stat-box"><strong>'+pctMedio+'%</strong><span>aplicado em média — '+esc(_painelBim)+'</span></div>'+
   '</div>';
+
+  if(_painelModo==='tema'){
+    const temaLinhas=[];
+    turmasAtivas().filter(t=>!_painelDisc||t.disciplina===_painelDisc).forEach(t=>{
+      Object.values(conteudos).filter(c=>c.turmaId===t.id&&c.bimestre===_painelBim).forEach(c=>{
+        temasDoConteudo(c.id).forEach(tm=>{
+          const aplicado=registrosDoTema(tm.id).some(r=>r.turmaId===t.id);
+          temaLinhas.push({t, tm, aplicado});
+        });
+      });
+    });
+    temaLinhas.sort((a,b)=> (a.aplicado===b.aplicado?0:a.aplicado?1:-1) || turmaNome(a.t).localeCompare(turmaNome(b.t),'pt-BR') || (a.tm.nome||'').localeCompare(b.tm.nome||'','pt-BR'));
+    if(!temaLinhas.length){ html+='<div class="empty"><p>Nenhum tema cadastrado neste filtro/bimestre.</p></div>'; box.innerHTML=html; return; }
+    html+='<div class="card-list">'+temaLinhas.map(({t,tm,aplicado})=>
+      '<div class="mini-card" style="cursor:pointer;display:flex;align-items:center;gap:8px" onclick="abrirTemaRapido(\''+tm.id+'\')">'+
+        '<span style="font-size:15px">'+(aplicado?'✅':'⬜')+'</span>'+
+        '<div style="flex:1;min-width:0">'+
+          '<b style="display:block;font-size:13.5px">'+esc(tm.tituloExibicao||tm.nome||'(sem título)')+(tm.dcgo?' <span class="codigo-inline">'+esc(tm.dcgo)+'</span>':'')+'</b>'+
+          '<span style="font-size:12px;color:var(--muted)">'+esc(turmaNome(t))+' · '+esc(t.disciplina||'')+'</span>'+
+        '</div>'+
+      '</div>'
+    ).join('')+'</div>';
+    box.innerHTML=html;
+    return;
+  }
 
   if(!linhas.length){ html += '<div class="empty"><p>Nenhuma turma cadastrada ainda.</p></div>'; box.innerHTML=html; return; }
 
