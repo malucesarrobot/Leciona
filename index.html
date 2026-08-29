@@ -593,7 +593,12 @@ table.md th{background:rgba(127,127,127,.12);font-weight:600}
     <nav>
       <button id="tabNotas" onclick="setView('notas')">📊 Notas</button>
       <button id="tabGestao" onclick="setView('gestao')">Gestão</button>
-      <button id="tabProjecao" onclick="abrirProjecaoAtual()">Projetar</button>
+      <!-- Pedido dela: tirar "Projetar" da navegação principal — já dá pra
+           projetar em contexto, pelo link "projetar" de cada aula na Agenda
+           ou pelo ▶ de cada tema na Gestão. Só oculto (não removido do DOM),
+           porque abrirProjecaoAtual()/fecharProjecao() ainda referenciam
+           este id pra marcar estado ativo/inativo. -->
+      <button id="tabProjecao" class="hidden" onclick="abrirProjecaoAtual()">Projetar</button>
       <button id="tabAcervo" class="hidden" onclick="setView('acervo')">📚 Acervo</button>
       <button id="tabAgenda" class="active" onclick="_agendaOrigin='';setView('agenda')">📅 Agenda</button>
       <button id="tabLinhaTempo" onclick="_ltTurma=scope.turma;_ltBim=scope.bim;setView('linhaTempo')">🗓️ Planejamento</button>
