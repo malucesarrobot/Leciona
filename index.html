@@ -7167,10 +7167,31 @@ function executarLancarNotas(){
   toast('"'+nome+'" adicionada ao controle de notas. Abra a aba 📊 Notas para lançar.','ok');
 }
 
+/* Pedido dela: dentro da própria turma, sem sair da Gestão, ver rapidinho
+   onde as OUTRAS turmas da mesma disciplina estão no conteúdo — antes
+   precisava ir pro Painel geral, filtrar, voltar pra Gestão turma por
+   turma (ela contou "quase 15 cliques"). Mostra % aplicado + pendentes de
+   cada turma-irmã, com salto direto (mesmo bimestre). */
+function outrasTurmasDaDisciplinaHtml(turmaAtualId){
+  const tuAtual=turmas[turmaAtualId]; if(!tuAtual) return '';
+  const irmas=turmasAtivas().filter(t=>t.id!==turmaAtualId&&t.disciplina===tuAtual.disciplina);
+  if(!irmas.length) return '';
+  const linhas=irmas.map(t=>{
+    const conts=Object.values(conteudos).filter(c=>c.turmaId===t.id&&c.bimestre===scope.bim);
+    let total=0,comReg=0;
+    conts.forEach(c=>temasDoConteudo(c.id).forEach(tm=>{ total++; if(registrosDoTema(tm.id).some(r=>r.turmaId===t.id)) comReg++; }));
+    const pct=total?Math.round(comReg/total*100):null;
+    return '<button class="btn ghost sm" style="justify-content:space-between" onclick="irParaTurma(\''+t.id+'\')" title="Ver esta turma na Gestão">'+
+      '<span>'+esc(turmaNome(t))+'</span><span style="color:var(--muted)">'+(pct==null?'sem conteúdo':pct+'% · '+comReg+'/'+total)+'</span></button>';
+  }).join('');
+  return '<details style="margin-bottom:10px"><summary style="cursor:pointer;font-size:12.5px;color:var(--muted)">↔ Outras turmas de '+esc(tuAtual.disciplina)+' ('+irmas.length+')</summary>'+
+    '<div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">'+linhas+'</div></details>';
+}
 /* ── Progresso por turma/bimestre ──────────────────────────────────────── */
 function renderProgressoBar(){
   const box=document.getElementById('progressoBar'); if(!box||!scope.turma) return;
   const tu=turmas[scope.turma]||{};
+  const outrasTurmasHtml=outrasTurmasDaDisciplinaHtml(scope.turma);
   const abertas=ocorrenciasAbertas(scope.turma);
   const avisoAtraso = abertas.length ?
     '<div class="notas-progresso" style="border:1px solid #a8442f;background:#fdecea;margin-bottom:10px">'+
@@ -7204,7 +7225,7 @@ function renderProgressoBar(){
       regsT.forEach(r=>(r.objetos||[]).forEach(k=>{ if(k in objContadores) objContadores[k]++; }));
     });
   });
-  if(!totalTemas){ box.innerHTML=avisoAtraso+(bimBarHtml?'<div class="notas-progresso">'+bimBarHtml+'</div>':'')+notasFixadasHtml; return; }
+  if(!totalTemas){ box.innerHTML=avisoAtraso+(bimBarHtml?'<div class="notas-progresso">'+bimBarHtml+'</div>':'')+notasFixadasHtml+outrasTurmasHtml; return; }
   const pct=Math.round(temasComReg/totalTemas*100);
   const objDots=PROJ_ORDER.map(k=>{
     const label=OBJ_DEFS.find(o=>o.k===k)?.label||k;
@@ -7222,7 +7243,7 @@ function renderProgressoBar(){
     '<div class="prog-barra-wrap"><div class="prog-barra" style="width:'+pct+'%"></div></div>'+
     bimBarHtml+
     '<div class="prog-objetos">'+objDots+'</div>'+
-  '</div>';
+  '</div>'+outrasTurmasHtml;
 }
 
 /* ── Modal Relatório da Turma ──────────────────────────────────────────── */
