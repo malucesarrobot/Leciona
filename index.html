@@ -1745,6 +1745,15 @@ function csvCell(v){
   if(/[",\n\r]/.test(s)) s='"'+s.replace(/"/g,'""')+'"';
   return s;
 }
+/* BOM (﻿) na frente é o que faz o Excel abrir o CSV como UTF-8 em vez
+   de Latin-1 — sem isso, acento em nome/tema vira caractere errado
+   ("JoÃ£o"). `data:text/csv,`+encodeURIComponent não carrega BOM nenhum,
+   por isso todo export precisa passar por Blob como aqui. */
+function baixarCSV(nomeArquivo, csv){
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=nomeArquivo; a.click();
+}
 function registrosTodosCSV(){
   const header='Data,Turma,Disciplina,Série,Unidade,Tema,Objetos,Entrega,Nota';
   const rows=Object.values(registros).sort((a,b)=>b.data.localeCompare(a.data)).map(r=>{
@@ -1755,10 +1764,7 @@ function registrosTodosCSV(){
 }
 function exportarRegistrosCSV(){
   const csv=registrosTodosCSV();
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='Leciona_Registros_'+isoLocal(new Date())+'.csv';
-  a.click();
+  baixarCSV('Leciona_Registros_'+isoLocal(new Date())+'.csv', csv);
   toast('CSV exportado.','ok');
 }
 let _lsContPendente=false, _lsTemasPendente=false, _lsFlushAgendado=false;
@@ -5371,7 +5377,7 @@ async function imgSugerir(){
     const u='Liste de 8 a 12 termos curtos de BUSCA DE IMAGENS associados ao tema escolar abaixo, para achar boas imagens no acervo Wikimedia Commons. Inclua nomes próprios, lugares, obras, personagens, documentos e conceitos visuais; pode misturar português e inglês. Responda só com os termos separados por vírgula, sem numeração.\n\n'+ctx(editing);
     const raw=await callClaude('Você ajuda professores a encontrar imagens didáticas livres.',u);
     const termos=[...new Set(raw.replace(/\n/g,',').split(',').map(x=>x.replace(/^[\d.\-•\s]+/,'').trim()).filter(x=>x&&x.length<40))].slice(0,12);
-    chips.innerHTML=termos.map(t=>'<button class="chip" onclick="imgAddChip(\''+t.replace(/'/g,"&#39;")+'\')">'+esc(t)+'</button>').join(' ');
+    chips.innerHTML=termos.map(t=>'<button class="chip" onclick="imgAddChip(\''+escOnclick(t)+'\')">'+esc(t)+'</button>').join(' ');
   }catch(e){ chips.innerHTML='<span class="statusdot">não consegui sugerir agora</span>'; }
 }
 async function imgBuscar(){
@@ -7359,8 +7365,7 @@ function exportarRelatorioCSV(){
     return [csvCell(av.nome),csvCell(tp),...turmasComp.map(tu=>{ const m=mediaAtividade(av.id,tu.id); return m!=null?m.toFixed(1):''; })].join(',');
   });
   const csv=header+'\n'+rows.join('\n');
-  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='Relatorio_'+esc(disc)+'_'+esc(serie)+'_'+isoLocal(new Date())+'.csv'; a.click();
+  baixarCSV('Relatorio_'+esc(disc)+'_'+esc(serie)+'_'+isoLocal(new Date())+'.csv', csv);
   toast('CSV exportado.','ok');
 }
 
@@ -8123,9 +8128,7 @@ function exportarQualitativaCSV(){
     const resumo=eventos.map(q=>q.motivo+' ('+q.valor.toFixed(1)+')').join(' | ');
     csv+=[al.matricula||'', al.nome, notaQualitativa(al.id,turmaId).toFixed(1), resumo].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')+'\n';
   });
-  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='Qualitativa_'+esc(turmaNome(tu))+'_'+isoLocal(new Date())+'.csv'; a.click();
+  baixarCSV('Qualitativa_'+esc(turmaNome(tu))+'_'+isoLocal(new Date())+'.csv', csv);
   toast('CSV pronta — confira e digite no SIAP.','ok');
 }
 let mediaModo = {}; // { turmaId: 'ponderada'|'aritmetica' }
@@ -8795,10 +8798,7 @@ function exportarNotasCSV(){
     return [csvCell(al.numero||''),csvCell(al.nome),...atvs.map(av=>{ const n=notaDoAluno(al.id,av.id); return csvCell(n&&n.valor!=null?n.valor:''); }),csvCell(med!=null?med.toFixed(1):'')].join(',');
   });
   const csv=header+'\n'+rows.join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='Notas_'+esc(turmaNome(tu))+'_'+isoLocal(new Date())+'.csv';
-  a.click();
+  baixarCSV('Notas_'+esc(turmaNome(tu))+'_'+isoLocal(new Date())+'.csv', csv);
   toast('CSV exportado.','ok');
 }
 /* Exporta as notas de TODAS as turmas de uma disciplina de uma vez — cada
@@ -8825,14 +8825,21 @@ function exportarNotasTodasTurmasCSV(){
   });
   if(!blocos.length){ toast('Nenhuma turma de '+disc+' tem aluno cadastrado.','err'); return; }
   const csv=blocos.join('\n\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='Notas_'+esc(disc)+'_todas_turmas_'+isoLocal(new Date())+'.csv';
-  a.click();
+  baixarCSV('Notas_'+esc(disc)+'_todas_turmas_'+isoLocal(new Date())+'.csv', csv);
   toast('CSV de '+blocos.length+' turma(s) exportado ('+totalAlunos+' aluno(s) no total).','ok');
 }
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+/* Pra texto livre (nome, termo, título — não id) usado como ARGUMENTO dentro
+   de onclick="fn('...')". `esc()` sozinho não basta aqui: o navegador
+   decodifica entidades HTML do atributo (&#39; → ') antes de interpretar o
+   onclick como JS, então um apóstrofo no texto ainda fecha a string cedo e
+   quebra o clique. Aqui a aspa simples vira \' de verdade (JS), não entidade. */
+function escOnclick(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
 let _lsCheioAte=0, _lsAvisou=false;
 function lsSet(k,v){
   if(Date.now()<_lsCheioAte) return; // cota estourou recentemente — confia no Firebase por ora
