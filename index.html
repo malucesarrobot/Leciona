@@ -6611,11 +6611,23 @@ function bimAtual(){ return bimAtivoAgora() || scope.bim || '2º Bimestre'; }
    tanto pela professora (textarea) quanto pelo assistente (ferramenta
    deixar_nota_geral). Mesma coleção pros dois lados, diferenciados só por
    `autor`. */
+let _notaGeralEditandoId=null;
 function persistNotaGeral(n){ persistItem('notas_gerais', notasGerais, LS_NOTASGERAIS, n, 'Falha ao gravar a nota'); }
 function removerNotaGeral(id){
   delete notasGerais[id];
   lsSet(LS_NOTASGERAIS,JSON.stringify(notasGerais));
   if(DB) DB.ref('leciona/notas_gerais/'+id).remove().catch(e=>toast('⚠ Removida localmente, mas falhou ao remover no Firebase: '+e.message,'err'));
+  renderNotasGeraisAgenda();
+}
+function editarNotaGeral(id){ _notaGeralEditandoId=id; renderNotasGeraisAgenda(); const el=document.getElementById('notaEdit-'+id); if(el) el.focus(); }
+function cancelarNotaGeralEdicao(){ _notaGeralEditandoId=null; renderNotasGeraisAgenda(); }
+function salvarNotaGeralEdicao(id){
+  const n=notasGerais[id]; if(!n) return;
+  const el=document.getElementById('notaEdit-'+id); const texto=(el.value||'').trim();
+  if(!texto) return;
+  n.texto=texto;
+  persistNotaGeral(n);
+  _notaGeralEditandoId=null;
   renderNotasGeraisAgenda();
 }
 function adicionarNotaGeral(){
@@ -6642,10 +6654,19 @@ function renderNotasGeraisAgenda(){
       '<div class="gt-checks" id="notaGeralTurmasWrap" style="margin-top:6px">'+turmaChecks+'</div>'+
     '</details>'+
     (notas.length ? notas.map(n=>
+      n.id===_notaGeralEditandoId ?
+      '<div style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:13px">'+
+        '<textarea id="notaEdit-'+n.id+'" rows="3" style="width:100%;margin-bottom:6px" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();salvarNotaGeralEdicao(\''+n.id+'\');}">'+esc(n.texto)+'</textarea>'+
+        '<div style="display:flex;gap:6px;justify-content:flex-end">'+
+          '<button class="btn ghost sm" onclick="cancelarNotaGeralEdicao()">Cancelar</button>'+
+          '<button class="btn primary sm" onclick="salvarNotaGeralEdicao(\''+n.id+'\')">Salvar</button>'+
+        '</div>'+
+      '</div>' :
       '<div style="background:var(--surface);border-radius:8px;padding:8px 10px;margin-bottom:6px;white-space:pre-wrap;font-size:13px;display:flex;gap:8px">'+
         '<div style="flex:1"><div style="font-size:11px;color:var(--muted);margin-bottom:3px">'+(n.autor==='assistente'?'🤖 Assistente':'📝 Você')+(n._ts?(' · '+new Date(n._ts).toLocaleDateString('pt-BR')):'')+'</div>'+esc(n.texto)+
           (Array.isArray(n.turmaIds)&&n.turmaIds.length?'<div style="font-size:11px;color:#6a8fbf;margin-top:3px">📌 '+n.turmaIds.map(id=>esc(turmaNome(turmas[id]||{}))).join(', ')+'</div>':'')+
         '</div>'+
+        '<button onclick="editarNotaGeral(\''+n.id+'\')" title="Editar" style="background:none;border:0;color:var(--muted);font-size:14px;line-height:1;cursor:pointer;padding:2px 4px;align-self:flex-start">✎</button>'+
         '<button onclick="removerNotaGeral(\''+n.id+'\')" title="Excluir" style="background:none;border:0;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;padding:2px 4px;align-self:flex-start">✕</button>'+
       '</div>'
     ).join('') : '<p style="color:var(--muted);font-size:13px">Nenhuma anotação ainda.</p>');
@@ -7957,7 +7978,7 @@ function perfisNecessariosDaTurma(turmaId){
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-function alunosDaTurma(turmaId){ return Object.values(alunos).filter(a=>a&&a.turmaId===turmaId&&a.ativo!==false).sort((a,b)=>(a.numero||999)-(b.numero||999)||(a.nome||'').localeCompare(b.nome||'')); }
+function alunosDaTurma(turmaId){ return Object.values(alunos).filter(a=>a&&a.turmaId===turmaId&&a.ativo!==false).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR',{sensitivity:'base'})||(a.numero||999)-(b.numero||999)); }
 function atividadesDaTurma(turmaId){
   return Object.values(atividadesCtrl)
     .filter(av=>av&&av.turmaIds&&av.turmaIds.includes(turmaId))
