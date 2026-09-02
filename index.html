@@ -792,11 +792,15 @@ function turmaNomeEscola(t){ return turmaNome(t)+' — '+(t.unidade||'?'); }
    Esta versão junta disciplina + turma + escola pra nunca confundir. */
 function turmaNomeCompleto(t){ return (t.disciplina||'')+' · '+turmaNome(t)+' — '+(t.unidade||'?'); }
 /* Nome curto pra tabela de Notas apertada (muitas colunas de atividade):
-   últimos 2 sobrenomes em vez do nome completo. O nome completo continua
-   no title do texto pra conferir na dúvida. */
+   primeiro nome (+ segundo, se composto) em vez do nome completo. O nome
+   completo continua no title do texto pra conferir na dúvida.
+   Antes pegava os ÚLTIMOS 2 nomes (sobrenome) em vez dos primeiros — na
+   prática mostrava só sobrenome e escondia o nome que a professora usa
+   pra identificar o aluno (ela reclamou de não achar "o primeiro nome"
+   na turma 9ºC, que tem atividade de sobra pra ativar esse modo curto). */
 function nomeSobrenome(nome){
   const partes=(nome||'').trim().split(/\s+/);
-  return partes.length>2 ? partes.slice(-2).join(' ') : (nome||'');
+  return partes.length>2 ? partes.slice(0,2).join(' ') : (nome||'');
 }
 /* <option>s agrupadas por disciplina, com a escola sempre visível — usado
    tanto em Notas quanto em Gestão, pra trocar de turma com um só seletor
@@ -1270,15 +1274,28 @@ function mergeRemote(local, remote){
   return {merged:out, pushBack};
 }
 let _pushBackCount=0, _pushBackWindowStart=0;
+const _pushBackUltimoPorChave={};
 function pushBackSeguro(path, upd){
   const agora=Date.now();
+  // Ignora chave que já foi empurrada há pouco (< 3s): ela ainda deve estar
+  // em trânsito pro servidor, reenviar de novo não é uma gravação nova.
+  // Sem isso, editar vários temas em sequência rápida (uso normal, ex.:
+  // preencher o planejamento de um bimestre inteiro) já disparava o aviso
+  // de "sincronização pausada" mesmo sem nada de errado — o listener do
+  // Firebase reage à coleção toda, então cada edição nova reempurrava as
+  // edições anteriores que ainda não tinham voltado confirmadas.
+  const chaves=Object.keys(upd).filter(k=>agora-(_pushBackUltimoPorChave[k]||0)>3000);
+  if(!chaves.length) return;
+  chaves.forEach(k=>_pushBackUltimoPorChave[k]=agora);
+  const updFiltrado={}; chaves.forEach(k=>updFiltrado[k]=upd[k]);
+
   if(agora-_pushBackWindowStart>10000){ _pushBackWindowStart=agora; _pushBackCount=0; }
   _pushBackCount++;
   if(_pushBackCount>8){
     toast('⚠ Sincronização com o Firebase pausada automaticamente (muitas gravações repetidas em pouco tempo). Recarregue a página quando puder.','err');
     return;
   }
-  DB.ref().update(upd).catch(e=>console.warn('pushBack '+path+':',e));
+  DB.ref().update(updFiltrado).catch(e=>console.warn('pushBack '+path+':',e));
 }
 /* Helper único pra gravar um item (chamada, nota, aluno, aula avulsa…) tanto
    local quanto no Firebase, com fila de pendências que sobrevive a reload —
