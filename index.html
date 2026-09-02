@@ -1782,9 +1782,18 @@ function persistConteudo(c){
   _lsContPendente=true; _agendarFlushLocal(); // grava local em lote a cada 3s, não a cada chamada
   if(DB) DB.ref('leciona/conteudos/'+c.id).set(c).catch(e=>toast('⚠ Falha ao gravar conteúdo no Firebase (mantido localmente). Verifique as Regras do banco. '+e.message,'err'));
 }
-function persistTema(t){ _temaIdx=null; // invalida índice
+/* Só atualiza o estado local (memória + localStorage), sem gravar no Firebase.
+   Usada por gerarTudo() pra registrar cada objeto gerado sem disparar um
+   .set() por item — vários .set() em sequência rápida no mesmo tema
+   costumavam estourar o limite do pushBackSeguro() (o listener de 'leciona/
+   temas' reage a cada gravação e pode reenviar em lote). O Firebase só
+   recebe a versão final, gravada uma vez só ao fim de gerarTudo(). */
+function persistTemaLocal(t){ _temaIdx=null; // invalida índice
   t._ts=Date.now(); t.updatedAt=t._ts; temas[t.id]=t;
   _lsTemasPendente=true; _agendarFlushLocal();
+}
+function persistTema(t){
+  persistTemaLocal(t);
   if(DB) DB.ref('leciona/temas/'+t.id).set(t).catch(e=>toast('⚠ Falha ao gravar tema no Firebase (mantido localmente). Verifique as Regras do banco. '+e.message,'err'));
 }
 window.addEventListener('beforeunload', ()=>{
@@ -4069,7 +4078,7 @@ async function gerarTudo(){
     const def=OBJ_DEFS.find(o=>o.k===k);
     const __label='Gerando '+def.label+'… ('+(ok+1)+'/'+ger.length+')';
     const __timerId=startGenTimer(()=>__label,t=>{ prog.innerHTML='<span class="spin dark"></span> '+t; },'lote');
-    try{ const okk=await genOne(k, foco); if(okk){ ok++; collectMeta(); persistTema(editing); dirty=false; } }
+    try{ const okk=await genOne(k, foco); if(okk){ ok++; collectMeta(); persistTemaLocal(editing); dirty=false; } }
     catch(e){ prog.textContent='Erro em '+def.label+': '+e.message; }
     finally{ stopGenTimer(__timerId); }
   }
@@ -4337,6 +4346,21 @@ async function preencherCronogramaCompleto(){
   }
 }
 
+async function backupRTDBAgora(){
+  const btn=event&&event.target;
+  const textoOriginal=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Fazendo backup…'; }
+  try{
+    const fn=firebase.app().functions('southamerica-east1').httpsCallable('backupRTDBAgora');
+    const r=await fn({});
+    const d=r.data||{};
+    toast('Backup gravado no Drive: '+d.arquivo+' ('+d.colecoes+' coleção(ões))'+(d.apagados?' · '+d.apagados+' backup(s) antigo(s) removido(s)':''),'ok');
+  }catch(e){
+    toast('⚠ Falha ao fazer backup: '+(e.message||e),'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=textoOriginal; }
+  }
+}
 async function atualizarQualitativaPlanilha(){
   const btn=event&&event.target;
   const textoOriginal=btn?btn.textContent:'';
@@ -6363,6 +6387,11 @@ function openConfig(){
         '<label class="btn ghost full" style="text-align:center;cursor:pointer;margin-top:8px;display:block">Restaurar backup completo'+
           '<input type="file" accept="application/json" style="display:none" onchange="importarBackupCompleto(event)">'+
         '</label></div>'+
+      '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:14px;margin-top:4px">'+
+        '<label>Backup automático no Google Drive</label>'+
+        '<small>Roda sozinho toda madrugada às 4h e grava uma cópia completa no Drive, sem precisar lembrar de clicar. Precisa a pasta do Drive estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
+        '<button class="btn" style="width:100%;margin-top:8px" onclick="backupRTDBAgora()">☁ Fazer backup no Drive agora</button>'+
+      '</div>'+
       '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:14px;margin-top:4px">'+
         '<label>Exportar conteúdo (só aulas, pra reaproveitar/compartilhar)</label>'+
         '<small>Não protege contra perda de dados — não inclui notas, chamada nem alunos. Use o "Backup completo" acima pra isso.</small>'+
