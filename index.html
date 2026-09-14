@@ -810,7 +810,7 @@ function turmaOptionsHtml(selectedId){
   return Object.keys(SERIES_BY_DISC).map(d=>{
     const opts=todas.filter(t=>t.disciplina===d);
     if(!opts.length) return '';
-    return '<optgroup label="'+esc(d)+'">'+opts.map(t=>'<option value="'+t.id+'"'+(t.id===selectedId?' selected':'')+'>'+esc(turmaNomeEscola(t))+'</option>').join('')+'</optgroup>';
+    return '<optgroup label="'+esc(d)+'">'+opts.map(t=>'<option value="'+t.id+'"'+(t.id===selectedId?' selected':'')+'>'+esc(turmaNomeCompleto(t))+'</option>').join('')+'</optgroup>';
   }).join('');
 }
 /* Turmas pré-carregadas: [disciplina, série, letra, unidade] */
@@ -7953,6 +7953,23 @@ function atividadeFeita(alunoId, av){
   if(av.checklist===true) return !!(n && n.valor>0);
   return !!(n && n.valor!=null);
 }
+/* Nome de atividade clicável dentro do boletim — leva direto pra célula de
+   nota daquele aluno x atividade em Notas, pra não precisar procurar de
+   novo depois de já ter achado o aluno e a atividade aqui. */
+function linkAtividadeBoletim(aluno,av){
+  return '<span class="boletim-atv-link" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px" onclick="irParaNotaAtividade(\''+aluno.id+'\',\''+aluno.turmaId+'\',\''+av.id+'\')" title="Ver/editar esta nota">'+esc(av.nome)+'</span>';
+}
+function irParaNotaAtividade(alunoId,turmaId,atividadeId){
+  closeModal();
+  abrirNotasTurma(turmaId);
+  const input=document.querySelector('.notas-table input[data-al="'+alunoId+'"][data-av="'+atividadeId+'"]');
+  if(!input) return;
+  input.scrollIntoView({block:'center',inline:'center'});
+  input.focus();
+  if(input.type==='number') input.select();
+  const td=input.closest('td');
+  if(td){ td.style.outline='2px solid var(--ochre)'; setTimeout(()=>{ td.style.outline=''; },1800); }
+}
 /* Boletim individual — clique no nome em Notas. Junta editar dados (que já
    existia) com a visão de todas as turmas em que o aluno está matriculado
    e o que já foi feito/falta em cada uma — pedido dela, espelhando o
@@ -7975,8 +7992,8 @@ function abrirBoletimAluno(id){
         '<span style="font-size:11.5px;color:var(--muted)">qualitativa '+notaQualitativa(a.id,a.turmaId).toFixed(1)+'</span>'+
       '</div>'+
       (atvs.length ? (
-        '<div style="font-size:12.5px;color:var(--green);margin-bottom:3px">✓ '+feitas.length+' feita(s)'+(feitas.length?': '+esc(feitas.map(av=>av.nome).join(', ')):'')+'</div>'+
-        '<div style="font-size:12.5px;color:var(--ochre)">○ '+faltando.length+' faltando'+(faltando.length?': '+esc(faltando.map(av=>av.nome).join(', ')):'')+'</div>'
+        '<div style="font-size:12.5px;color:var(--green);margin-bottom:3px">✓ '+feitas.length+' feita(s)'+(feitas.length?': '+feitas.map(av=>linkAtividadeBoletim(a,av)).join(', '):'')+'</div>'+
+        '<div style="font-size:12.5px;color:var(--ochre)">○ '+faltando.length+' faltando'+(faltando.length?': '+faltando.map(av=>linkAtividadeBoletim(a,av)).join(', '):'')+'</div>'
       ) : '<p style="color:var(--muted);font-size:12.5px;margin:0">Nenhuma atividade lançada nesta turma ainda.</p>')+
     '</div>';
   }).join('');
