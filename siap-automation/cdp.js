@@ -47,7 +47,7 @@ async function connect() {
       const payload = { id: reqId, method, params: params || {} };
       if (sessionId) payload.sessionId = sessionId;
       ws.send(JSON.stringify(payload));
-      setTimeout(() => { if (pending.has(reqId)) { pending.delete(reqId); reject(new Error('CDP timeout: ' + method)); } }, 15000);
+      setTimeout(() => { if (pending.has(reqId)) { pending.delete(reqId); reject(new Error('CDP timeout: ' + method)); } }, 45000);
     });
   }
   const target = await findSiapTarget();
