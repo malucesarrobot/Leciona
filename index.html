@@ -1969,6 +1969,15 @@ function boot(){
   loadLocal();
   initFirebase();
   if(!DB) seedTurmasIfEmpty();
+  // A turma salva é a fonte da verdade: se disc/serie/unidade salvos ficaram
+  // desatualizados em relação a ela (algum fluxo que trocou de turma sem
+  // manter os 4 campos do scope em sincronia), corrige aqui em vez de deixar
+  // refreshTurmas() descartar silenciosamente a turma certa por não bater
+  // no filtro — era isso que fazia algumas turmas "sumirem" da aba Notas.
+  if(scope.turma && turmas[scope.turma]){
+    const tScope=turmas[scope.turma];
+    scope.disc=tScope.disciplina; scope.serie=tScope.serie||scope.serie; scope.unidade=tScope.unidade||scope.unidade;
+  }
   // aplica o contexto salvo aos seletores, na ordem certa
   d.value = (SERIES_BY_DISC[scope.disc]?scope.disc:'História');
   us.value = scope.unidade||UNIDADES[0];
@@ -7877,7 +7886,7 @@ function confirmarUsarPrePronto(i){
 function acervoAbrir(turmaId, temaId){
   const tu=turmas[turmaId]; if(!tu) return;
   // Ir para gestão na turma certa e abrir o tema
-  scope.disc=tu.disciplina; scope.serie=tu.serie; scope.unidade=tu.unidade;
+  scope.disc=tu.disciplina; scope.serie=tu.serie; scope.unidade=tu.unidade; scope.turma=turmaId;
   const cont=Object.values(conteudos).find(c=>c.turmaId===turmaId);
   if(cont) scope.bim=cont.bimestre;
   saveScope();
