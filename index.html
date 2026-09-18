@@ -8517,6 +8517,7 @@ function toggleFaltaChamadaInline(alunoId){
   if(!turmaId||!data) return;
   const existente=chamadaDoDia(turmaId,data);
   const c=existente || {id:uid(), turmaId, data, presencas:{}};
+  if(!c.presencas) c.presencas={};
   const atual=c.presencas[alunoId];
   c.presencas[alunoId] = atual===false ? true : false;
   persistChamada(c);
@@ -8655,7 +8656,7 @@ function renderNotas(){
       esc(nomesCurtos ? nomeSobrenome(al.nome) : al.nome)+
     '</td>'+
     (temHorarioChamada
-      ? (()=>{ const falta=chamadaHoje && chamadaHoje.presencas[al.id]===false;
+      ? (()=>{ const falta=chamadaHoje && chamadaHoje.presencas && chamadaHoje.presencas[al.id]===false;
           return '<td style="text-align:center;cursor:pointer;background:'+(falta?'rgba(200,60,60,.1)':'rgba(60,150,90,.08)')+'" onclick="toggleFaltaChamadaInline(\''+al.id+'\')" title="Clique pra marcar '+(falta?'presença':'falta')+' em '+window.__chamadaColData.split('-').reverse().join('/')+'">'+
             (falta?'<span style="color:var(--err)">✕ falta</span>':'<span style="color:var(--green)">✓</span>')+
           '</td>'; })()
