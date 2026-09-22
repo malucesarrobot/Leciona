@@ -4380,7 +4380,7 @@ async function backupRTDBAgora(){
     const fn=firebase.app().functions('southamerica-east1').httpsCallable('backupRTDBAgora');
     const r=await fn({});
     const d=r.data||{};
-    toast('Backup gravado no Drive: '+d.arquivo+' ('+d.colecoes+' coleção(ões))'+(d.apagados?' · '+d.apagados+' backup(s) antigo(s) removido(s)':''),'ok');
+    toast('Backup gravado no Storage: '+d.arquivo+' ('+d.colecoes+' coleção(ões))'+(d.apagados?' · '+d.apagados+' backup(s) antigo(s) removido(s)':''),'ok');
   }catch(e){
     toast('⚠ Falha ao fazer backup: '+(e.message||e),'err');
   }finally{
@@ -6414,9 +6414,9 @@ function openConfig(){
           '<input type="file" accept="application/json" style="display:none" onchange="importarBackupCompleto(event)">'+
         '</label></div>'+
       '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:14px;margin-top:4px">'+
-        '<label>Backup automático no Google Drive</label>'+
-        '<small>Roda sozinho toda madrugada às 4h e grava uma cópia completa no Drive, sem precisar lembrar de clicar. Precisa a pasta do Drive estar compartilhada com o e-mail de serviço (veja com a Malu/Claude se ainda não configurou).</small>'+
-        '<button class="btn" style="width:100%;margin-top:8px" onclick="backupRTDBAgora()">☁ Fazer backup no Drive agora</button>'+
+        '<label>Backup automático no Storage</label>'+
+        '<small>Roda sozinho toda madrugada às 4h e grava uma cópia completa no Cloud Storage do projeto (Console do Firebase → Storage → pasta "backups/"), sem precisar lembrar de clicar.</small>'+
+        '<button class="btn" style="width:100%;margin-top:8px" onclick="backupRTDBAgora()">☁ Fazer backup agora</button>'+
       '</div>'+
       '<div class="field" style="border-top:1px solid var(--bd,#ddd);padding-top:14px;margin-top:4px">'+
         '<label>Exportar conteúdo (só aulas, pra reaproveitar/compartilhar)</label>'+
@@ -8057,9 +8057,13 @@ function perfisNecessariosDaTurma(turmaId){
 // ── Helpers ───────────────────────────────────────────────────────────────
 function alunosDaTurma(turmaId){ return Object.values(alunos).filter(a=>a&&a.turmaId===turmaId&&a.ativo!==false).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR',{sensitivity:'base'})||(a.numero||999)-(b.numero||999)); }
 function atividadesDaTurma(turmaId){
+  // Atividades "Bloco..." (ex.: "Bloco do CEPI") ficam sempre por último entre
+  // as colunas de atividade, coladas em Média/qualitativa — mesmo quando sua
+  // data é anterior à de atividades lançadas depois. Pedido explícito da Malu.
+  const ehBloco=av=>/^bloco/i.test((av&&av.nome)||'');
   return Object.values(atividadesCtrl)
     .filter(av=>av&&av.turmaIds&&av.turmaIds.includes(turmaId))
-    .sort((a,b)=>(a.data||'').localeCompare(b.data||'')||(a.nome||'').localeCompare(b.nome||''));
+    .sort((a,b)=>(ehBloco(a)-ehBloco(b))||(a.data||'').localeCompare(b.data||'')||(a.nome||'').localeCompare(b.nome||''));
 }
 /* Índice notasCtrl por "alunoId|atividadeId" (mesmo padrão do _temaIdx) —
    notaDoAluno() é chamada em loop pra cada aluno×atividade em renderNotas,

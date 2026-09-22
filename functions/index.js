@@ -8,7 +8,6 @@ const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const { google } = require('googleapis');
-const { Readable } = require('stream');
 
 admin.initializeApp();
 const rtdb = admin.database();
@@ -417,9 +416,9 @@ exports.importarPlanilhaAgora = onCall(
   }
 );
 
-// Roda sozinha todo dia útil à noite, depois que a planilha do Arlan já foi preenchida.
+// Roda sozinha todo dia útil às 10h da manhã.
 exports.importarPlanilhaAgendado = onSchedule(
-  { schedule: '30 19 * * 1-5', timeZone: 'America/Sao_Paulo', region: 'southamerica-east1', memory: '256MiB', timeoutSeconds: 120 },
+  { schedule: '0 10 * * 1-5', timeZone: 'America/Sao_Paulo', region: 'southamerica-east1', memory: '256MiB', timeoutSeconds: 120 },
   async () => { await importarPlanilhaArlan(); }
 );
 
@@ -1245,49 +1244,33 @@ exports.preencherCronogramaCompletoAgora = onCall(
    substitui) o "Backup completo" manual do app (Configurações), que só
    roda se alguém lembrar de clicar.
 
-   Autenticação: mesma conta de serviço da própria Cloud Function (padrão
-   de sheetsClient() acima, já usado pra escrever na planilha Qualitativa)
-   — não precisa de segredo novo. Mas a PASTA de destino no Drive precisa
-   estar compartilhada com essa conta de serviço (papel Editor), senão o
-   upload falha com "permission denied" nos logs; é a MESMA conta que já
-   tem acesso à planilha Qualitativa (PLANILHA_QUALITATIVA_ID acima).
+   Autenticação: mesma conta de serviço da própria Cloud Function, mas
+   grava no Cloud Storage do próprio projeto Firebase (bucket padrão),
+   não no Google Drive — contas de serviço não têm cota de armazenamento
+   em Drive pessoal (erro "Service Accounts do not have storage quota"),
+   então salvar lá nunca funcionaria com uma conta Gmail pessoal (sem
+   Google Workspace). Storage não tem esse problema: é armazenamento do
+   próprio projeto GCP, sem depender de compartilhamento de pasta.
+   Acesse os backups pelo Console do Firebase → Storage → pasta "backups/".
 
-   Mantém só os BACKUP_RETENCAO arquivos mais recentes na pasta — apaga os
+   Mantém só os BACKUP_RETENCAO arquivos mais recentes — apaga os
    mais antigos a cada rodada pra não acumular pra sempre. */
-const BACKUP_DRIVE_FOLDER_ID = '19U8qQeYqbeatz-RyfpcfUPNBgdDCcBKf'; // pasta "Leciona — Backups" no Drive da professora
 const BACKUP_RETENCAO = 30;
 
-async function driveClient() {
-  const auth = new google.auth.GoogleAuth({ scopes: ['https://www.googleapis.com/auth/drive'] });
-  const authClient = await auth.getClient();
-  return google.drive({ version: 'v3', auth: authClient });
-}
-
 async function fazerBackupRTDB() {
-  if (!BACKUP_DRIVE_FOLDER_ID) {
-    throw new Error('Backup automático ainda não configurado: falta o ID da pasta do Drive em BACKUP_DRIVE_FOLDER_ID (functions/index.js).');
-  }
   const snap = await rtdb.ref('leciona').once('value');
   const dados = snap.val() || {};
   const conteudo = JSON.stringify({ exportedAt: new Date().toISOString(), leciona: dados });
   const nomeArquivo = 'leciona-backup-' + new Date().toISOString().slice(0, 10) + '.json';
 
-  const drive = await driveClient();
-  await drive.files.create({
-    requestBody: { name: nomeArquivo, parents: [BACKUP_DRIVE_FOLDER_ID], mimeType: 'application/json' },
-    media: { mimeType: 'application/json', body: Readable.from([conteudo]) },
-    fields: 'id',
-  });
+  const bucket = admin.storage().bucket();
+  await bucket.file('backups/' + nomeArquivo).save(conteudo, { contentType: 'application/json' });
 
-  const lista = await drive.files.list({
-    q: "'" + BACKUP_DRIVE_FOLDER_ID + "' in parents and trashed = false and name contains 'leciona-backup-'",
-    fields: 'files(id, name, createdTime)',
-    orderBy: 'createdTime desc',
-    pageSize: 1000,
-  });
-  const excedentes = (lista.data.files || []).slice(BACKUP_RETENCAO);
+  const [arquivos] = await bucket.getFiles({ prefix: 'backups/leciona-backup-' });
+  const ordenados = arquivos.sort((a, b) => (b.metadata.timeCreated || '').localeCompare(a.metadata.timeCreated || ''));
+  const excedentes = ordenados.slice(BACKUP_RETENCAO);
   for (const f of excedentes) {
-    await drive.files.delete({ fileId: f.id }).catch(() => {});
+    await f.delete().catch(() => {});
   }
 
   return { arquivo: nomeArquivo, colecoes: Object.keys(dados).length, apagados: excedentes.length };

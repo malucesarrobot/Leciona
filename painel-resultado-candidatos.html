@@ -1,0 +1,461 @@
+<title>Painel de Apuração</title>
+<meta name="description" content="Cole o CSV exportado do Scoresheet do Plickers, por turma, e veja o resultado combinado e individual de cada aluno.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{
+  --paper:#F6F4EF; --surface:#FFFFFF; --ink:#1F2421; --ink-muted:#5B6259; --ink-faint:#8B9187;
+  --line:rgba(31,36,33,0.14); --line-strong:rgba(31,36,33,0.28);
+  --accent:#C98A2E; --accent-ink:#6E4712; --accent-soft:#F3E3C6;
+  --warn:#A94A3E; --warn-soft:#F6E2DE;
+  --good:#3E6B4F; --good-soft:#E1EDE3;
+  --c-lula:#3B8368; --c-flavio:#B54B3A; --c-cury:#B8862E; --c-pimenta:#7357A6; --c-renan:#3B6EA0;
+  --font-display:"Fraunces",Georgia,serif; --font-body:"IBM Plex Sans",-apple-system,sans-serif; --font-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15181A; --surface:#1D2123; --ink:#ECE8DF; --ink-muted:#A8ACA2; --ink-faint:#6C7069;
+    --line:rgba(236,232,223,0.14); --line-strong:rgba(236,232,223,0.26);
+    --accent:#E0A845; --accent-ink:#2B1B04; --accent-soft:#3A2C10;
+    --warn:#D98276; --warn-soft:#3A2320;
+    --good:#7FBD93; --good-soft:#1E2D22;
+    --c-lula:#5FAE8E; --c-flavio:#D9765F; --c-cury:#D9A64E; --c-pimenta:#9E82CC; --c-renan:#6C9BCC;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15181A; --surface:#1D2123; --ink:#ECE8DF; --ink-muted:#A8ACA2; --ink-faint:#6C7069;
+  --line:rgba(236,232,223,0.14); --line-strong:rgba(236,232,223,0.26);
+  --accent:#E0A845; --accent-ink:#2B1B04; --accent-soft:#3A2C10;
+  --warn:#D98276; --warn-soft:#3A2320;
+  --good:#7FBD93; --good-soft:#1E2D22;
+  --c-lula:#5FAE8E; --c-flavio:#D9765F; --c-cury:#D9A64E; --c-pimenta:#9E82CC; --c-renan:#6C9BCC;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);line-height:1.5;}
+.wrap{max-width:920px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
+header{margin-bottom:2rem;}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent-soft);display:inline-block;padding:.25rem .6rem;border-radius:4px;margin-bottom:.9rem;}
+h1{font-family:var(--font-display);font-weight:600;font-size:2rem;margin:0 0 .5rem;text-wrap:balance;}
+.sub{color:var(--ink-muted);font-size:.96rem;max-width:66ch;margin:0;}
+
+.tabs{display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap;}
+.tab{font-family:var(--font-body);font-weight:600;font-size:.86rem;background:var(--surface);border:1px solid var(--line-strong);border-radius:8px;padding:.55rem 1rem;cursor:pointer;color:var(--ink-muted);display:flex;align-items:center;gap:.45rem;}
+.tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+:root[data-theme="dark"] .tab.active, :root:not([data-theme="light"]) .tab.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+.tab .dot{width:7px;height:7px;border-radius:50%;background:var(--line-strong);flex-shrink:0;}
+.tab.done .dot{background:var(--good);}
+.tab.active .dot{background:currentColor;opacity:.5;}
+
+.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1.4rem 1.5rem;margin-bottom:1.25rem;}
+.step-label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.6rem;}
+.step h2{font-family:var(--font-display);font-size:1.2rem;font-weight:600;margin:0 0 .5rem;}
+.step p{color:var(--ink-muted);font-size:.9rem;margin:0 0 1rem;}
+
+textarea{width:100%;min-height:120px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--font-mono);font-size:.8rem;padding:.75rem;resize:vertical;}
+textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+.file-row{display:flex;align-items:center;gap:.8rem;margin-bottom:1rem;flex-wrap:wrap;}
+.file-btn{font-family:var(--font-body);font-weight:600;font-size:.88rem;background:var(--paper);border:1px solid var(--line-strong);border-radius:8px;padding:.55rem 1rem;cursor:pointer;}
+.file-btn:hover{border-color:var(--accent);}
+.file-name{font-family:var(--font-mono);font-size:.8rem;color:var(--ink-muted);}
+input[type="file"]{display:none;}
+
+.process-row{display:flex;align-items:center;gap:1rem;margin-bottom:.5rem;}
+.process-btn{font-family:var(--font-body);font-weight:600;font-size:.95rem;background:var(--accent);color:var(--accent-ink);border:none;border-radius:9px;padding:.75rem 1.5rem;cursor:pointer;transition:transform .12s ease;}
+.process-btn:hover{transform:translateY(-1px);}
+
+.status{font-family:var(--font-mono);font-size:.82rem;margin-top:.8rem;padding:.6rem .8rem;border-radius:7px;display:none;}
+.status.show{display:block;}
+.status.ok{background:var(--good-soft);color:var(--good);}
+.status.err{background:var(--warn-soft);color:var(--warn);}
+
+.combined{margin-top:2.5rem;}
+.combined-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.3rem;flex-wrap:wrap;gap:.5rem;}
+.results-title{font-family:var(--font-display);font-size:1.6rem;font-weight:600;margin:0;}
+.results-sub{color:var(--ink-muted);font-size:.85rem;font-family:var(--font-mono);margin:0 0 1.5rem;}
+.empty-note{color:var(--ink-faint);font-size:.9rem;font-style:italic;padding:1rem 0;}
+
+.filter-chips{display:flex;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap;}
+.chip{font-family:var(--font-mono);font-size:.76rem;border:1px solid var(--line-strong);border-radius:20px;padding:.3rem .75rem;cursor:pointer;color:var(--ink-muted);background:var(--surface);}
+.chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+:root[data-theme="dark"] .chip.active, :root:not([data-theme="light"]) .chip.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+
+.rank{display:flex;align-items:center;gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--line);}
+.rank:last-child{border-bottom:none;}
+.rank-pos{font-family:var(--font-display);font-size:1.25rem;font-weight:600;color:var(--ink-faint);width:1.8rem;text-align:center;flex-shrink:0;}
+.rank:first-child .rank-pos{color:var(--accent-ink);}
+.rank-body{flex:1;min-width:0;}
+.rank-name{font-weight:600;font-size:.98rem;margin-bottom:.3rem;}
+.rank-track{height:9px;border-radius:5px;background:var(--line);overflow:hidden;}
+.rank-fill{height:100%;border-radius:5px;background:var(--ink-faint);width:0%;transition:width 1s cubic-bezier(.2,.8,.2,1);}
+.rank:first-child .rank-fill{background:var(--accent);}
+.rank-pct{font-family:var(--font-mono);font-weight:600;font-size:1.02rem;width:3.8rem;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;}
+.rank:first-child .rank-pct{color:var(--accent-ink);}
+
+.students-head{display:flex;justify-content:space-between;align-items:baseline;margin:2.25rem 0 1rem;}
+.students-head h2{font-family:var(--font-display);font-size:1.25rem;font-weight:600;margin:0;}
+.students-count{font-family:var(--font-mono);font-size:.78rem;color:var(--ink-faint);}
+.search{width:100%;margin-bottom:1rem;padding:.6rem .8rem;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-family:var(--font-body);font-size:.88rem;}
+.search:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+.legend{display:flex;flex-wrap:wrap;gap:.5rem 1rem;margin-bottom:1.1rem;}
+.legend-item{display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:var(--ink-muted);}
+.legend-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+
+.student-list{display:flex;flex-direction:column;gap:.55rem;}
+.student-row{display:flex;align-items:center;gap:.9rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:.7rem .9rem;}
+.student-row-left{width:9rem;flex-shrink:0;min-width:0;}
+.student-name{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.student-turma{font-family:var(--font-mono);font-size:.66rem;color:var(--ink-faint);}
+.student-bar{flex:1;height:20px;border-radius:6px;overflow:hidden;display:flex;background:var(--line);min-width:80px;}
+.student-bar-seg{height:100%;transition:width .6s ease;}
+.student-lead{width:9.5rem;flex-shrink:0;text-align:right;}
+.student-match{font-family:var(--font-display);font-size:.95rem;font-weight:600;}
+.student-match.tie{color:var(--ink-muted);font-family:var(--font-body);font-weight:500;font-size:.8rem;font-style:italic;}
+.student-detail{font-family:var(--font-mono);font-size:.68rem;color:var(--ink-faint);}
+@media (max-width:640px){
+  .student-row{flex-wrap:wrap;}
+  .student-row-left{width:auto;flex:1 1 100%;}
+  .student-lead{width:auto;text-align:left;margin-left:auto;}
+}
+
+.reset-row{text-align:center;margin-top:2rem;}
+.reset-link{font-family:var(--font-mono);font-size:.78rem;color:var(--ink-faint);background:none;border:none;text-decoration:underline;cursor:pointer;padding:.3rem;}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Enquete cega · Sociologia</span>
+    <h1>Painel de apuração</h1>
+    <p class="sub">Depois de aplicar nas 3 turmas, exporte o CSV do Scoresheet de cada uma (Plickers já inclui nome do aluno + resposta por pergunta) e cole aqui, uma turma de cada vez. A ferramenta soma tudo — resultado combinado das 3 turmas e, pra cada aluno, qual candidato mais bateu com as posições que ele escolheu.</p>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="step">
+    <div class="step-label">CSV desta turma</div>
+    <h2 id="stepTitle">Cole os dados da Turma 1</h2>
+    <p>No Plickers, abra o Scoresheet dessa turma (os 3 blocos "Candidatos 2026"), clique em exportar e cole o CSV — ou envie o arquivo.</p>
+    <div class="file-row">
+      <button class="file-btn" id="fileBtn">Escolher arquivo CSV</button>
+      <input type="file" id="fileInput" accept=".csv,text/csv">
+      <span class="file-name" id="fileName">Nenhum arquivo selecionado</span>
+    </div>
+    <textarea id="csvInput" placeholder="Nome,Sobre a atuação do Estado na economia...,Sobre carga tributária...,...&#10;Ana Beatriz,B,A,D,C,-,...&#10;Bruno Costa,A,A,C,B,C,..."></textarea>
+    <div class="process-row">
+      <button class="process-btn" id="processBtn">Processar esta turma</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="combined">
+    <div class="combined-head">
+      <h2 class="results-title">Resultado combinado</h2>
+    </div>
+    <p class="results-sub" id="resultsSub"></p>
+    <div id="rankList"><p class="empty-note">Processe pelo menos uma turma para ver o ranking aqui.</p></div>
+
+    <div class="students-head">
+      <h2>Cada aluno, seu candidato</h2>
+      <span class="students-count" id="studentsCount"></span>
+    </div>
+    <div class="filter-chips" id="turmaChips"></div>
+    <div class="legend" id="legend"></div>
+    <input type="text" class="search" id="studentSearch" placeholder="Buscar aluno...">
+    <div class="student-list" id="studentGrid"></div>
+
+    <div class="reset-row"><button class="reset-link" id="resetBtn">Limpar tudo e recomeçar</button></div>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  { key: "atuação do estado",    map: { A:"Flávio Bolsonaro", B:"Augusto Cury", C:"Rui Costa Pimenta", D:"Renan Santos" } },
+  { key: "carga tributária",     map: { A:"Flávio Bolsonaro", B:"Augusto Cury", C:"Rui Costa Pimenta", D:"Renan Santos" } },
+  { key: "legislação trabalhista", map: { A:"Flávio Bolsonaro", B:"Augusto Cury", C:"Rui Costa Pimenta", D:"Renan Santos" } },
+  { key: "previdência",          map: { A:"Lula", B:"Augusto Cury", C:"Rui Costa Pimenta", D:"Renan Santos" } },
+  { key: "saúde pública",        map: { A:"Lula", B:"Augusto Cury", C:"Rui Costa Pimenta", D:"Renan Santos" } },
+  { key: "educação básica",      map: { A:"Lula", B:"Augusto Cury", C:"Rui Costa Pimenta", D:"Renan Santos" } },
+  { key: "cotas raciais",        map: { A:"Lula", B:"Flávio Bolsonaro", C:"Rui Costa Pimenta", D:"Renan Santos" } },
+  { key: "religião e estado",    map: { A:"Lula", B:"Flávio Bolsonaro", C:"Rui Costa Pimenta", D:"Renan Santos" } },
+  { key: "armamento civil",      map: { A:"Lula", B:"Flávio Bolsonaro", C:"Rui Costa Pimenta", D:"Renan Santos" } },
+  { key: "habitação popular",    map: { A:"Lula", B:"Flávio Bolsonaro", C:"Augusto Cury", D:"Renan Santos" } },
+  { key: "policiamento",         map: { A:"Lula", B:"Flávio Bolsonaro", C:"Augusto Cury", D:"Renan Santos" } },
+  { key: "política de drogas",   map: { A:"Lula", B:"Flávio Bolsonaro", C:"Augusto Cury", D:"Renan Santos" } },
+  { key: "judiciário",           map: { A:"Lula", B:"Flávio Bolsonaro", C:"Augusto Cury", D:"Rui Costa Pimenta" } },
+  { key: "transição energética", map: { A:"Lula", B:"Flávio Bolsonaro", C:"Augusto Cury", D:"Rui Costa Pimenta" } },
+  { key: "desmatamento",         map: { A:"Lula", B:"Flávio Bolsonaro", C:"Augusto Cury", D:"Rui Costa Pimenta" } },
+];
+
+const TURMAS = ["Turma 1", "Turma 2", "Turma 3"];
+
+const CANDIDATE_COLORS = {
+  "Lula": "var(--c-lula)",
+  "Flávio Bolsonaro": "var(--c-flavio)",
+  "Augusto Cury": "var(--c-cury)",
+  "Rui Costa Pimenta": "var(--c-pimenta)",
+  "Renan Santos": "var(--c-renan)",
+};
+const CANDIDATE_ORDER = Object.keys(CANDIDATE_COLORS);
+
+function norm(s){
+  return (s||"").toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i], next = text[i+1];
+    if(inQuotes){
+      if(c === '"' && next === '"'){ field += '"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else field += c;
+    } else {
+      if(c === '"') inQuotes = true;
+      else if(c === ',' || c === '\t'){ row.push(field); field = ""; }
+      else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; }
+      else if(c === '\r'){ }
+      else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ""));
+}
+
+function matchColumns(headerRow){
+  return headerRow.map(h => {
+    const hn = norm(h);
+    return QUESTIONS.find(q => hn.includes(norm(q.key))) || null;
+  });
+}
+
+function processCSV(text){
+  const rows = parseCSV(text);
+  if(rows.length < 2) throw new Error("Não achei linhas suficientes no CSV.");
+  const header = rows[0];
+  const colMatch = matchColumns(header);
+  const matchedCount = colMatch.filter(Boolean).length;
+  if(matchedCount === 0) throw new Error("Não reconheci nenhuma das 15 perguntas nas colunas do CSV.");
+
+  const students = [];
+  for(let r=1; r<rows.length; r++){
+    const row = rows[r];
+    const name = (row[0] || "").trim();
+    if(!name || /class average/i.test(name)) continue;
+    const totals = {};
+    let answered = 0;
+    for(let c=0; c<row.length; c++){
+      const q = colMatch[c];
+      if(!q) continue;
+      const raw = (row[c] || "").trim().toUpperCase();
+      const letter = raw.replace(/[^A-D]/g, "");
+      if(!letter || !q.map[letter]) continue;
+      const cand = q.map[letter];
+      totals[cand] = (totals[cand] || 0) + 1;
+      answered++;
+    }
+    if(answered === 0) continue;
+    const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
+    const top = sorted[0];
+    const tied = sorted.filter(([,v]) => v === top[1]);
+    students.push({ name, totals, answered, top: top[0], topVotes: top[1], tied: tied.length > 1, tiedNames: tied.map(t=>t[0]) });
+  }
+  if(students.length === 0) throw new Error("Não achei nenhum aluno com respostas nessas colunas.");
+  return { students, matchedCount };
+}
+
+// state: one entry per turma, null until processed
+const turmaData = TURMAS.map(() => null);
+let activeTurma = 0;
+let turmaFilter = "all";
+
+const tabsEl = document.getElementById("tabs");
+const stepTitle = document.getElementById("stepTitle");
+const fileBtn = document.getElementById("fileBtn");
+const fileInput = document.getElementById("fileInput");
+const fileName = document.getElementById("fileName");
+const csvInput = document.getElementById("csvInput");
+const statusEl = document.getElementById("status");
+const processBtn = document.getElementById("processBtn");
+const resultsSub = document.getElementById("resultsSub");
+const rankList = document.getElementById("rankList");
+const studentGrid = document.getElementById("studentGrid");
+const studentsCount = document.getElementById("studentsCount");
+const studentSearch = document.getElementById("studentSearch");
+const turmaChips = document.getElementById("turmaChips");
+const legend = document.getElementById("legend");
+
+function renderTabs(){
+  tabsEl.innerHTML = TURMAS.map((t,i) => `
+    <button class="tab ${i===activeTurma?'active':''} ${turmaData[i]?'done':''}" data-i="${i}">
+      <span class="dot"></span>${t}${turmaData[i] ? ' · ' + turmaData[i].students.length : ''}
+    </button>
+  `).join("");
+  tabsEl.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeTurma = Number(btn.dataset.i);
+      stepTitle.textContent = "Cole os dados de " + TURMAS[activeTurma];
+      statusEl.className = "status";
+      renderTabs();
+    });
+  });
+}
+
+fileBtn.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", () => {
+  const f = fileInput.files[0];
+  if(!f) return;
+  fileName.textContent = f.name;
+  const reader = new FileReader();
+  reader.onload = e => { csvInput.value = e.target.result; };
+  reader.readAsText(f);
+});
+
+function showStatus(msg, kind){
+  statusEl.textContent = msg;
+  statusEl.className = "status show " + kind;
+}
+
+function renderCombined(){
+  const active = turmaData.filter(Boolean);
+  if(active.length === 0){
+    resultsSub.textContent = "";
+    rankList.innerHTML = '<p class="empty-note">Processe pelo menos uma turma para ver o ranking aqui.</p>';
+    turmaChips.innerHTML = "";
+    studentsCount.textContent = "";
+    studentGrid.innerHTML = "";
+    return;
+  }
+
+  const classTotals = {};
+  let grand = 0, totalStudents = 0;
+  active.forEach(t => {
+    totalStudents += t.students.length;
+    t.students.forEach(s => {
+      Object.entries(s.totals).forEach(([cand, v]) => {
+        classTotals[cand] = (classTotals[cand] || 0) + v;
+        grand += v;
+      });
+    });
+  });
+
+  const turmaNames = TURMAS.filter((_,i) => turmaData[i]);
+  resultsSub.textContent = grand + " respostas de " + totalStudents + " aluno" + (totalStudents===1?"":"s") + " · " + turmaNames.join(", ");
+
+  const classRanking = Object.entries(classTotals)
+    .map(([name,votes]) => ({ name, votes, pct: grand ? votes/grand*100 : 0 }))
+    .sort((a,b) => b.votes - a.votes);
+
+  rankList.innerHTML = classRanking.map((r,i) => `
+    <div class="rank">
+      <div class="rank-pos">${i+1}</div>
+      <div class="rank-body">
+        <div class="rank-name">${r.name}</div>
+        <div class="rank-track"><div class="rank-fill" data-pct="${r.pct}" style="background:${CANDIDATE_COLORS[r.name]||'var(--ink-faint)'}"></div></div>
+      </div>
+      <div class="rank-pct">${r.pct.toFixed(1)}%</div>
+    </div>
+  `).join("");
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    rankList.querySelectorAll(".rank-fill").forEach(el => { el.style.width = el.dataset.pct + "%"; });
+  }));
+
+  legend.innerHTML = CANDIDATE_ORDER.map(c => `
+    <div class="legend-item"><span class="legend-swatch" style="background:${CANDIDATE_COLORS[c]}"></span>${c}</div>
+  `).join("");
+
+  // chips
+  const chips = [{ id: "all", label: "Todas" }].concat(
+    TURMAS.map((t,i) => turmaData[i] ? { id: String(i), label: t } : null).filter(Boolean)
+  );
+  turmaChips.innerHTML = chips.map(c => `<button class="chip ${turmaFilter===c.id?'active':''}" data-id="${c.id}">${c.label}</button>`).join("");
+  turmaChips.querySelectorAll(".chip").forEach(btn => {
+    btn.addEventListener("click", () => { turmaFilter = btn.dataset.id; renderCombined(); });
+  });
+
+  const allStudents = [];
+  TURMAS.forEach((t,i) => {
+    if(!turmaData[i]) return;
+    if(turmaFilter !== "all" && turmaFilter !== String(i)) return;
+    turmaData[i].students.forEach(s => allStudents.push({ ...s, turma: t }));
+  });
+  allStudents.sort((a,b) => a.name.localeCompare(b.name, "pt-BR"));
+  studentsCount.textContent = allStudents.length + " aluno" + (allStudents.length===1?"":"s");
+  renderStudents(allStudents, studentSearch.value);
+}
+
+let lastAllStudents = [];
+function studentBar(s){
+  return CANDIDATE_ORDER.map(c => {
+    const v = s.totals[c] || 0;
+    if(v === 0) return "";
+    const pct = (v / s.answered * 100).toFixed(2);
+    return `<div class="student-bar-seg" style="width:${pct}%;background:${CANDIDATE_COLORS[c]}" title="${c}: ${v}"></div>`;
+  }).join("");
+}
+function renderStudents(list, filter){
+  lastAllStudents = list;
+  const f = norm(filter);
+  const shown = f ? list.filter(s => norm(s.name).includes(f)) : list;
+  studentGrid.innerHTML = shown.map(s => `
+    <div class="student-row">
+      <div class="student-row-left">
+        <div class="student-name">${s.name}</div>
+        <div class="student-turma">${s.turma}</div>
+      </div>
+      <div class="student-bar">${studentBar(s)}</div>
+      <div class="student-lead">
+        ${s.tied
+          ? `<div class="student-match tie">Empate: ${s.tiedNames.join(" · ")}</div>`
+          : `<div class="student-match" style="color:${CANDIDATE_COLORS[s.top]}">${s.top}</div>`}
+        <div class="student-detail">${s.topVotes}/${s.answered} respostas</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+studentSearch.addEventListener("input", () => renderStudents(lastAllStudents, studentSearch.value));
+
+processBtn.addEventListener("click", () => {
+  statusEl.className = "status";
+  try{
+    const { students, matchedCount } = processCSV(csvInput.value);
+    turmaData[activeTurma] = { students, matchedCount };
+    showStatus(TURMAS[activeTurma] + ": " + students.length + " alunos, " + matchedCount + " de 15 perguntas reconhecidas.", "ok");
+    renderTabs();
+    renderCombined();
+  }catch(err){
+    showStatus(err.message, "err");
+  }
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if(!confirm("Limpar os dados de todas as turmas?")) return;
+  for(let i=0;i<turmaData.length;i++) turmaData[i] = null;
+  activeTurma = 0;
+  turmaFilter = "all";
+  csvInput.value = "";
+  fileInput.value = "";
+  fileName.textContent = "Nenhum arquivo selecionado";
+  stepTitle.textContent = "Cole os dados de " + TURMAS[0];
+  statusEl.className = "status";
+  renderTabs();
+  renderCombined();
+  window.scrollTo({ top:0, behavior:"smooth" });
+});
+
+// pre-load the real test-run CSV (2 guest cards) so the page opens already showing how it works
+const DEMO_CSV = `Card Number,First name,Last Name,Score,Correct,Answered,Sobre a atuação do Estado na economia,Sobre carga tributária,Sobre legislação trabalhista (CLT),Sobre previdência (INSS),Sobre a saúde pública (SUS)
+4,Guest 4,,-,0,0,B,A,D,C,-
+11,Guest 11,,-,0,0,-,-,-,-,C`;
+csvInput.value = DEMO_CSV;
+try{
+  const { students, matchedCount } = processCSV(DEMO_CSV);
+  turmaData[0] = { students, matchedCount };
+  showStatus("Exemplo carregado: teste com 2 cartões (Turma 1). Cole o CSV real de cada turma pra substituir.", "ok");
+}catch(e){}
+
+renderTabs();
+renderCombined();
+</script>

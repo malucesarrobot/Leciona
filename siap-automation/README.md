@@ -145,6 +145,172 @@ próxima (mesma semana) como aproximação razoável.
   → `4`/`16`/`15`/`1841`.
 - Turno: sempre `1` (Matutino) — não há turmas à tarde nesta automação.
 
+## Frequência — "selo de gravação" (descoberto em 20/09/2026)
+
+Antes de tentar lançar/corrigir frequência de uma data, **checar primeiro sem
+abrir a data**, direto na célula do calendário mensal
+(`td[data-canonica="YYYY/M/D"]`):
+- `data-lancamento-frequencia="True"` → **já foi lançado** — pular, não abrir
+  nem clicar em nada (a Malu chama isso de "selo de gravação" — ela vê no
+  painel "Histórico detalhado", no rodapé da página de frequência de uma
+  data já aberta, uma entrada `.containerHistorico` por gravação feita, com
+  nome/CPF/data-hora/"Ação: Inclusão"; o atributo do calendário é o mesmo
+  sinal, só que consultável sem precisar abrir a data).
+- `class` **sem** `"dialog letivo"` (geralmente `class=""`) → o SIAP **não
+  considera esse dia letivo pra essa turma-disciplina** — clicar nele não
+  funciona (não é bug de clique, a célula genuinamente não é interativa).
+  Se o Leciona tem uma chamada registrada nessa data mesmo assim, é uma
+  inconsistência de dado pra conferir com a Malu, não algo pra forçar via
+  automação (aconteceu com Filosofia 1ªB numa quinta-feira — o SIAP só
+  reconhece quarta como dia letivo dessa turma-disciplina).
+- Só quando `data-lancamento-frequencia="False"` **e** a classe tem
+  `"dialog letivo"` é que vale a pena abrir a data (`gotoDate`) e seguir o
+  fluxo normal de diff+clique+salvar.
+- Implementado em `lancar-frequencia.js` (`lancarFrequenciaTurma`) — checa
+  isso ANTES de chamar `gotoDate`, evitando abrir datas que não precisam
+  de nada e evitando depender do clique (que falha com alguma frequência)
+  pra decidir se algo já está pronto.
+- **Regra geral de escopo** (pedido explícito da Malu em 20/09): não
+  reprocessar tudo toda vez — atualizar só as turmas que tiveram aula nos
+  dias pedidos e que ainda não estão preenchidas. Só fazer um reprocessamento
+  completo de um período quando ela pedir uma "varredura" explícita.
+
+## Notas (NotasModeloEdicao.aspx) — descoberto em 18/09/2026
+
+Página diferente das de Conteúdo/Frequência (não usa `nav.js`). Chega nela
+por Diário do Professor → Listar → escolher turma → aba "Notas". Estrutura:
+
+- Acordeão horizontal com seções `Alunos` / `Av. Subjetivas` / `Av. Objetivas`
+  (e mais colunas calculadas: Média Parcial, Recuperação, Faltas, Média
+  Bimestral — só leitura, o SIAP calcula sozinho a partir dos instrumentos).
+- Cada **instrumento avaliativo já criado** aparece como um bloco
+  `.lista.listaDeNotas` dentro de "Av. Subjetivas" ou "Av. Objetivas", com
+  atributos: `data-id` (ID do instrumento, usado na gravação), `data-ciclo`
+  (ex. "1" pro modelo Ciclo 1), `title` (a descrição digitada ao criar, ex.
+  "atividades avaliativas"). Se não existe nenhum instrumento numa seção,
+  ela mostra só o texto "Avaliação não lançada".
+- Dentro de cada instrumento, um `.item.subjetiva.nota[data-matricula="…"]`
+  por aluno (mesma matrícula que aparece em `.listaDeAlunos .item`), com um
+  `<input class="seeTextField">` pra nota. Alunos com `data-bloqueado="True"`
+  (ex. transferidos) não devem ser preenchidos.
+- **O clique+blur simulado na interface é pouco confiável pra gravar nota
+  — usar `fetch()` direto, não simular clique/digitação.** Descoberto em
+  21/09/2026 depois de uma sessão inteira tentando entender por que alguns
+  alunos "sumiam" ao recarregar mesmo com `input.value` mostrando certo
+  logo depois do `blur()`: o clique sintético/teclado real às vezes não
+  dispara o `POST WMAtualizaNotaSubjetiva` pra campos específicos, sem erro
+  visível — client-side, não é sobre "Enviar para o SIGE" (esse clique
+  também é pouco confiável de automatizar, mas **não é obrigatório pra
+  persistir**, apesar do que uma versão anterior deste README dizia).
+  **Solução: chamar o endpoint direto via `fetch()`** de dentro do
+  contexto da página (mesma origem, cookies automáticos):
+  ```js
+  await fetch('/DiarioDoProfessorWebMethods.aspx/WMAtualizaNotaSubjetiva', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    body: JSON.stringify({ indiceAvaliacao, matricula, nota })  // nota: número, ex. 7.5
+  });
+  ```
+  `indiceAvaliacao` é o `data-id` do `.lista.listaDeNotas` daquele
+  instrumento (**pode haver mais de um instrumento com nomes parecidos
+  numa mesma seção** — ex. "Atividades Avaliativas" vs "Atividades
+  Avaliativas - seminarios" — cada aluno pertence a um; usar o `data-id`
+  errado devolve HTTP 500 "Index was out of range" bem claro, então dá pra
+  detectar). A resposta é `{"d":"{\"Ciclos\":[...],\"Parcial\":{...}}"}` —
+  o campo `Nota` aí dentro é a **média recalculada** (parcial/ciclo), não
+  eco do valor enviado; não comparar com o que foi mandado, só checar
+  `status === 200`. Implementado em `lancar-notas.js`
+  (`lancarNotasSubjetiva` + `achaIndiceAvaliacao`) — testado e confirmado
+  100% confiável em ~15 alunos de turmas diferentes depois da migração pro
+  `fetch()` direto, contra várias falhas silenciosas com o método antigo de
+  simular clique.
+  - **Mesmo assim, sempre confirme com um reload de página fresco depois**
+    — nunca conclua "deu certo" só pelo `status === 200` da resposta nem
+    pelo `input.value` da tela.
+- **Armadilha do campo de nota**: é uma máscara estilo valor monetário, não
+  um campo de texto normal. Setar `el.value = '4'` vira **"0,4"**, não "4,0"
+  — o dígito entra pela casa decimal e empurra os que já estavam pra
+  esquerda. Pra lançar uma nota `X,Y` (uma casa decimal), setar
+  `el.value = String(Math.round(nota*10))` (ex.: nota 4 → `"40"` → mostra
+  "4,0"; nota 0 → `"0"` → "0,0"; nota 7,5 → `"75"` → "7,5"). Sempre ler
+  `input.value` de volta depois do `blur()` pra confirmar que bateu com o
+  esperado (mesmo padrão de `clickAndVerify` do `cdp.js`) — não existe
+  `data-matricula`/`data-nota` fidedigno até o blur disparar o AJAX.
+- **Criar um instrumento novo — testado e funcionando em 20/09.** O "+"
+  (`.controle.adicionar`) no cabeçalho de "Av. Subjetivas"/"Av. Objetivas"
+  **não é clicável de forma confiável**: o clique real (`realClick`) acerta
+  o elemento certo (confirmado via `elementFromPoint`, handler jQuery
+  presente) mas o handler do botão captura `$elItemConteudoAvaliacoes` numa
+  variável de clausura vinculada na hora que a seção foi montada — depois
+  de navegar entre turmas via SPA sem reload de página essa referência fica
+  obsoleta e o clique não produz nenhum efeito visível (sem erro, sem
+  requisição de rede). **Solução: pular o clique e chamar a API JS
+  diretamente**, via `evaluate()`:
+  ```js
+  const m = new ViewModalAvaliacao();          // cria e já injeta o dialog real no DOM (visível, funcional)
+  m.on("avaliacaoCriada", function(data){       // mesmo listener que o handler original registraria
+    const viewAvaliacao = new ViewAvaliacaoModelo();
+    viewAvaliacao.montaComBaseNaTabelaDeAlunos(data.Avaliacao, $(".lista.listaDeAlunos")[0], data.indiceAvaliacao);
+    $(itemConteudoDaSecaoCerta.querySelector('.listaTableWrap')).append(viewAvaliacao.renderiza().el);
+    $(".nota").find("input").on("keyup", /* ...máscara de backspace, ver handler original... */);
+    definirMascara();
+  });
+  // esperar a lista de modelos popular via AJAX (assíncrono, ~1-2s) antes de ler as options:
+  const sel = m.el.querySelector('select[name=modelo]');
+  sel.value = '239';  // "Ciclo1 - CEPI Ensino Médio" — value varia por escola/turma, ler as options antes
+  const desc = m.el.querySelector('input[name=descricao]');
+  desc.value = 'Atividades Avaliativas';
+  m.callbackBtnConfirmar();   // método real no protótipo — NÃO precisa clicar no botão "Confirmar"
+  ```
+  `m.callbackBtnConfirmar()` dispara o `POST WMCriaAvaliacaoSubjetiva` de
+  verdade (`{descricao, tipoAvaliacao, peso, ciclo, subjetiva:<value do
+  modelo>}`) e, no callback de sucesso, emite `avaliacaoCriada` com os dados
+  do instrumento recém-criado (já incluindo a lista de 35 `itens` por
+  matrícula com `nota:""`) — o listener acima monta e injeta a tabela real
+  na tela, pronta pro `lanca-notas-siap.js` preencher normalmente. Truque
+  geral: quando um clique real não produz efeito e o handler jQuery
+  encontrado via `elementFromPoint`/`_data(el,'events')` referencia
+  closures possivelmente obsoletas, inspecionar o protótipo do objeto
+  relevante (`Object.getOwnPropertyNames(Object.getPrototypeOf(instancia))`)
+  e chamar o método de callback direto — bypassa o DOM inteiro.
+
+**Mapeamento Leciona → SIAP (acordado com a Malu em 18/09):**
+- Atividades tipo checklist no Leciona (✓/vazio) → um único instrumento
+  **subjetivo** "Atividades Avaliativas" (modelo Ciclo 1) por turma-
+  disciplina-bimestre; o valor lançado é a **média já calculada pelo
+  Leciona** (`mediaAluno`) pra aquele conjunto de atividades — não recalcular
+  na mão.
+- Atividades numéricas (trabalho/seminário/artigo/pesquisa) no Leciona → um
+  segundo instrumento **objetivo** "Pesquisa" (a criar quando a turma tiver
+  esse tipo de atividade lançada) — 2 instrumentos separados, nunca somados
+  num só campo (pedido explícito: "instrumento 1" e "instrumento 2").
+- Avaliação Qualitativa (comportamento, só 9º ano) é outra categoria ainda
+  não mapeada nesta automação — usa a mesma fonte que
+  `atualizarQualitativaPlanilhaAgora` em `functions/index.js`.
+- Casar aluno Leciona↔SIAP: nome normalizado (maiúsculo/trim) quando a
+  matrícula não está em mãos nos dois lados na mesma consulta — **sempre
+  conferir contagem e diferença de nomes entre os dois rosters antes de
+  escrever** (visto no 1ªA-Filosofia: 35 SIAP ativos batendo exatos com 35
+  do Leciona; mas já existiu um par quase-duplicado tipo "FRANÇA"/"FRAÇA"
+  em outra turma vindo de erro de digitação da planilha do Arlan — não
+  supor que sempre bate 1:1 sem checar).
+- Pendente: testar o mesmo fluxo de criação de instrumento pra "Av.
+  Objetivas" (deve ser análogo, trocando o `tipoAvaliacao`/seção-alvo —
+  ainda não testado porque nenhuma turma teve atividade numérica lançada no
+  Leciona até agora), testar Avaliação Qualitativa (9º ano), e decidir a
+  regra de "atualizar só quem mudou" (comparar `input.value` atual contra a
+  média do Leciona antes de escrever, só tocando o que diverge — ainda não
+  implementado como script reutilizável, foi feito manualmente turma por
+  turma em 18/09).
+- **Lição crítica sobre dados desatualizados (19/09):** notas lançadas numa
+  primeira passada de 1ªA-Filosofia ficaram baixas demais porque a lista de
+  atividades do Leciona **mudou** (2 atividades removidas) depois da
+  extração original ter sido salva num arquivo JSON de cache. **Nunca
+  reusar um JSON de extração de uma sessão anterior pra escrever no SIAP —
+  sempre buscar `mediaAluno`/`atividadesDaTurma` ao vivo no Leciona
+  imediatamente antes de cada lançamento**, mesmo que pareça a mesma turma
+  de minutos atrás.
+
 ## Estado em 16/09/2026
 
 3º bimestre (agosto) completo em Sociologia (7 turmas), Filosofia (7 turmas)
