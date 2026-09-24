@@ -3,21 +3,30 @@ const cdp = require('./cdp.js');
 
 /* Códigos usados nos <select> do filtro "Diário do Professor" — únicos fixos
    pra este vínculo (571 = Ensino Médio Concomitante Intercomplementar, EFG). */
-const SERIE = { '1': '5711', '2': '5712', '3': '5713' }; // 1ª/2ª/3ª série
+const SERIE = { '1': '5711', '2': '5712', '3': '5713' }; // 1ª/2ª/3ª série (composição 571, EFG)
 const DISCIPLINA = { Historia: '4', Sociologia: '16', Filosofia: '15', EstudoOrientado: '1841' };
+
+/* CEPI Marajó / Ensino Fundamental (9º ano) — composição e série diferentes
+   do vínculo EFG. Descoberto em 22-23/09. Disciplina usa os MESMOS códigos
+   (Historia=4 etc) — só composição/série/turno mudam. Turno vespertino=2. */
+const CEPI = { composicao: '199', serie9: '1999', turno: '2' };
 
 /* Navega do zero (Listagem → seleciona turma → Conteúdos → Frequência → mês)
    até a aba de Frequência de uma turma+disciplina, com o mês já selecionado.
    serieValue: '5711'|'5712'|'5713' (ou use SERIE['1'|'2'|'3']).
    turmaLetra: '1A', '2B', '3C' etc — usado como regex \bXX\b pra achar a linha certa.
-   discValue: código da disciplina (ou use DISCIPLINA.Historia etc). */
-async function navigateToFrequencia(c, serieValue, turmaLetra, discValue, mes) {
+   discValue: código da disciplina (ou use DISCIPLINA.Historia etc).
+   opts: {composicao, turno} — default '571'/'1' (EFG); passe CEPI.composicao/CEPI.turno
+   pra 9º ano CEPI Marajó (serieValue nesse caso = CEPI.serie9). */
+async function navigateToFrequencia(c, serieValue, turmaLetra, discValue, mes, opts) {
   mes = mes || 'Agosto';
+  const composicao = (opts && opts.composicao) || '571';
+  const turno = (opts && opts.turno) || '1';
   await cdp.evaluate(c, `location.href='https://siap.educacao.go.gov.br/DiarioEscolarListagem.aspx'`);
   await cdp.waitMs(2500);
-  await cdp.evaluate(c, `(function(){ const sel=document.querySelector('#cphFuncionalidade_cphCampos_ddlComposicao'); sel.value='571'; sel.dispatchEvent(new Event('change',{bubbles:true})); })()`);
+  await cdp.evaluate(c, `(function(){ const sel=document.querySelector('#cphFuncionalidade_cphCampos_ddlComposicao'); sel.value=${JSON.stringify(composicao)}; sel.dispatchEvent(new Event('change',{bubbles:true})); })()`);
   await cdp.waitMs(2000);
-  await cdp.evaluate(c, `(function(){ document.querySelector('#cphFuncionalidade_cphCampos_ddlSerie').value=${JSON.stringify(serieValue)}; document.querySelector('#cphFuncionalidade_cphCampos_ddlTurno').value='1'; document.querySelector('#cphFuncionalidade_cphCampos_ddlDisciplina').value=${JSON.stringify(discValue)}; })()`);
+  await cdp.evaluate(c, `(function(){ document.querySelector('#cphFuncionalidade_cphCampos_ddlSerie').value=${JSON.stringify(serieValue)}; document.querySelector('#cphFuncionalidade_cphCampos_ddlTurno').value=${JSON.stringify(turno)}; document.querySelector('#cphFuncionalidade_cphCampos_ddlDisciplina').value=${JSON.stringify(discValue)}; })()`);
   await cdp.click(c, '#cphFuncionalidade_btnListar');
   await cdp.waitMs(2000);
   const idx = await cdp.evaluate(c, `(function(){ const rows=Array.from(document.querySelectorAll('#cphFuncionalidade_gdvListagem tr')); const re = new RegExp('\\\\b${turmaLetra}\\\\b'); for(let i=1;i<rows.length;i++){ if(re.test(rows[i].innerText)) return i; } return -1; })()`);
@@ -35,12 +44,14 @@ async function navigateToFrequencia(c, serieValue, turmaLetra, discValue, mes) {
    NotasModeloEdicao.aspx de uma turma+disciplina, bimestre já é o corrente
    (o SIAP mostra o bimestre atual por padrão — trocar manualmente se
    precisar de outro). Mesmos parâmetros de navigateToFrequencia. */
-async function navigateToNotas(c, serieValue, turmaLetra, discValue) {
+async function navigateToNotas(c, serieValue, turmaLetra, discValue, opts) {
+  const composicao = (opts && opts.composicao) || '571';
+  const turno = (opts && opts.turno) || '1';
   await cdp.evaluate(c, `location.href='https://siap.educacao.go.gov.br/DiarioEscolarListagem.aspx'`);
   await cdp.waitMs(2500);
-  await cdp.evaluate(c, `(function(){ const sel=document.querySelector('#cphFuncionalidade_cphCampos_ddlComposicao'); sel.value='571'; sel.dispatchEvent(new Event('change',{bubbles:true})); })()`);
+  await cdp.evaluate(c, `(function(){ const sel=document.querySelector('#cphFuncionalidade_cphCampos_ddlComposicao'); sel.value=${JSON.stringify(composicao)}; sel.dispatchEvent(new Event('change',{bubbles:true})); })()`);
   await cdp.waitMs(2000);
-  await cdp.evaluate(c, `(function(){ document.querySelector('#cphFuncionalidade_cphCampos_ddlSerie').value=${JSON.stringify(serieValue)}; document.querySelector('#cphFuncionalidade_cphCampos_ddlTurno').value='1'; document.querySelector('#cphFuncionalidade_cphCampos_ddlDisciplina').value=${JSON.stringify(discValue)}; })()`);
+  await cdp.evaluate(c, `(function(){ document.querySelector('#cphFuncionalidade_cphCampos_ddlSerie').value=${JSON.stringify(serieValue)}; document.querySelector('#cphFuncionalidade_cphCampos_ddlTurno').value=${JSON.stringify(turno)}; document.querySelector('#cphFuncionalidade_cphCampos_ddlDisciplina').value=${JSON.stringify(discValue)}; })()`);
   await cdp.click(c, '#cphFuncionalidade_btnListar');
   await cdp.waitMs(2000);
   const idx = await cdp.evaluate(c, `(function(){ const rows=Array.from(document.querySelectorAll('#cphFuncionalidade_gdvListagem tr')); const re = new RegExp('\\\\b${turmaLetra}\\\\b'); for(let i=1;i<rows.length;i++){ if(re.test(rows[i].innerText)) return i; } return -1; })()`);
@@ -75,4 +86,4 @@ async function gotoDate(c, canon, label) {
   return false;
 }
 
-module.exports = { navigateToFrequencia, navigateToNotas, selecionarMes, gotoDate, SERIE, DISCIPLINA };
+module.exports = { navigateToFrequencia, navigateToNotas, selecionarMes, gotoDate, SERIE, DISCIPLINA, CEPI };

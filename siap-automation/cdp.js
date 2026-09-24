@@ -16,15 +16,24 @@
    logada em https://siap.educacao.go.gov.br (login manual da professora, esta
    automação nunca vê a senha). Ver README.md nesta pasta pro comando exato. */
 
-async function findSiapTarget() {
+async function findSiapTarget(targetId) {
   const res = await fetch('http://localhost:9222/json/list');
   const list = await res.json();
+  if (targetId) {
+    const t = list.find(x => x.type === 'page' && x.id === targetId);
+    if (!t) throw new Error('Aba com targetId ' + targetId + ' não encontrada — confirme que ainda está aberta');
+    return t;
+  }
   const t = list.find(x => x.type === 'page' && x.url.includes('siap.educacao.go.gov.br'));
   if (!t) throw new Error('Aba do SIAP não encontrada — confirme que o Chrome de automação está aberto e logado (ver README.md)');
   return t;
 }
 
-async function connect() {
+/* targetId (opcional): fixa numa aba específica em vez de pegar "a primeira aba do SIAP
+   que achar" — necessário quando há mais de uma aba do SIAP aberta ao mesmo tempo (ex.:
+   uma pra automação, outra pra uso manual da Malu em paralelo). Sem isso, connect() pode
+   pegar a aba errada de forma não-determinística. */
+async function connect(targetId) {
   const verRes = await fetch('http://localhost:9222/json/version');
   const ver = await verRes.json();
   const ws = new WebSocket(ver.webSocketDebuggerUrl);
@@ -50,7 +59,7 @@ async function connect() {
       setTimeout(() => { if (pending.has(reqId)) { pending.delete(reqId); reject(new Error('CDP timeout: ' + method)); } }, 45000);
     });
   }
-  const target = await findSiapTarget();
+  const target = await findSiapTarget(targetId);
   const { sessionId } = await send('Target.attachToTarget', { targetId: target.id, flatten: true });
   await send('Runtime.enable', {}, sessionId);
   return { ws, send, sessionId };
