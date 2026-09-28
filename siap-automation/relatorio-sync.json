@@ -1,11 +1,116 @@
 [
  {
-  "label": "3ª série EMC Filosofia",
+  "label": "1ªB Filosofia",
+  "totalAlunos": 33,
+  "resolvidos": 33,
+  "naoResolvidos": [],
+  "jaCorretos": 32,
+  "escritos": 1,
+  "falhas": 0,
+  "detalheFalhas": [],
+  "sigeReenviado": true
+ },
+ {
+  "label": "2ªA Filosofia",
+  "totalAlunos": 34,
+  "resolvidos": 34,
+  "naoResolvidos": [],
+  "jaCorretos": 34,
+  "escritos": 0,
+  "falhas": 0,
+  "detalheFalhas": [],
+  "sigeReenviado": true
+ },
+ {
+  "label": "2ªB Filosofia",
+  "totalAlunos": 34,
+  "resolvidos": 33,
+  "naoResolvidos": [
+   "Lucas Oliveira Rangel de Jesus"
+  ],
+  "jaCorretos": 33,
+  "escritos": 0,
+  "falhas": 0,
+  "detalheFalhas": [],
+  "sigeReenviado": true
+ },
+ {
+  "label": "3ªC Filosofia",
   "totalAlunos": 27,
   "resolvidos": 27,
   "naoResolvidos": [],
   "jaCorretos": 27,
   "escritos": 0,
+  "falhas": 0,
+  "detalheFalhas": [],
+  "sigeReenviado": true
+ },
+ {
+  "label": "2ªB História",
+  "totalAlunos": 34,
+  "resolvidos": 33,
+  "naoResolvidos": [
+   "Lucas Oliveira Rangel de Jesus"
+  ],
+  "jaCorretos": 30,
+  "escritos": 3,
+  "falhas": 0,
+  "detalheFalhas": [],
+  "sigeReenviado": true
+ },
+ {
+  "label": "2ªB Sociologia",
+  "totalAlunos": 34,
+  "resolvidos": 33,
+  "naoResolvidos": [
+   "Lucas Oliveira Rangel de Jesus"
+  ],
+  "jaCorretos": 33,
+  "escritos": 0,
+  "falhas": 0,
+  "detalheFalhas": [],
+  "sigeReenviado": true
+ },
+ {
+  "label": "3ªC Sociologia",
+  "totalAlunos": 27,
+  "resolvidos": 27,
+  "naoResolvidos": [],
+  "jaCorretos": 27,
+  "escritos": 0,
+  "falhas": 0,
+  "detalheFalhas": [],
+  "sigeReenviado": true
+ },
+ {
+  "label": "1ªA História",
+  "totalAlunos": 35,
+  "resolvidos": 35,
+  "naoResolvidos": [],
+  "jaCorretos": 4,
+  "escritos": 31,
+  "falhas": 0,
+  "detalheFalhas": [],
+  "sigeReenviado": true
+ },
+ {
+  "label": "1ªB História",
+  "totalAlunos": 33,
+  "resolvidos": 33,
+  "naoResolvidos": [],
+  "jaCorretos": 14,
+  "escritos": 19,
+  "falhas": 0,
+  "detalheFalhas": [],
+  "sigeReenviado": true
+ },
+ {
+  "label": "2ªA História",
+  "totalAlunos": 34,
+  "resolvidos": 34,
+  "naoResolvidos": [],
+  "jaCorretos": 28,
+  "escritos": 6,
   "falhas": 0,
   "detalheFalhas": [],
   "sigeReenviado": true

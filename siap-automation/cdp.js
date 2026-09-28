@@ -75,6 +75,17 @@ async function click(cdp, selector) {
   return evaluate(cdp, `(function(){ const el = document.querySelector(${JSON.stringify(selector)}); if(!el) return 'NOTFOUND'; el.click(); return 'OK'; })()`);
 }
 
+/* Pra checkboxes da grade de "Bloco da Rede" (Lançamento de Notas por
+   Modelo): `.click()` sintético (e até `realClick` por coordenada) às
+   vezes para de funcionar no meio de uma sessão longa — o clique "pega"
+   (retorna OK, sem erro) mas o `.checked` nunca muda e o "Qtde. Acertos"
+   ao vivo não atualiza. Forçar `checked` direto + disparar `click` E
+   `change` funciona de forma confiável nesse caso (descoberto 25/09).
+   Preferir esta função a `click()` pra esses checkboxes específicos. */
+async function setChecked(cdp, selector, valor) {
+  return evaluate(cdp, `(function(){ const el = document.querySelector(${JSON.stringify(selector)}); if(!el) return 'NOTFOUND'; if(el.checked!==${JSON.stringify(!!valor)}){ el.checked=${JSON.stringify(!!valor)}; el.dispatchEvent(new Event('click',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); } return 'OK'; })()`);
+}
+
 async function fill(cdp, selector, value) {
   return evaluate(cdp, `(function(){ const el = document.querySelector(${JSON.stringify(selector)}); if(!el) return 'NOTFOUND'; el.value = ${JSON.stringify(value)}; el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return 'OK'; })()`);
 }
@@ -116,4 +127,4 @@ async function clickAndVerify(cdp, selector, attrCheck, expectedAfter, maxTries)
   return false;
 }
 
-module.exports = { connect, evaluate, click, fill, waitMs, close, realClick, clickAndVerify };
+module.exports = { connect, evaluate, click, fill, waitMs, close, realClick, clickAndVerify, setChecked };

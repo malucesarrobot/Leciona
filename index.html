@@ -8647,6 +8647,7 @@ function renderNotas(){
       '</th>';
     }).join('')+
     '<th style="width:56px">Média</th>'+
+    '<th style="width:74px;color:var(--muted);font-weight:400" title="Nota final oficial já lançada no SIAP pra esse bimestre — só informativa, editar aqui não muda a média calculada pelas atividades">Final (SIAP)</th>'+
     '<th style="width:56px;color:var(--muted);font-weight:400" title="Nota qualitativa (comportamento) — começa em 10, não entra na média das atividades. Aparece só pra você, discretamente.">qualit.</th>'+
     '<th style="width:36px"></th>'+
   '</tr></thead><tbody>';
@@ -8684,6 +8685,7 @@ function renderNotas(){
         'onchange="salvarNota(this)" onblur="salvarNota(this)"></td>';
     }).join('')+
     '<td><span class="nota-media '+medCls+'">'+medStr+'</span></td>'+
+    '<td><input class="nota-input" type="text" inputmode="decimal" style="width:100%;text-align:center" value="'+esc(al.notaFinalSiap!=null?String(al.notaFinalSiap):'')+'" data-al="'+al.id+'" placeholder="-" onchange="salvarNotaFinalSiap(this)" onblur="salvarNotaFinalSiap(this)" title="Nota final oficial do SIAP — editar aqui não afeta a média calculada"></td>'+
     (()=>{ const nq=notaQualitativa(al.id,turmaId);
       return '<td style="text-align:center;cursor:pointer;color:var(--muted);font-size:12px;opacity:.75" onclick="abrirQualitativaAluno(\''+al.id+'\')" title="Nota qualitativa — clique pra ver histórico e lançar desconto">'+nq.toFixed(1)+'</td>'; })()+
     '<td><button class="btn ghost sm danger" data-aid="'+al.id+'" onclick="removerAluno(this.dataset.aid)" title="Remover aluno">✕</button></td>'+
@@ -8695,7 +8697,7 @@ function renderNotas(){
     '<td class="aluno-nome">Média turma</td>'+
     '<td></td>'+
     atvs.map(av=>{ const m=mediaAtividade(av.id,turmaId); return '<td style="text-align:center">'+(m!=null?m.toFixed(1):'-')+'</td>'; }).join('')+
-    '<td></td><td></td><td></td></tr>';
+    '<td></td><td></td><td></td><td></td></tr>';
 
   h+='</tbody></table></div>';
   box.innerHTML=h;
@@ -8718,6 +8720,18 @@ function salvarNota(input){
   const med=mediaAluno(alunoId,atvs,turmaId);
   const row=input.closest('tr');
   if(row){ const medCell=row.querySelector('.nota-media'); if(medCell){ medCell.textContent=med!=null?med.toFixed(1):'-'; medCell.className='nota-media '+(med==null?'':(med>=6?'aprovado':'reprovado')); } }
+}
+/* Nota final oficial do SIAP — puramente informativa, gravada direto no
+   cadastro do aluno (não é uma "atividade"), então não entra no cálculo
+   de mediaAluno() e não afeta os colegas de turma. Serve pra registrar o
+   que já foi lançado no SIAP (ex.: recuperação, atestado médico) sem
+   precisar mexer nas atividades/médias calculadas. */
+function salvarNotaFinalSiap(input){
+  const alunoId=input.dataset.al;
+  const al=alunos[alunoId]; if(!al) return;
+  const val=input.value.trim();
+  al.notaFinalSiap=val===''?null:val.replace('.',',');
+  persistAluno(al);
 }
 
 // ── Modais ────────────────────────────────────────────────────────────────

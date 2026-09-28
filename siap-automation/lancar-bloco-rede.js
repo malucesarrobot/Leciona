@@ -17,10 +17,27 @@ async function esperarSelectPronto(c, sel, minOptions, maxTentativas) {
   return false;
 }
 
+/* Espera E seta num unico round-trip (polling roda dentro do proprio
+   browser via IIFE async), pra evitar a janela de corrida entre checar
+   "o select tem opcoes" e de fato setar o value — o <select> pode ser
+   substituido pelo AJAX de cascata bem entre essas duas chamadas CDP
+   separadas, causando "Cannot set properties of null". */
 async function setSel(c, sel, value, minOptions) {
-  const pronto = await esperarSelectPronto(c, sel, minOptions);
-  if (!pronto) throw new Error('select ' + sel + ' nao populou a tempo');
-  await cdp.evaluate(c, `(function(){ const el=document.querySelector(${JSON.stringify(sel)}); el.value=${JSON.stringify(value)}; el.dispatchEvent(new Event('change',{bubbles:true})); })()`);
+  minOptions = minOptions || 2;
+  const js = `(async function(){
+    for (let i = 0; i < 20; i++) {
+      const el = document.querySelector(${JSON.stringify(sel)});
+      if (el && el.options.length >= ${minOptions}) {
+        el.value = ${JSON.stringify(value)};
+        el.dispatchEvent(new Event('change', {bubbles:true}));
+        return 'OK';
+      }
+      await new Promise(r => setTimeout(r, 700));
+    }
+    return 'TIMEOUT';
+  })()`;
+  const r = await cdp.evaluate(c, js);
+  if (r !== 'OK') throw new Error('select ' + sel + ' nao populou a tempo (' + r + ')');
 }
 
 async function abrirBloco(c, { composicao, serieValue, turno, turmaValue, disciplinaValue, bimestre, tituloContem }) {
