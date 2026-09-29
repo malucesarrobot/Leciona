@@ -1,0 +1,62 @@
+[
+  {
+    "label": "1ªA Filosofia (Jhonatan)", "serie": "1", "letra": "A", "disc": "Filosofia",
+    "alunos": ["22121833425"],
+    "datas": [
+      {"data":"2026-08-07","falta":true},{"data":"2026-08-14","falta":true},
+      {"data":"2026-08-21","falta":false},{"data":"2026-08-28","falta":false},
+      {"data":"2026-09-04","falta":false},{"data":"2026-09-11","falta":false},
+      {"data":"2026-09-18","falta":false},{"data":"2026-09-25","falta":false}
+    ]
+  },
+  {
+    "label": "1ªA Sociologia (Jhonatan)", "serie": "1", "letra": "A", "disc": "Sociologia",
+    "alunos": ["22121833425"],
+    "datas": [
+      {"data":"2026-08-06","falta":true},{"data":"2026-08-13","falta":true},
+      {"data":"2026-08-20","falta":false},{"data":"2026-08-27","falta":false},
+      {"data":"2026-09-03","falta":false},{"data":"2026-09-10","falta":false},
+      {"data":"2026-09-17","falta":false},{"data":"2026-09-24","falta":false}
+    ]
+  },
+  {
+    "label": "1ªA História (Jhonatan)", "serie": "1", "letra": "A", "disc": "Historia",
+    "alunos": ["22121833425"],
+    "datas": [
+      {"data":"2026-08-05","falta":true},{"data":"2026-08-06","falta":true},
+      {"data":"2026-08-12","falta":false},{"data":"2026-08-19","falta":false},{"data":"2026-08-26","falta":false},
+      {"data":"2026-09-02","falta":false},{"data":"2026-09-09","falta":false},
+      {"data":"2026-09-16","falta":false},{"data":"2026-09-23","falta":false}
+    ]
+  },
+  {
+    "label": "3ªC Filosofia (Thayla+Davi)", "serie": "3", "letra": "C", "disc": "Filosofia",
+    "alunos": ["23127129959","22122339130"],
+    "datas": [
+      {"data":"2026-08-07","falta":true},{"data":"2026-08-14","falta":true},
+      {"data":"2026-08-21","falta":false},{"data":"2026-08-28","falta":false},
+      {"data":"2026-09-04","falta":false},{"data":"2026-09-11","falta":false},
+      {"data":"2026-09-18","falta":false},{"data":"2026-09-25","falta":false}
+    ]
+  },
+  {
+    "label": "3ªC Sociologia (Thayla+Davi)", "serie": "3", "letra": "C", "disc": "Sociologia",
+    "alunos": ["23127129959","22122339130"],
+    "datas": [
+      {"data":"2026-08-05","falta":true},{"data":"2026-08-07","falta":true},
+      {"data":"2026-08-14","falta":false},{"data":"2026-08-21","falta":false},{"data":"2026-08-28","falta":false},
+      {"data":"2026-09-04","falta":false},{"data":"2026-09-11","falta":false},
+      {"data":"2026-09-18","falta":false},{"data":"2026-09-25","falta":false}
+    ]
+  },
+  {
+    "label": "3ªC História (Thayla+Davi)", "serie": "3", "letra": "C", "disc": "Historia",
+    "alunos": ["23127129959","22122339130"],
+    "datas": [
+      {"data":"2026-08-04","falta":true},{"data":"2026-08-05","falta":true},
+      {"data":"2026-08-11","falta":false},{"data":"2026-08-18","falta":false},{"data":"2026-08-25","falta":false},
+      {"data":"2026-09-01","falta":false},{"data":"2026-09-08","falta":false},
+      {"data":"2026-09-15","falta":false},{"data":"2026-09-22","falta":false}
+    ]
+  }
+]

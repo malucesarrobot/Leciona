@@ -8648,6 +8648,8 @@ function renderNotas(){
     }).join('')+
     '<th style="width:56px">Média</th>'+
     '<th style="width:74px;color:var(--muted);font-weight:400" title="Nota final oficial já lançada no SIAP pra esse bimestre — só informativa, editar aqui não muda a média calculada pelas atividades">Final (SIAP)</th>'+
+    '<th style="width:74px;color:var(--muted);font-weight:400" title="Nota de recuperação, quando o aluno fez — só informativa, editar aqui não muda a média calculada pelas atividades">Recuperação</th>'+
+    '<th style="width:74px;color:var(--muted);font-weight:400" title="Média final do bimestre depois da recuperação (a que vai pro histórico) — só informativa, editar aqui não muda a média calculada pelas atividades">Média Final</th>'+
     '<th style="width:56px;color:var(--muted);font-weight:400" title="Nota qualitativa (comportamento) — começa em 10, não entra na média das atividades. Aparece só pra você, discretamente.">qualit.</th>'+
     '<th style="width:36px"></th>'+
   '</tr></thead><tbody>';
@@ -8686,6 +8688,8 @@ function renderNotas(){
     }).join('')+
     '<td><span class="nota-media '+medCls+'">'+medStr+'</span></td>'+
     '<td><input class="nota-input" type="text" inputmode="decimal" style="width:100%;text-align:center" value="'+esc(al.notaFinalSiap!=null?String(al.notaFinalSiap):'')+'" data-al="'+al.id+'" placeholder="-" onchange="salvarNotaFinalSiap(this)" onblur="salvarNotaFinalSiap(this)" title="Nota final oficial do SIAP — editar aqui não afeta a média calculada"></td>'+
+    '<td><input class="nota-input" type="text" inputmode="decimal" style="width:100%;text-align:center" value="'+esc(al.recuperacaoSiap!=null?String(al.recuperacaoSiap):'')+'" data-al="'+al.id+'" placeholder="-" onchange="salvarRecuperacaoSiap(this)" onblur="salvarRecuperacaoSiap(this)" title="Nota de recuperação — editar aqui não afeta a média calculada"></td>'+
+    '<td><input class="nota-input" type="text" inputmode="decimal" style="width:100%;text-align:center" value="'+esc(al.mediaFinalBimestre!=null?String(al.mediaFinalBimestre):'')+'" data-al="'+al.id+'" placeholder="-" onchange="salvarMediaFinalBimestre(this)" onblur="salvarMediaFinalBimestre(this)" title="Média final do bimestre (pós-recuperação) — editar aqui não afeta a média calculada"></td>'+
     (()=>{ const nq=notaQualitativa(al.id,turmaId);
       return '<td style="text-align:center;cursor:pointer;color:var(--muted);font-size:12px;opacity:.75" onclick="abrirQualitativaAluno(\''+al.id+'\')" title="Nota qualitativa — clique pra ver histórico e lançar desconto">'+nq.toFixed(1)+'</td>'; })()+
     '<td><button class="btn ghost sm danger" data-aid="'+al.id+'" onclick="removerAluno(this.dataset.aid)" title="Remover aluno">✕</button></td>'+
@@ -8697,7 +8701,7 @@ function renderNotas(){
     '<td class="aluno-nome">Média turma</td>'+
     '<td></td>'+
     atvs.map(av=>{ const m=mediaAtividade(av.id,turmaId); return '<td style="text-align:center">'+(m!=null?m.toFixed(1):'-')+'</td>'; }).join('')+
-    '<td></td><td></td><td></td><td></td></tr>';
+    '<td></td><td></td><td></td><td></td><td></td><td></td></tr>';
 
   h+='</tbody></table></div>';
   box.innerHTML=h;
@@ -8731,6 +8735,20 @@ function salvarNotaFinalSiap(input){
   const al=alunos[alunoId]; if(!al) return;
   const val=input.value.trim();
   al.notaFinalSiap=val===''?null:val.replace('.',',');
+  persistAluno(al);
+}
+function salvarRecuperacaoSiap(input){
+  const alunoId=input.dataset.al;
+  const al=alunos[alunoId]; if(!al) return;
+  const val=input.value.trim();
+  al.recuperacaoSiap=val===''?null:val.replace('.',',');
+  persistAluno(al);
+}
+function salvarMediaFinalBimestre(input){
+  const alunoId=input.dataset.al;
+  const al=alunos[alunoId]; if(!al) return;
+  const val=input.value.trim();
+  al.mediaFinalBimestre=val===''?null:val.replace('.',',');
   persistAluno(al);
 }
 

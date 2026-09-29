@@ -1,0 +1,9 @@
+[
+  {
+    "label": "1ªA Filosofia (Jhonatan) - TESTE", "serie": "1", "letra": "A", "disc": "Filosofia",
+    "alunos": ["22121833425"],
+    "datas": [
+      {"data":"2026-08-07","falta":true},{"data":"2026-08-14","falta":true}
+    ]
+  }
+]
