@@ -81,7 +81,7 @@ async function lancarAcertosGrade(c, mapaAcertos, log) {
   const linhas = await lerLinhas(c);
   const resultados = [];
   for (const { idx, nome } of linhas) {
-    const acertos = mapaAcertos[nome.toUpperCase()];
+    const acertos = mapaAcertos[nome.trim().toUpperCase()];
     if (acertos === undefined) { resultados.push({ nome, status: 'sem-dado-pulado' }); continue; }
 
     const presId = `#cphFuncionalidade_cphCampos_gdvLista_ctl00_${idx}`;
