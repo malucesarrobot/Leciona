@@ -9,23 +9,6 @@
     "relCfg": {
       ".read": "auth != null && (auth.token.email === 'prof.malufc@gmail.com' || auth.token.email === 'malu.cesar@gmail.com')",
       ".write": "auth != null && (auth.token.email === 'prof.malufc@gmail.com' || auth.token.email === 'malu.cesar@gmail.com')"
-    },
-    "percursos2026": {
-      ".read": "auth != null && (auth.token.email === 'prof.malufc@gmail.com' || auth.token.email === 'malu.cesar@gmail.com')",
-      "results": {
-        "$id": {
-          ".write": "auth != null && !data.exists()",
-          ".validate": "newData.hasChildren(['v','ek','iv','ct','activity_id','discipline','series','created_at']) && newData.child('v').val() === 1 && newData.child('activity_id').isString() && newData.child('discipline').isString() && newData.child('series').isString() && newData.child('ek').isString() && newData.child('iv').isString() && newData.child('ct').isString()"
-        }
-      },
-      "progress": {
-        "$student": {
-          "$activity": {
-            ".write": "auth != null",
-            ".validate": "newData.hasChildren(['finished_at','sync']) && newData.child('finished_at').isString() && newData.child('sync').isString()"
-          }
-        }
-      }
     }
   }
 }
