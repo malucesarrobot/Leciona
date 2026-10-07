@@ -8369,13 +8369,29 @@ function perfisNecessariosDaTurma(turmaId){
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function alunosDaTurma(turmaId){ return Object.values(alunos).filter(a=>a&&a.turmaId===turmaId&&a.ativo!==false).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR',{sensitivity:'base'})||(a.numero||999)-(b.numero||999)); }
+// Registros antigos sem bimestre usam a data; sem ambos, permanecem no 3º.
+function bimestreDaNota(item){ return item.bimestre || (item.data && bimAtivoAgora(item.data)) || '3º Bimestre'; }
+function mediaFinalDoBimestre(al){
+  if(al.mediasFinaisBimestres && Object.prototype.hasOwnProperty.call(al.mediasFinaisBimestres,scope.bim)) return al.mediasFinaisBimestres[scope.bim];
+  return scope.bim==='3º Bimestre' ? al.mediaFinalBimestre : null;
+}
+function seletorBimestreNotas(){
+  return '<select aria-label="Bimestre das notas" onchange="trocarBimestreNotas(this.value)" style="padding:6px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text)">'+BIMESTRES.map(b=>'<option value="'+esc(b)+'"'+(b===scope.bim?' selected':'')+'>'+esc(b)+'</option>').join('')+'</select>';
+}
+function trocarBimestreNotas(bim){
+  if(!BIMESTRES.includes(bim)) return;
+  scope.bim=bim;
+  const sel=document.getElementById('selBim'); if(sel) sel.value=bim;
+  window.__chamadaColData=null; window.__chamadaData=null; window.__chamadaPresencas=null;
+  saveScope(); renderNotas();
+}
 function atividadesDaTurma(turmaId){
   // Atividades "Bloco..." (ex.: "Bloco do CEPI") ficam sempre por último entre
   // as colunas de atividade, coladas em Média/qualitativa — mesmo quando sua
   // data é anterior à de atividades lançadas depois. Pedido explícito da Malu.
   const ehBloco=av=>/^bloco/i.test((av&&av.nome)||'');
   return Object.values(atividadesCtrl)
-    .filter(av=>av&&av.turmaIds&&av.turmaIds.includes(turmaId))
+    .filter(av=>av&&av.turmaIds&&av.turmaIds.includes(turmaId)&&bimestreDaNota(av)===scope.bim)
     .sort((a,b)=>(ehBloco(a)-ehBloco(b))||(a.data||'').localeCompare(b.data||'')||(a.nome||'').localeCompare(b.nome||''));
 }
 /* Índice notasCtrl por "alunoId|atividadeId" (mesmo padrão do _temaIdx) —
@@ -8446,7 +8462,7 @@ function removerQualitativa(id){
   lsSet(LS_QUALITATIVA,JSON.stringify(qualitativa));
   if(DB) DB.ref('leciona/qualitativa/'+id).remove().catch(e=>toast('⚠ Removido localmente, mas falhou ao remover no Firebase: '+e.message,'err'));
 }
-function qualitativaDoAluno(alunoId, turmaId){ return Object.values(qualitativa).filter(q=>q&&q.alunoId===alunoId&&q.turmaId===turmaId).sort((a,b)=>(b._ts||0)-(a._ts||0)); }
+function qualitativaDoAluno(alunoId, turmaId){ return Object.values(qualitativa).filter(q=>q&&q.alunoId===alunoId&&q.turmaId===turmaId&&bimestreDaNota(q)===scope.bim).sort((a,b)=>(b._ts||0)-(a._ts||0)); }
 function notaQualitativa(alunoId, turmaId){
   const total=10+qualitativaDoAluno(alunoId,turmaId).reduce((s,q)=>s+(q.valor||0),0);
   return Math.max(0, Math.min(10, total));
@@ -8500,7 +8516,7 @@ function confirmarQualitativa(alunoId){
   const obs=(document.getElementById('qualObs').value||'').trim();
   const valor=parseFloat(document.getElementById('qualValor').value)||0;
   const data=document.getElementById('qualData').value||isoLocal(new Date());
-  const q={id:uid(), alunoId, turmaId:scope.turma, data, motivoKey, motivo:obs?motivoLabel+' — '+obs:motivoLabel, valor};
+  const q={id:uid(), alunoId, turmaId:scope.turma, bimestre:scope.bim, data, motivoKey, motivo:obs?motivoLabel+' — '+obs:motivoLabel, valor};
   persistQualitativa(q);
   toast('Desconto lançado.','ok');
   renderNotas();
@@ -8865,7 +8881,7 @@ function renderNotas(){
   const turmaId=scope.turma;
   const todasTurmasInit=Object.values(turmas).sort((a,b)=>turmaNome(a).localeCompare(turmaNome(b)));
   if(!turmaId||!todasTurmasInit.length){
-    box.innerHTML='<div class="notas-toolbar"><h3>📊 Notas</h3></div>'+
+    box.innerHTML='<div class="notas-toolbar"><h3>📊 Notas</h3>'+seletorBimestreNotas()+'</div>'+
       '<div class="acervo-vazio"><p>'+(!todasTurmasInit.length?'Nenhuma turma cadastrada. Crie turmas na Gestão.':'Selecione uma turma acima para começar.')+'</p></div>';
     if(todasTurmasInit.length){
       const sel='<div class="notas-toolbar" style="margin-top:0"><select onchange="trocarTurmaNotas(this.value)" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text)"><option value="">— Selecionar turma —</option>'+turmaOptionsHtml('')+'</select></div>';
@@ -8887,7 +8903,7 @@ function renderNotas(){
     turmaOptionsHtml(turmaId)+
   '</select>';
   let h='<div class="notas-toolbar">'+
-    '<span style="font-size:18px">📊</span>'+trocaTurmaSel+
+    '<span style="font-size:18px">📊</span>'+trocaTurmaSel+seletorBimestreNotas()+
     '<button class="btn ghost sm" onclick="abrirAddAluno()">+ Aluno</button>'+
     '<button class="btn ghost sm" onclick="abrirAddAtividade()">+ Atividade</button>'+
     '<button class="btn ghost sm" onclick="abrirTodasChamadas()" title="Ver e editar a chamada de qualquer dia do bimestre">📋 Todas as chamadas</button>'+
@@ -9002,7 +9018,7 @@ function renderNotas(){
     '<td><span class="nota-media '+medCls+'">'+medStr+'</span></td>'+
     '<td><input class="nota-input" type="text" inputmode="decimal" style="width:100%;text-align:center" value="'+esc(al.notaFinalSiap!=null?String(al.notaFinalSiap):'')+'" data-al="'+al.id+'" placeholder="-" onchange="salvarNotaFinalSiap(this)" onblur="salvarNotaFinalSiap(this)" title="Nota final oficial do SIAP — editar aqui não afeta a média calculada"></td>'+
     '<td><input class="nota-input" type="text" inputmode="decimal" style="width:100%;text-align:center" value="'+esc(al.recuperacaoSiap!=null?String(al.recuperacaoSiap):'')+'" data-al="'+al.id+'" placeholder="-" onchange="salvarRecuperacaoSiap(this)" onblur="salvarRecuperacaoSiap(this)" title="Nota de recuperação — editar aqui não afeta a média calculada"></td>'+
-    '<td><input class="nota-input" type="text" inputmode="decimal" style="width:100%;text-align:center" value="'+esc(al.mediaFinalBimestre!=null?String(al.mediaFinalBimestre):'')+'" data-al="'+al.id+'" placeholder="-" onchange="salvarMediaFinalBimestre(this)" onblur="salvarMediaFinalBimestre(this)" title="Média final do bimestre (pós-recuperação) — editar aqui não afeta a média calculada"></td>'+
+    '<td><input class="nota-input" type="text" inputmode="decimal" style="width:100%;text-align:center" value="'+esc(mediaFinalDoBimestre(al)!=null?String(mediaFinalDoBimestre(al)):'')+'" data-al="'+al.id+'" placeholder="-" onchange="salvarMediaFinalBimestre(this)" onblur="salvarMediaFinalBimestre(this)" title="Média final do bimestre (pós-recuperação) — editar aqui não afeta a média calculada"></td>'+
     (()=>{ const nq=notaQualitativa(al.id,turmaId);
       return '<td style="text-align:center;cursor:pointer;color:var(--muted);font-size:12px;opacity:.75" onclick="abrirQualitativaAluno(\''+al.id+'\')" title="Nota qualitativa — clique pra ver histórico e lançar desconto">'+nq.toFixed(1)+'</td>'; })()+
     '<td><button class="btn ghost sm danger" data-aid="'+al.id+'" onclick="removerAluno(this.dataset.aid)" title="Remover aluno">✕</button></td>'+
@@ -9061,7 +9077,8 @@ function salvarMediaFinalBimestre(input){
   const alunoId=input.dataset.al;
   const al=alunos[alunoId]; if(!al) return;
   const val=input.value.trim();
-  al.mediaFinalBimestre=val===''?null:val.replace('.',',');
+  al.mediasFinaisBimestres=Object.assign({},al.mediasFinaisBimestres||{});
+  al.mediasFinaisBimestres[scope.bim]=val===''?null:val.replace('.',',');
   persistAluno(al);
 }
 
