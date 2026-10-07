@@ -1510,6 +1510,7 @@ function initFirebase(){
       compromissos=s.val()||{};
       lsSet(LS_COMP, JSON.stringify(compromissos));
       if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+      importarCalendario4B2026();
     });
     _escutar('leciona/aulas_avulsas', s=>{
       aulasAvulsas=s.val()||{};
@@ -4230,6 +4231,307 @@ async function importarPlanilhaArlan(){
    de classe. Criadas como compromissos na Agenda, com [Fundamental] no
    título e a fonte na descrição, pra não confundir com a agenda do Médio
    (EFG). Decidido em 18/08/2026. */
+/* Cronograma institucional do 4º bimestre. Somente Agenda: não cria
+   turmas, atividades de notas, temas ou conteúdos. Importação única,
+   após leitura remota autenticada; exclusões posteriores não ressuscitam. */
+const CALENDARIO_4B_2026 = [
+  {
+    "id": "cal4b2026-medio-00",
+    "data": "2026-10-08",
+    "titulo": "Início do 4º bimestre [Médio]",
+    "descricao": "Período acadêmico já cadastrado: 08/10 a 18/12. Planejamento mantido no documento paralelo. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-01",
+    "data": "2026-10-12",
+    "titulo": "Feriado [Médio]",
+    "descricao": "Sem aulas, conforme orientação da professora. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-02",
+    "data": "2026-10-13",
+    "titulo": "Produção de texto CEPI [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-03",
+    "data": "2026-10-15",
+    "titulo": "Dia do Professor — dia letivo normal [Médio]",
+    "descricao": "Manter as aulas previstas no horário. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-04",
+    "data": "2026-10-16",
+    "titulo": "Feriado [Médio]",
+    "descricao": "Sem aulas, conforme orientação da professora. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-05",
+    "data": "2026-10-19",
+    "titulo": "Bloco 01 — Língua Portuguesa [Médio]",
+    "descricao": "20 questões: 15 de múltipla escolha e 5 de V ou F. Entrega: 05/10. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-06",
+    "data": "2026-10-26",
+    "titulo": "Simulado ENEM — 1ª, 2ª e 3ª séries [Médio]",
+    "descricao": "Entrega: 30/09. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-07",
+    "data": "2026-11-03",
+    "titulo": "Bloco 2 — Geografia e História [Médio]",
+    "descricao": "15 questões por disciplina: 10 de múltipla escolha e 5 de V ou F. Entrega: 19/10. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-08",
+    "data": "2026-11-09",
+    "titulo": "Bloco 3 — Matemática [Médio]",
+    "descricao": "20 questões: 15 de múltipla escolha e 5 de V ou F. Entrega: 20/10. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-09",
+    "data": "2026-11-16",
+    "titulo": "Bloco 4 — Inglês, Arte e Educação Física [Médio]",
+    "descricao": "10 questões por disciplina: 5 de múltipla escolha e 5 de V ou F. Entrega: 26/10. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-10",
+    "data": "2026-11-23",
+    "titulo": "Produção de texto SEDUC [Médio]",
+    "descricao": "Entrega: 09/11. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-11",
+    "data": "2026-11-27",
+    "titulo": "Bloco 5 — Física e Química [Médio]",
+    "descricao": "15 questões por disciplina: 10 de múltipla escolha e 5 de V ou F. Entrega: 16/11. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-12",
+    "data": "2026-12-01",
+    "titulo": "Bloco 6 — Biologia, Sociologia e Filosofia [Médio]",
+    "descricao": "Biologia: 15 questões (10 de múltipla escolha e 5 de V ou F). Sociologia: 8 (5 de múltipla escolha e 3 de V ou F). Filosofia: 7 (5 de múltipla escolha e 2 de V ou F). Entrega: 17/11. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-13",
+    "data": "2026-12-02",
+    "titulo": "Avaliação SEDUC — Matemática e suas Tecnologias [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-14",
+    "data": "2026-12-03",
+    "titulo": "Avaliação SEDUC — Ciências Humanas e Sociais Aplicadas [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-15",
+    "data": "2026-12-04",
+    "titulo": "Avaliação SEDUC — Linguagens e suas Tecnologias [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-16",
+    "data": "2026-12-07",
+    "titulo": "Avaliação SEDUC — Ciências da Natureza e suas Tecnologias [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-17",
+    "data": "2026-09-30",
+    "titulo": "Entrega das questões — Simulado ENEM [Médio]",
+    "descricao": "Prazo de entrega à coordenação de área. Cronograma do 4º bimestre; inclui prazos anteriores ao início do período. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-18",
+    "data": "2026-10-05",
+    "titulo": "Entrega das questões — Bloco 01 — Língua Portuguesa [Médio]",
+    "descricao": "Prazo de entrega à coordenação de área. Cronograma do 4º bimestre; inclui prazos anteriores ao início do período. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-19",
+    "data": "2026-10-19",
+    "titulo": "Entrega das questões — Bloco 2 — Geografia e História [Médio]",
+    "descricao": "Prazo de entrega à coordenação de área. Cronograma do 4º bimestre; inclui prazos anteriores ao início do período. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-20",
+    "data": "2026-10-20",
+    "titulo": "Entrega das questões — Bloco 3 — Matemática [Médio]",
+    "descricao": "Prazo de entrega à coordenação de área. Cronograma do 4º bimestre; inclui prazos anteriores ao início do período. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-21",
+    "data": "2026-10-26",
+    "titulo": "Entrega das questões — Bloco 4 — Inglês, Arte e Educação Física [Médio]",
+    "descricao": "Prazo de entrega à coordenação de área. Cronograma do 4º bimestre; inclui prazos anteriores ao início do período. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-22",
+    "data": "2026-11-09",
+    "titulo": "Entrega das questões — Produção de texto SEDUC [Médio]",
+    "descricao": "Prazo de entrega à coordenação de área. Cronograma do 4º bimestre; inclui prazos anteriores ao início do período. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-23",
+    "data": "2026-11-16",
+    "titulo": "Entrega das questões — Bloco 5 — Física e Química [Médio]",
+    "descricao": "Prazo de entrega à coordenação de área. Cronograma do 4º bimestre; inclui prazos anteriores ao início do período. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-24",
+    "data": "2026-11-17",
+    "titulo": "Entrega das questões — Bloco 6 — Biologia, Sociologia e Filosofia [Médio]",
+    "descricao": "Prazo de entrega à coordenação de área. Cronograma do 4º bimestre; inclui prazos anteriores ao início do período. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-25",
+    "data": "2026-10-30",
+    "titulo": "Feriado — Dia do Funcionário Público [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-26",
+    "data": "2026-11-02",
+    "titulo": "Feriado [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-27",
+    "data": "2026-11-11",
+    "titulo": "Trabalho coletivo [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-28",
+    "data": "2026-11-20",
+    "titulo": "Feriado — Dia da Consciência Negra [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-29",
+    "data": "2026-11-30",
+    "titulo": "Feriado — Dia do Evangélico [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-30",
+    "data": "2026-12-08",
+    "titulo": "Culminância das eletivas e clubes juvenis [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-31",
+    "data": "2026-12-09",
+    "titulo": "Último dia de envio das notas para o SIGE [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-32",
+    "data": "2026-12-17",
+    "titulo": "Conselho de classe [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-33",
+    "data": "2026-12-18",
+    "titulo": "Resultado final [Médio]",
+    "descricao": " Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-34",
+    "data": "2026-11-18",
+    "titulo": "Projeto da Consciência Negra — a confirmar [Médio]",
+    "descricao": "Humanas e Linguagens. Instrumento valendo de 0 a 10. Data a confirmar. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-35",
+    "data": "2026-11-24",
+    "titulo": "Avaliação formativa — a confirmar [Médio]",
+    "descricao": "Prevista para 24 e 25/11; a confirmar. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-36",
+    "data": "2026-11-25",
+    "titulo": "Avaliação formativa — a confirmar [Médio]",
+    "descricao": "Prevista para 24 e 25/11; a confirmar. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-37",
+    "data": "2026-12-09",
+    "titulo": "Início — aulas normais com recomposição [Médio]",
+    "descricao": "Período de 09 a 16/12; manter aulas nos dias previstos no horário da turma. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  },
+  {
+    "id": "cal4b2026-medio-44",
+    "data": "2026-12-16",
+    "titulo": "Fim — aulas normais com recomposição [Médio]",
+    "descricao": "Período de 09 a 16/12; manter aulas nos dias previstos no horário da turma. Fonte: CRONOGRAMA 4º BIMESTRE e DATAS IMPORTANTES enviados pela professora em 06/10/2026. Calendário sujeito a alteração.",
+    "concluido": false
+  }
+];
+let _importandoCalendario4B=false;
+async function importarCalendario4B2026(){
+  if(!DB || _importandoCalendario4B) return;
+  _importandoCalendario4B=true;
+  try{
+    const marca='leciona/_calendarios/medio4b2026';
+    if((await DB.ref(marca).once('value')).val()) return;
+    const existentes=(await DB.ref('leciona/compromissos').once('value')).val()||{};
+    const updates={};
+    CALENDARIO_4B_2026.forEach(c=>{
+      if(!existentes[c.id]) updates['compromissos/'+c.id]=Object.assign({},c,{_ts:Date.now()});
+    });
+    updates['_calendarios/medio4b2026']={importadoEm:Date.now(),versao:1};
+    await DB.ref('leciona').update(updates);
+    // Também atualiza a tela em ?safe=1, que usa leitura única.
+    compromissos=(await DB.ref('leciona/compromissos').once('value')).val()||{};
+    lsSet(LS_COMP,JSON.stringify(compromissos));
+    if(!document.getElementById('viewAgenda').classList.contains('hidden')) renderAgenda();
+  }catch(e){
+    toast('Não foi possível carregar o cronograma do 4º bimestre: '+(e.message||e),'err');
+  }finally{ _importandoCalendario4B=false; }
+}
+
 async function adicionarCalendarioFundamental(){
   const btn=event&&event.target;
   const textoOriginal=btn?btn.textContent:'';
@@ -5578,11 +5880,10 @@ const BIM_RANGES = {
   '3º Bimestre':['2026-08-03','2026-10-07'],
   '4º Bimestre':['2026-10-08','2026-12-18']
 };
-const FERIADOS_2026 = new Set(['2026-01-01','2026-02-04','2026-02-17','2026-03-06','2026-04-03','2026-04-05','2026-04-21','2026-05-01','2026-05-06','2026-06-04','2026-06-15','2026-09-07','2026-09-16','2026-10-12','2026-10-15','2026-10-24','2026-10-28','2026-11-02','2026-11-11','2026-11-15','2026-11-20','2026-11-30','2026-12-25']);
-// Trabalho Coletivo (04/02, 06/03, 06/05, 16/09, 11/11) e Dia do Professor
-// (15/10, recesso escolar por recomendação da Resolução CEE/CP 08/2025) —
-// adicionados a partir do "Calendário Escolar 2026 — Calendário da Rede"
-// (SEDUC-GO, Google Drive, 30/07/2026).
+const FERIADOS_2026 = new Set(['2026-01-01','2026-02-04','2026-02-17','2026-03-06','2026-04-03','2026-04-05','2026-04-21','2026-05-01','2026-05-06','2026-06-04','2026-06-15','2026-09-07','2026-09-16','2026-10-12','2026-10-16','2026-10-24','2026-10-30','2026-11-02','2026-11-11','2026-11-15','2026-11-20','2026-11-30','2026-12-25']);
+// Calendário acadêmico SEDUC-GO; no 4º bimestre prevalece o cronograma
+// escolar enviado em 06/10/2026: 15/10 letivo, 16/10 feriado,
+// Dia do Funcionário Público em 30/10. 11/11 é trabalho coletivo.
 const WD_NOMES = {1:'Segunda',2:'Terça',3:'Quarta',4:'Quinta',5:'Sexta'};
 // grades conhecidas do horário do CEPI Marajó (getDay: 2=Ter,3=Qua)
 const KNOWN_GRADES = { 'História|9º ano|A|CEPI Marajó':{2:1,3:2}, 'História|9º ano|C|CEPI Marajó':{2:2,3:1} };
