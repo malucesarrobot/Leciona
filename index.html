@@ -8323,6 +8323,7 @@ function abrirBoletimAluno(id){
     '<div class="modal-h"><h3>📋 Boletim — '+esc(al.nome)+'</h3></div>'+
     '<div class="modal-b">'+
       '<div class="field"><label>Nome completo</label><input id="alunoEdNome" value="'+esc(al.nome||'')+'" autofocus></div>'+
+      '<div class="field"><label>Aviso na chamada (⚠️)</label><input id="alunoEdAviso" value="'+esc(al.avisoChamada||'')+'" placeholder="Deixe vazio para remover o ícone"></div>'+
       '<div class="field"><label>Número (opcional)</label><input id="alunoEdNum" type="number" value="'+esc(al.numero!=null?String(al.numero):'')+'" placeholder="ex.: 1"></div>'+
       '<div class="field"><label>Adaptação curricular (perfis que este aluno precisa)</label><div class="gt-checks">'+
         ADAPT_PERFIS.map(pf=>'<label class="check"><input type="checkbox" name="alunoPerf" value="'+pf.k+'"'+((al.perfisAdaptacao||[]).includes(pf.k)?' checked':'')+'> '+esc(pf.label)+'</label>').join('')+
@@ -8342,6 +8343,7 @@ function salvarEdicaoAluno(id){
   const numStr=document.getElementById('alunoEdNum')?.value;
   if(!nome){ toast('Digite o nome do aluno.','err'); return; }
   al.nome=nome;
+  al.avisoChamada=(document.getElementById('alunoEdAviso')?.value||'').trim();
   al.numero=numStr?parseInt(numStr,10):null;
   al.perfisAdaptacao=[...document.querySelectorAll('input[name=alunoPerf]:checked')].map(c=>c.value);
   persistAluno(al);
@@ -8734,6 +8736,42 @@ function trocarTurmaNotas(turmaId){
    cai direto no dia de aula certo, com todo mundo presente por padrão
    (só toca no nome de quem faltou). Esses mesmos dados (calendário +
    horário por turma) servem de base pras automações no SIAP no futuro. */
+
+// Avisos são dados privados do cadastro; nenhuma relação de alunos fica no código.
+function iconeAvisoChamada(a){
+  if(!a.avisoChamada) return '';
+  return ' <button type="button" class="btn ghost sm" style="padding:0 3px" title="'+esc(a.avisoChamada)+'" aria-label="'+esc('Aviso: '+a.avisoChamada)+'" onclick="event.stopPropagation();alert(alunos[\''+a.id+'\'].avisoChamada)">⚠️</button>';
+}
+function normalizarAviso(v){ return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function abrirImportarAvisosChamada(){
+  abrirModal('<div class="modal-bg"><div class="modal" style="max-width:640px"><div class="modal-h"><h3>⚠️ Avisos na chamada</h3></div><div class="modal-b">'+
+    '<p>Um aluno por linha: turma;nome completo. Apenas cadastros ativos com nome exato serão marcados nas disciplinas da mesma escola.</p>'+
+    '<textarea id="avisosLista" rows="10" placeholder="1A;Nome completo"></textarea>'+
+    '<div class="field"><label>Aviso</label><input id="avisosTexto" value="Média anual provisória inferior a 4,5 — auditoria SIAP de 21/10/2026; 4º bimestre pendente."></div>'+
+    '<div id="avisosResultado" role="status"></div></div><div class="modal-f"><button class="btn ghost" onclick="closeModal();renderNotas()">Fechar</button><button class="btn primary" onclick="importarAvisosChamada()">Marcar alunos</button></div></div></div>');
+}
+function importarAvisosChamada(){
+  const aviso=document.getElementById('avisosTexto').value.trim();
+  const linhas=document.getElementById('avisosLista').value.trim().split(/\n/).filter(x=>x.trim());
+  const resultado=document.getElementById('avisosResultado');
+  if(!aviso||!linhas.length){ resultado.textContent='Preencha a lista e o aviso.'; return; }
+  const marcados=new Set(), pendentes=[];
+  linhas.forEach(linha=>{
+    const partes=linha.split(';');
+    if(partes.length!==2){ pendentes.push(linha+' — formato inválido'); return; }
+    const codigo=normalizarAviso(partes[0]), nome=normalizarAviso(partes[1]);
+    const encontrados=Object.values(alunos).filter(a=>{
+      const tu=a&&turmas[a.turmaId];
+      return a&&a.ativo!==false&&tu&&normalizarAviso(a.nome)===nome&&normalizarAviso(turmaNome(tu))===codigo;
+    });
+    const escolas=new Set(encontrados.map(a=>turmas[a.turmaId].unidade||''));
+    if(!encontrados.length||escolas.size!==1){ pendentes.push(linha+' — '+(!encontrados.length?'não localizado':'escola ambígua')); return; }
+    encontrados.forEach(a=>{ if(a.avisoChamada!==aviso) persistAluno(Object.assign({},a,{avisoChamada:aviso})); });
+    marcados.add(codigo+';'+nome);
+  });
+  resultado.textContent=marcados.size+' aluno(s) marcado(s). '+(pendentes.length?'Pendências: '+pendentes.join(' | '):'Nenhuma pendência.');
+}
+
 function renderChamadaBody(tu, als){
   const grade=gradeDe(tu);
   if(!Object.keys(grade).length || window.__configurarHorario) return renderConfigurarHorario(tu);
@@ -8770,7 +8808,7 @@ function renderChamadaBody(tu, als){
   h+='<div class="chamada-lista">'+als.map(a=>{
     const falta=pres[a.id]===false;
     return '<div class="chamada-row'+(falta?' falta':'')+'" onclick="toggleFaltaChamada(\''+a.id+'\')">'+
-      '<span class="chamada-nome">'+esc(a.nome)+'</span>'+
+      '<span class="chamada-nome">'+esc(a.nome)+iconeAvisoChamada(a)+'</span>'+
       '<span class="chamada-status">'+(falta?'✕ falta':'✓ presente')+'</span>'+
     '</div>';
   }).join('')+'</div>';
@@ -8864,7 +8902,7 @@ function abrirTodasChamadas(){
   const html='<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" style="max-width:640px">'+
     '<div class="modal-h"><h3>📋 Chamada — '+esc(turmaNome(tu))+'</h3></div>'+
     '<div class="modal-b" id="todasChamadasBody">'+renderChamadaBody(tu, als)+'</div>'+
-    '<div class="modal-f"><button class="btn ghost" onclick="closeModal();renderNotas()">Fechar</button></div></div></div>';
+    '<div class="modal-f"><button class="btn ghost" onclick="abrirImportarAvisosChamada()">⚠️ Avisos em lote</button><button class="btn ghost" onclick="closeModal();renderNotas()">Fechar</button></div></div></div>';
   abrirModal(html);
 }
 function renderNotas(){
@@ -8989,7 +9027,7 @@ function renderNotas(){
     const medCls=med==null?'':(med>=6?'aprovado':'reprovado');
     h+='<tr><td class="aluno-nome" style="cursor:pointer" onclick="abrirBoletimAluno(\''+al.id+'\')" title="'+esc(al.nome)+' — clique para ver o boletim (turmas, notas, editar dados)">'+
       (al.numero?'<span style="color:var(--muted);font-size:11px;margin-right:4px">'+al.numero+'</span>':'')+
-      esc(nomesCurtos ? nomeSobrenome(al.nome) : al.nome)+
+      esc(nomesCurtos ? nomeSobrenome(al.nome) : al.nome)+iconeAvisoChamada(al)+
     '</td>'+
     (temHorarioChamada
       ? (()=>{ const falta=chamadaHoje && chamadaHoje.presencas && chamadaHoje.presencas[al.id]===false;
